@@ -96,7 +96,7 @@ pub fn print_tokens(len: usize, tokens: &Vec<Token>) {
     println!("========================");
 }
 
-pub fn is_not_identi(cur: char) -> bool {
+pub fn is_identi(cur: char) -> bool {
     !(cur.is_ascii_digit() || cur == '+' || cur == '\n' || cur == '=' || cur.is_whitespace())
 }
 
@@ -218,7 +218,7 @@ fn make_identifier(lexer: &mut Lexer, kwds: &[String]) -> Token {
         endcol: lexer.col + 1,
     };
 
-    while is_not_identi(lexer.current) {
+    while is_identi(lexer.current) {
         data.push(lexer.current);
         advance(lexer);
     }
