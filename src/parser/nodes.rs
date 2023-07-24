@@ -1,0 +1,97 @@
+use std::{collections::HashMap, fmt::Debug};
+
+use crate::utils::Position;
+
+#[derive(Debug)]
+pub struct Node {
+    pub pos: Position,
+    pub tp: NodeType,
+    pub data: Box<dyn NodeData>,
+}
+
+impl Node {
+    pub fn new(pos: Position, tp: NodeType, data: Box<dyn NodeData>) -> Node {
+        Node { pos, tp, data }
+    }
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub enum NodeType {
+    I32,
+    Binary,
+}
+
+#[derive(Debug)]
+pub struct NodeValue<'a> {
+    pub raw: HashMap<String, String>,
+    pub nodes: HashMap<String, &'a Node>,
+    pub op: Option<OpType>,
+    pub nodearr: Option<&'a Vec<Node>>,
+    pub args: Option<Vec<String>>,
+    pub mapping: Option<&'a Vec<(Node, Node)>>,
+}
+
+pub trait NodeData {
+    fn get_data(&self) -> NodeValue;
+}
+
+impl Debug for dyn NodeData {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "NodeData{:?}", self.get_data())
+    }
+}
+
+impl<'a> NodeValue<'a> {
+    fn new() -> NodeValue<'a> {
+        NodeValue {
+            raw: HashMap::new(),
+            nodes: HashMap::new(),
+            op: None,
+            nodearr: None,
+            args: None,
+            mapping: None,
+        }
+    }
+}
+
+//===================================================
+//===================================================
+
+pub struct DecimalNode {
+    pub value: String,
+}
+
+impl NodeData for DecimalNode {
+    fn get_data(&self) -> NodeValue {
+        let mut value = NodeValue::new();
+        value
+            .raw
+            .insert(String::from("value"), self.value.to_owned());
+
+        value
+    }
+}
+
+// ========================
+
+#[derive(Debug, Copy, Clone)]
+pub enum OpType {
+    Add,
+}
+
+pub struct BinaryNode {
+    pub left: Node,
+    pub right: Node,
+    pub op: OpType,
+}
+
+impl NodeData for BinaryNode {
+    fn get_data(&self) -> NodeValue {
+        let mut value = NodeValue::new();
+        value.nodes.insert(String::from("left"), &self.left);
+        value.nodes.insert(String::from("right"), &self.right);
+        value.op = Some(self.op);
+
+        value
+    }
+}
