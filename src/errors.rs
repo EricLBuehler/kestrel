@@ -48,12 +48,11 @@ pub fn raise_error(
     println!("{}", location.red());
 
     let collected = info.data.clone().collect::<Vec<_>>();
-    let lines = Vec::from_iter(collected.split(|num| *num as char == '\n'));
+    let lines = Vec::from_iter(collected.split(|num| *num == '\n'));
 
     let snippet: String = format!(
         "{}",
-        String::from_iter(lines.get(pos.line).unwrap().to_vec())
-            .blue()
+        String::from_iter(lines.get(pos.line).unwrap().to_vec()).blue()
     );
     let mut arrows: String = String::new();
     for idx in 0..snippet.len() {

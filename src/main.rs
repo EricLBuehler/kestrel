@@ -61,7 +61,7 @@ fn main() {
             return;
         }
     };
-    
+
     let data = file_data.chars();
 
     let mut file_info = FileInfo {

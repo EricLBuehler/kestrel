@@ -95,19 +95,14 @@ pub fn print_tokens(len: usize, tokens: &Vec<Token>) {
 }
 
 pub fn is_not_identi(cur: char) -> bool {
-    if cur.is_ascii_digit() || cur == '+' || cur == '\n' || cur == '=' {
-        false
-    }
-    else {
-        true
-    }
+    !(cur.is_ascii_digit() || cur == '+' || cur == '\n' || cur == '=' || cur.is_whitespace())
 }
 
 pub fn generate_tokens(lexer: &mut Lexer, _kwds: &[String]) -> (usize, Vec<Token>) {
     let mut tokens: Vec<Token> = Vec::new();
 
     while lexer.current != '\0' {
-        let cur: char = lexer.current.into();
+        let cur = lexer.current;
 
         if cur.is_ascii_digit() {
             tokens.push(make_number(lexer));
@@ -159,8 +154,10 @@ pub fn generate_tokens(lexer: &mut Lexer, _kwds: &[String]) -> (usize, Vec<Token
                 },
             });
             advance(lexer);
-        } else {
+        } else if !cur.is_whitespace() {
             tokens.push(make_identifier(lexer));
+        } else {
+            advance(lexer);
         }
     }
 
@@ -193,8 +190,8 @@ fn make_number(lexer: &mut Lexer) -> Token {
         endcol: lexer.col + 1,
     };
 
-    while (lexer.current as char).is_numeric() || lexer.current == '_' {
-        data.push(lexer.current as char);
+    while (lexer.current).is_numeric() || lexer.current == '_' {
+        data.push(lexer.current);
         advance(lexer);
     }
 
@@ -222,7 +219,7 @@ fn make_identifier(lexer: &mut Lexer) -> Token {
     };
 
     while is_not_identi(lexer.current) {
-        data.push(lexer.current as char);
+        data.push(lexer.current);
         advance(lexer);
     }
 
