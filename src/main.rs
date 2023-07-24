@@ -70,7 +70,7 @@ fn main() {
         dir: String::from("."),
     };
 
-    let keywords = vec![];
+    let keywords = vec!["let".into()];
     let mut lexer = lexer::new(&mut file_info);
     let (len, tokens) = lexer::generate_tokens(&mut lexer, &keywords);
     lexer::print_tokens(len, &tokens);

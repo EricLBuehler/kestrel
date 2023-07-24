@@ -12,6 +12,7 @@ pub enum TokenType {
     Eof,
     Equal,
     Identifier,
+    Keyword,
 }
 
 pub struct Lexer<'a> {
@@ -45,6 +46,7 @@ impl std::fmt::Display for TokenType {
             TokenType::Eof => write!(f, "EOF"),
             TokenType::Equal => write!(f, "equal"),
             TokenType::Identifier => write!(f, "identifier"),
+            TokenType::Keyword => write!(f, "keyword"),
         }
     }
 }
@@ -98,7 +100,7 @@ pub fn is_not_identi(cur: char) -> bool {
     !(cur.is_ascii_digit() || cur == '+' || cur == '\n' || cur == '=' || cur.is_whitespace())
 }
 
-pub fn generate_tokens(lexer: &mut Lexer, _kwds: &[String]) -> (usize, Vec<Token>) {
+pub fn generate_tokens(lexer: &mut Lexer, kwds: &[String]) -> (usize, Vec<Token>) {
     let mut tokens: Vec<Token> = Vec::new();
 
     while lexer.current != '\0' {
@@ -155,7 +157,7 @@ pub fn generate_tokens(lexer: &mut Lexer, _kwds: &[String]) -> (usize, Vec<Token
             });
             advance(lexer);
         } else if !cur.is_whitespace() {
-            tokens.push(make_identifier(lexer));
+            tokens.push(make_identifier(lexer, kwds));
         } else {
             advance(lexer);
         }
@@ -207,10 +209,8 @@ fn make_number(lexer: &mut Lexer) -> Token {
     }
 }
 
-fn make_identifier(lexer: &mut Lexer) -> Token {
+fn make_identifier(lexer: &mut Lexer, kwds: &[String]) -> Token {
     let mut data: String = String::from("");
-
-    let tp: TokenType = TokenType::Identifier;
 
     let start = Position {
         line: lexer.line,
@@ -222,6 +222,12 @@ fn make_identifier(lexer: &mut Lexer) -> Token {
         data.push(lexer.current);
         advance(lexer);
     }
+
+    let tp = if kwds.contains(&data) {
+        TokenType::Keyword
+    } else {
+        TokenType::Identifier
+    };
 
     Token {
         data,
