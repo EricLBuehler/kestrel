@@ -88,7 +88,11 @@ impl<'a> Parser<'a> {
     }
 
     fn raise_error(&mut self, error: &str, errtp: ErrorType) -> ! {
-        crate::errors::raise_error(error, errtp, &self.current.start, &self.info);
+        crate::errors::raise_error(error, errtp, &Position {
+            startcol: self.current.start.startcol,
+            endcol: self.current.end.endcol - 1,
+            line: self.current.start.line,
+        }, &self.info);
     }
 
     fn advance(&mut self) {

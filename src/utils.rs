@@ -1,6 +1,8 @@
+use std::str::Chars;
+
 #[derive(Clone, Debug)]
 pub struct FileInfo<'a> {
-    pub data: &'a [u8],
+    pub data: Chars<'a>,
     pub name: String,
     pub dir: String,
 }

@@ -46,12 +46,13 @@ pub fn raise_error(
     let location: String = format!("{}:{}:{}", info.name, pos.line + 1, pos.startcol + 1);
     println!("{}", header.red().bold());
     println!("{}", location.red());
-    let lines = Vec::from_iter(info.data.split(|num| *num as char == '\n'));
+
+    let collected = info.data.clone().collect::<Vec<_>>();
+    let lines = Vec::from_iter(collected.split(|num| *num as char == '\n'));
 
     let snippet: String = format!(
         "{}",
-        String::from_utf8(lines.get(pos.line).unwrap().to_vec())
-            .unwrap()
+        String::from_iter(lines.get(pos.line).unwrap().to_vec())
             .blue()
     );
     let mut arrows: String = String::new();

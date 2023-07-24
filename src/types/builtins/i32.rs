@@ -100,7 +100,15 @@ fn i32_add<'a>(
 
         codegen.builder.position_at_end(overflow_block);
 
-        print_panic(codegen, &format!("Error: i32 addition overflow!\n    {}:{}:{}\n", codegen.info.name, pos.line + 1, pos.startcol + 1));
+        print_panic(
+            codegen,
+            &format!(
+                "Error: i32 addition overflow!\n    {}:{}:{}\n",
+                codegen.info.name,
+                pos.line + 1,
+                pos.startcol + 1
+            ),
+        );
 
         codegen.builder.build_unconditional_branch(done_block);
 

@@ -18,7 +18,7 @@ use crate::{
         builtins::init_builtins, init_extern_fns, BasicType, BuiltinTypes, Trait, TraitType, Type,
     },
     utils::FileInfo,
-    NoFlag
+    NoFlag,
 };
 
 pub struct CodeGen<'a> {

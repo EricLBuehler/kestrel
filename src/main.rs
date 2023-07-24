@@ -61,21 +61,23 @@ fn main() {
             return;
         }
     };
+    
+    let data = file_data.chars();
 
-    let file_data_bytes: &[u8] = file_data.as_bytes();
-
-    let file_info = FileInfo {
-        data: file_data_bytes.clone(),
+    let mut file_info = FileInfo {
+        data: data.clone(),
         name: args.file.clone(),
         dir: String::from("."),
     };
 
     let keywords = vec![];
-    let mut lexer = lexer::new(&file_info);
-    let (_, tokens) = lexer::generate_tokens(&mut lexer, &keywords);
+    let mut lexer = lexer::new(&mut file_info);
+    let (len, tokens) = lexer::generate_tokens(&mut lexer, &keywords);
+    lexer::print_tokens(len, &tokens);
 
     let mut parser = parser::Parser::new(tokens, &file_info);
     let ast = parser.generate_ast();
 
-    generate_code(&args.file, &args.file, ast, &file_info, no_flags).expect("Code generation error.");
+    generate_code(&args.file, &args.file, ast, &file_info, no_flags)
+        .expect("Code generation error.");
 }
