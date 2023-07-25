@@ -29,6 +29,9 @@ done:                                             ; preds = %end, %else
   %phi = phi i32 [ %result, %end ], [ -1, %else ]
   %ptr2 = alloca i32, align 4
   store i32 %phi, i32* %ptr2, align 4
+  %l1 = load i32, i32* %ptr2, align 4
+  %ptr3 = alloca i32, align 4
+  store i32 %l1, i32* %ptr3, align 4
   ret i32 0
 }
 

@@ -5,7 +5,7 @@ use crate::{
 };
 
 pub mod nodes;
-use self::nodes::{BinaryNode, DecimalNode, Node, OpType, IdentifierNode, LetNode};
+use self::nodes::{BinaryNode, DecimalNode, IdentifierNode, LetNode, Node, OpType};
 
 pub struct Parser<'a> {
     current: Token,
@@ -78,12 +78,8 @@ impl<'a> Parser<'a> {
 
     fn parse_statement(&mut self) -> Node {
         match self.current.tp {
-            TokenType::Keyword => {
-                self.keyword()
-            }
-            _ => {
-                self.expr(Precedence::Lowest)
-            }
+            TokenType::Keyword => self.keyword(),
+            _ => self.expr(Precedence::Lowest),
         }
     }
 
@@ -160,20 +156,17 @@ impl<'a> Parser<'a> {
         }
     }
 
-    
     // =======================
 
     fn keyword(&mut self) -> Node {
         match self.current.data.as_str() {
-            "let" => {
-                self.generate_let()
-            }
+            "let" => self.generate_let(),
             _ => {
                 unreachable!();
             }
         }
     }
-    
+
     fn generate_let(&mut self) -> Node {
         self.advance();
 
@@ -182,7 +175,7 @@ impl<'a> Parser<'a> {
         let name = self.atom().unwrap();
 
         self.advance();
-        
+
         self.expect(TokenType::Equal);
 
         self.advance();
@@ -198,7 +191,10 @@ impl<'a> Parser<'a> {
                 endcol_raw: expr.pos.endcol_raw,
             },
             nodes::NodeType::Let,
-            Box::new(LetNode { name: name.data.get_data().raw.get("value").unwrap().clone(), expr }),
+            Box::new(LetNode {
+                name: name.data.get_data().raw.get("value").unwrap().clone(),
+                expr,
+            }),
         )
     }
 

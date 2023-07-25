@@ -125,12 +125,8 @@ pub struct LetNode {
 impl NodeData for LetNode {
     fn get_data(&self) -> NodeValue {
         let mut value = NodeValue::new();
-        value
-            .raw
-            .insert(String::from("name"), self.name.to_owned());
-        value
-            .nodes
-            .insert(String::from("expr"), &self.expr);
+        value.raw.insert(String::from("name"), self.name.to_owned());
+        value.nodes.insert(String::from("expr"), &self.expr);
 
         value
     }

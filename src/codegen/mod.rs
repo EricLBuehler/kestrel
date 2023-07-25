@@ -1,4 +1,3 @@
-use std::{collections::HashMap, error::Error};
 use inkwell::{
     basic_block::BasicBlock,
     builder::Builder,
@@ -7,8 +6,9 @@ use inkwell::{
     module::FlagBehavior,
     module::Module,
     passes::PassManagerSubType,
-    values::{BasicMetadataValueEnum, FunctionValue, BasicValue, PointerValue},
+    values::{BasicMetadataValueEnum, BasicValue, FunctionValue, PointerValue},
 };
+use std::{collections::HashMap, error::Error};
 
 use crate::{
     errors::{raise_error, ErrorType},
@@ -21,7 +21,7 @@ use crate::{
 };
 
 pub struct Namespace<'a> {
-    bindings: HashMap<String, PointerValue<'a>>,
+    bindings: HashMap<String, (PointerValue<'a>, Type<'a>)>,
 }
 
 pub struct CodeGen<'a> {
@@ -65,7 +65,7 @@ impl<'a> CodeGen<'a> {
         match node.tp {
             NodeType::Binary => self.compile_binary(node),
             NodeType::I32 => self.compile_i32(node),
-            NodeType::Identifier => todo!(),
+            NodeType::Identifier => self.compile_load(node),
             NodeType::Let => self.compile_let(node),
         }
     }
@@ -130,14 +130,46 @@ impl<'a> CodeGen<'a> {
         let name = letnode.raw.get("name").unwrap();
         let right = self.compile_expr(letnode.nodes.get("expr").unwrap());
 
-        let alloc = self.builder.build_alloca(right.data.unwrap().into_int_value().get_type(), "ptr");
-        self.builder.build_store(alloc, right.data.unwrap().into_int_value().as_basic_value_enum());
-        
-        self.namespaces.get_mut(&self.cur_fn.unwrap()).unwrap().bindings.insert(name.clone(), alloc);
-        
+        let alloc = self
+            .builder
+            .build_alloca(right.data.unwrap().into_int_value().get_type(), "ptr");
+        self.builder.build_store(
+            alloc,
+            right.data.unwrap().into_int_value().as_basic_value_enum(),
+        );
+
+        self.namespaces
+            .get_mut(&self.cur_fn.unwrap())
+            .unwrap()
+            .bindings
+            .insert(name.clone(), (alloc, right.tp));
+
         Data {
             data: None,
             tp: self.builtins.get(&BasicType::Void).unwrap().clone(),
+        }
+    }
+
+    fn compile_load(&mut self, node: &Node) -> Data<'a> {
+        let identifiernode = node.data.get_data();
+        let name = identifiernode.raw.get("value").unwrap();
+
+        let binding = self
+            .namespaces
+            .get_mut(&self.cur_fn.unwrap())
+            .unwrap()
+            .bindings
+            .get(name);
+        if binding.is_none() {
+            let fmt: String = format!("Binding '{}' not found in scope.", name);
+            raise_error(&fmt, ErrorType::BindingNotFound, &node.pos, self.info);
+        }
+
+        let binding = binding.unwrap();
+
+        Data {
+            data: Some(self.builder.build_load(binding.0, "l1").into()),
+            tp: binding.1.clone(),
         }
     }
 }
@@ -228,7 +260,12 @@ pub fn generate_code(
     let basic_block: inkwell::basic_block::BasicBlock =
         codegen.context.append_basic_block(realmain, "entry");
 
-    codegen.namespaces.insert(realmain.clone(), Namespace { bindings: HashMap::new() });
+    codegen.namespaces.insert(
+        realmain.clone(),
+        Namespace {
+            bindings: HashMap::new(),
+        },
+    );
 
     let mut attr: inkwell::attributes::Attribute = codegen.context.create_enum_attribute(
         inkwell::attributes::Attribute::get_named_enum_kind_id("noinline"),

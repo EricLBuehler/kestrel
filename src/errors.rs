@@ -6,6 +6,7 @@ pub enum ErrorType {
     InvalidLiteralForRadix,
     InvalidNoFlag,
     TypeMismatch,
+    BindingNotFound,
 }
 
 impl std::fmt::Display for ErrorType {
@@ -20,6 +21,7 @@ pub fn repr_err(tp: ErrorType) -> &'static str {
         ErrorType::InvalidLiteralForRadix => "invalid literal for radix provided",
         ErrorType::InvalidNoFlag => "invalid 'no flag' passed",
         ErrorType::TypeMismatch => "type mismatch",
+        ErrorType::BindingNotFound => "binding not found",
     }
 }
 
@@ -43,7 +45,7 @@ pub fn raise_error(
     info: &crate::utils::FileInfo,
 ) -> ! {
     let header: String = format!("error[E{:0>3}]: {}", errtp as u8 + 1, error);
-    let location: String = format!("{}:{}:{}", info.name, pos.line + 1, pos.startcol_raw + 1);
+    let location: String = format!("{}:{}:{}", info.name, pos.line + 1, pos.startcol + 1);
     println!("{}", header.red().bold());
     println!("{}", location.red());
 
@@ -54,6 +56,7 @@ pub fn raise_error(
         "{}",
         String::from_iter(lines.get(pos.line).unwrap().to_vec()).blue()
     );
+    
     let mut arrows: String = String::new();
     for idx in 0..snippet.len() {
         if idx >= pos.startcol && idx < pos.endcol {

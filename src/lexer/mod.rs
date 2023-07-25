@@ -43,7 +43,7 @@ impl std::fmt::Display for TokenType {
         match *self {
             TokenType::I32 => write!(f, "i32"),
             TokenType::Plus => write!(f, "plus"),
-            TokenType::Newline => write!(f, "NEWLINE"),
+            TokenType::Newline => write!(f, "\\n"),
             TokenType::Eof => write!(f, "EOF"),
             TokenType::Equal => write!(f, "equal"),
             TokenType::Identifier => write!(f, "identifier"),
@@ -69,6 +69,9 @@ fn advance(lexer: &mut Lexer) {
     let next = lexer.chars.next();
 
     lexer.raw_col += 1;
+    if lexer.current != '\n' && lexer.current != '\r' {
+        lexer.col += unicode_width::UnicodeWidthChar::width(lexer.current).unwrap();
+    }
 
     if next.is_none() {
         lexer.col += 1;
@@ -77,11 +80,11 @@ fn advance(lexer: &mut Lexer) {
     }
 
     let next = next.unwrap();
-    lexer.col += unicode_width::UnicodeWidthChar::width(lexer.current).unwrap();
 
     if lexer.current == '\n' || lexer.current == '\r' {
         lexer.line += 1;
         lexer.col = 0;
+        lexer.raw_col = 0;
     }
 
     lexer.current = next;
@@ -89,7 +92,7 @@ fn advance(lexer: &mut Lexer) {
 
 #[allow(dead_code)]
 pub fn print_tokens(len: usize, tokens: &Vec<Token>) {
-    println!("\n\nGenerated tokens:\n========================");
+    println!("Generated tokens:\n========================");
     println!("Token list ({} tokens)", len);
     println!("------------------------");
     let mut idx: usize = 1;
@@ -134,7 +137,7 @@ pub fn generate_tokens(lexer: &mut Lexer, kwds: &[String]) -> (usize, Vec<Token>
             advance(lexer);
         } else if cur == '\n' {
             tokens.push(Token {
-                data: String::from("\n"),
+                data: String::from("\\n"),
                 tp: TokenType::Newline,
                 start: Position {
                     line: lexer.line,
@@ -244,7 +247,7 @@ fn make_identifier(lexer: &mut Lexer, kwds: &[String]) -> Token {
         endcol_raw: lexer.raw_col + 1,
     };
 
-    while is_identi(lexer.current) {
+    while is_identi(lexer.current) && lexer.current != '\0' {
         data.push(lexer.current);
         advance(lexer);
     }
@@ -262,9 +265,9 @@ fn make_identifier(lexer: &mut Lexer, kwds: &[String]) -> Token {
         end: Position {
             line: lexer.line,
             startcol: lexer.col,
-            endcol: lexer.col + 1,
+            endcol: lexer.col,
             startcol_raw: lexer.raw_col,
-            endcol_raw: lexer.raw_col + 1,
+            endcol_raw: lexer.raw_col,
         },
     }
 }

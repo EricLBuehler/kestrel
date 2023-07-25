@@ -84,6 +84,12 @@ main:                                   # @main
 	jmp	.LBB0_3
 .LBB0_3:                                # %done
 	movq	%rsp, %rcx
+	movq	%rcx, %rdx
+	addq	$-16, %rdx
+	movq	%rdx, %rsp
+	movl	%eax, -16(%rcx)
+	movl	-16(%rcx), %eax
+	movq	%rsp, %rcx
 	addq	$-16, %rcx
 	movq	%rcx, %rsp
 	movl	%eax, (%rcx)
