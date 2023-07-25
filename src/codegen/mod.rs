@@ -133,7 +133,7 @@ impl<'a> CodeGen<'a> {
 
         let alloc = self
             .builder
-            .build_alloca(right.data.unwrap().into_int_value().get_type(), "ptr");
+            .build_alloca(right.data.unwrap().into_int_value().get_type(), "");
 
         self.builder.build_store(
             alloc,
@@ -171,7 +171,7 @@ impl<'a> CodeGen<'a> {
         let binding = binding.unwrap();
 
         Data {
-            data: Some(self.builder.build_load(binding.0, "l1").into()),
+            data: Some(self.builder.build_load(binding.0, "").into()),
             tp: binding.1.clone(),
         }
     }
@@ -261,7 +261,7 @@ pub fn generate_code(
     let realmain: inkwell::values::FunctionValue =
         codegen.module.add_function("main", main_tp, None);
     let basic_block: inkwell::basic_block::BasicBlock =
-        codegen.context.append_basic_block(realmain, "entry");
+        codegen.context.append_basic_block(realmain, "");
 
     codegen.namespaces.insert(
         realmain,

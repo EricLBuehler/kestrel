@@ -54,7 +54,7 @@ fn i32_add<'a>(
             .build_call(
                 sadd_i32_function,
                 &[this.data.unwrap(), other.data.unwrap()],
-                "i32_sadd",
+                "",
             )
             .try_as_basic_value()
             .left();
@@ -62,22 +62,22 @@ fn i32_add<'a>(
         let result =
             codegen
                 .builder
-                .build_extract_value(res.unwrap().into_struct_value(), 0, "result");
+                .build_extract_value(res.unwrap().into_struct_value(), 0, "");
         let overflow =
             codegen
                 .builder
-                .build_extract_value(res.unwrap().into_struct_value(), 1, "overflow");
-
-        let end_block: inkwell::basic_block::BasicBlock = codegen
-            .context
-            .append_basic_block(codegen.cur_fn.unwrap(), "end");
-
+                .build_extract_value(res.unwrap().into_struct_value(), 1, "");
+        
         let overflow_block: inkwell::basic_block::BasicBlock = codegen
             .context
-            .append_basic_block(codegen.cur_fn.unwrap(), "else");
+            .append_basic_block(codegen.cur_fn.unwrap(), "");
+        let end_block: inkwell::basic_block::BasicBlock = codegen
+            .context
+            .append_basic_block(codegen.cur_fn.unwrap(), "");
+
         let done_block: inkwell::basic_block::BasicBlock = codegen
             .context
-            .append_basic_block(codegen.cur_fn.unwrap(), "done");
+            .append_basic_block(codegen.cur_fn.unwrap(), "");
 
         let res = codegen
             .builder
@@ -87,7 +87,7 @@ fn i32_add<'a>(
                     overflow.unwrap().into(),
                     codegen.context.bool_type().const_int(0, true).into(),
                 ],
-                "sadd1",
+                "",
             )
             .try_as_basic_value()
             .left();
@@ -125,7 +125,7 @@ fn i32_add<'a>(
 
         let phi = codegen
             .builder
-            .build_phi(this.data.unwrap().into_int_value().get_type(), "phi");
+            .build_phi(this.data.unwrap().into_int_value().get_type(), "");
 
         phi.add_incoming(&[(&result.unwrap(), end_block)]);
         phi.add_incoming(&[(
@@ -143,7 +143,7 @@ fn i32_add<'a>(
         let res = codegen.builder.build_int_add(
             this.data.unwrap().into_int_value(),
             other.data.unwrap().into_int_value(),
-            "i32sum",
+            "",
         );
 
         Data {

@@ -78,7 +78,7 @@ pub fn print_panic(codegen: &mut CodeGen, message: &str) {
 
     let ptr = codegen
         .builder
-        .build_struct_gep(mem, 0_u32, "ptr")
+        .build_struct_gep(mem, 0_u32, "")
         .expect("GEP error");
     codegen.builder.build_store(ptr, str);
     let ptr = unsafe {
@@ -88,13 +88,13 @@ pub fn print_panic(codegen: &mut CodeGen, message: &str) {
                 codegen.context.i32_type().const_zero(),
                 codegen.context.i32_type().const_zero(),
             ],
-            "ptr",
+            "",
         )
     };
 
     codegen.builder.build_call(
         *codegen.extern_fns.get("printf").unwrap(),
         &[ptr.into()],
-        "printf_call",
+        "",
     );
 }

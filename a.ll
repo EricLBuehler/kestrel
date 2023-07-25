@@ -7,31 +7,30 @@ declare noundef i32 @printf(i8* nocapture noundef readonly) local_unnamed_addr #
 
 ; Function Attrs: noinline nounwind optnone
 define i32 @main(i32 %0, i32** %1) local_unnamed_addr #1 {
-entry:
-  %i32_sadd = call { i32, i1 } @llvm.sadd.with.overflow.i32.i32(i32 1, i32 2)
-  %result = extractvalue { i32, i1 } %i32_sadd, 0
-  %overflow = extractvalue { i32, i1 } %i32_sadd, 1
-  %sadd1 = call i1 @llvm.expect.i1.i1(i1 %overflow, i1 false)
-  br i1 %sadd1, label %else, label %end
+  %3 = call { i32, i1 } @llvm.sadd.with.overflow.i32.i32(i32 1, i32 2)
+  %4 = extractvalue { i32, i1 } %3, 0
+  %5 = extractvalue { i32, i1 } %3, 1
+  %6 = call i1 @llvm.expect.i1.i1(i1 %5, i1 false)
+  br i1 %6, label %7, label %11
 
-else:                                             ; preds = %entry
+7:                                                ; preds = %2
   %string = alloca { [51 x i8] }, align 8
-  %ptr = getelementptr inbounds { [51 x i8] }, { [51 x i8] }* %string, i32 0, i32 0
-  store [51 x i8] c"Error: i32 addition overflow!\0A    program.ke:1:10\0A\00", [51 x i8]* %ptr, align 1
-  %ptr1 = getelementptr [51 x i8], [51 x i8]* %ptr, i32 0, i32 0
-  %printf_call = call i32 @printf(i8* %ptr1)
-  br label %done
+  %8 = getelementptr inbounds { [51 x i8] }, { [51 x i8] }* %string, i32 0, i32 0
+  store [51 x i8] c"Error: i32 addition overflow!\0A    program.ke:1:10\0A\00", [51 x i8]* %8, align 1
+  %9 = getelementptr [51 x i8], [51 x i8]* %8, i32 0, i32 0
+  %10 = call i32 @printf(i8* %9)
+  br label %12
 
-end:                                              ; preds = %entry
-  br label %done
+11:                                               ; preds = %2
+  br label %12
 
-done:                                             ; preds = %end, %else
-  %phi = phi i32 [ %result, %end ], [ -1, %else ]
-  %ptr2 = alloca i32, align 4
-  store i32 %phi, i32* %ptr2, align 4
-  %l1 = load i32, i32* %ptr2, align 4
-  %ptr3 = alloca i32, align 4
-  store i32 %l1, i32* %ptr3, align 4
+12:                                               ; preds = %11, %7
+  %13 = phi i32 [ %4, %11 ], [ -1, %7 ]
+  %14 = alloca i32, align 4
+  store i32 %13, i32* %14, align 4
+  %15 = load i32, i32* %14, align 4
+  %16 = alloca i32, align 4
+  store i32 %15, i32* %16, align 4
   ret i32 0
 }
 

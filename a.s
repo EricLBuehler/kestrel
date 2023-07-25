@@ -7,7 +7,7 @@ main:                                   # @main
 .Lfunc_begin0:
 	.cfi_sections .debug_frame
 	.cfi_startproc
-# %bb.0:                                # %entry
+# %bb.0:
 	pushq	%rbp
 	.cfi_def_cfa_offset 16
 	.cfi_offset %rbp, -16
@@ -21,7 +21,7 @@ main:                                   # @main
 	testb	$1, %cl
 	jne	.LBB0_1
 	jmp	.LBB0_2
-.LBB0_1:                                # %else
+.LBB0_1:
 	movq	%rsp, %rax
 	movq	%rax, %rdi
 	addq	$-64, %rdi
@@ -80,9 +80,9 @@ main:                                   # @main
 	callq	printf@PLT
 	movl	$4294967295, %eax               # imm = 0xFFFFFFFF
 	jmp	.LBB0_3
-.LBB0_2:                                # %end
+.LBB0_2:
 	jmp	.LBB0_3
-.LBB0_3:                                # %done
+.LBB0_3:
 	movq	%rsp, %rcx
 	movq	%rcx, %rdx
 	addq	$-16, %rdx
