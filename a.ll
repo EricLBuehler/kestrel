@@ -2,10 +2,11 @@
 source_filename = "program.ke"
 target triple = "x86_64-unknown-linux-gnu"
 
-declare i32 @printf(i8*)
+; Function Attrs: nofree nounwind
+declare noundef i32 @printf(i8* nocapture noundef readonly) local_unnamed_addr #0
 
-; Function Attrs: noinline optnone
-define i32 @main(i32 %0, i32** %1) #0 {
+; Function Attrs: noinline nounwind optnone
+define i32 @main(i32 %0, i32** %1) local_unnamed_addr #1 {
 entry:
   %i32_sadd = call { i32, i1 } @llvm.sadd.with.overflow.i32.i32(i32 1, i32 2)
   %result = extractvalue { i32, i1 } %i32_sadd, 0
@@ -26,17 +27,21 @@ end:                                              ; preds = %entry
 
 done:                                             ; preds = %end, %else
   %phi = phi i32 [ %result, %end ], [ -1, %else ]
+  %ptr2 = alloca i32, align 4
+  store i32 %phi, i32* %ptr2, align 4
+  ret i32 0
 }
 
-; Function Attrs: nofree nosync nounwind readnone speculatable willreturn
-declare { i32, i1 } @llvm.sadd.with.overflow.i32.i32(i32, i32) #1
+; Function Attrs: mustprogress nofree nosync nounwind readnone speculatable willreturn
+declare { i32, i1 } @llvm.sadd.with.overflow.i32.i32(i32, i32) #2
 
-; Function Attrs: nofree nosync nounwind readnone willreturn
-declare i1 @llvm.expect.i1.i1(i1, i1) #2
+; Function Attrs: mustprogress nofree nosync nounwind readnone willreturn
+declare i1 @llvm.expect.i1.i1(i1, i1) #3
 
-attributes #0 = { noinline optnone }
-attributes #1 = { nofree nosync nounwind readnone speculatable willreturn }
-attributes #2 = { nofree nosync nounwind readnone willreturn }
+attributes #0 = { nofree nounwind }
+attributes #1 = { noinline nounwind optnone }
+attributes #2 = { mustprogress nofree nosync nounwind readnone speculatable willreturn }
+attributes #3 = { mustprogress nofree nosync nounwind readnone willreturn }
 
 !llvm.module.flags = !{!0}
 !llvm.dbg.cu = !{!1}

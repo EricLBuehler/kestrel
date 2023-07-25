@@ -1,5 +1,4 @@
 use std::{collections::HashMap, error::Error};
-
 use inkwell::{
     basic_block::BasicBlock,
     builder::Builder,
@@ -8,7 +7,7 @@ use inkwell::{
     module::FlagBehavior,
     module::Module,
     passes::PassManagerSubType,
-    values::{BasicMetadataValueEnum, FunctionValue},
+    values::{BasicMetadataValueEnum, FunctionValue, BasicValue, PointerValue},
 };
 
 use crate::{
@@ -20,6 +19,10 @@ use crate::{
     utils::FileInfo,
     NoFlag,
 };
+
+pub struct Namespace<'a> {
+    bindings: HashMap<String, PointerValue<'a>>,
+}
 
 pub struct CodeGen<'a> {
     pub context: &'a Context,
@@ -33,6 +36,7 @@ pub struct CodeGen<'a> {
 
     pub builtins: BuiltinTypes<'a>,
     pub extern_fns: HashMap<String, FunctionValue<'a>>,
+    namespaces: HashMap<FunctionValue<'a>, Namespace<'a>>,
 
     pub no_flags: Vec<NoFlag>,
 }
@@ -126,11 +130,15 @@ impl<'a> CodeGen<'a> {
         let name = letnode.raw.get("name").unwrap();
         let right = self.compile_expr(letnode.nodes.get("expr").unwrap());
 
-        println!("{:?}", name);
-        println!("{:?}", right);
-        self.module.print_to_file(std::path::Path::new("a.ll")).unwrap();
+        let alloc = self.builder.build_alloca(right.data.unwrap().into_int_value().get_type(), "ptr");
+        self.builder.build_store(alloc, right.data.unwrap().into_int_value().as_basic_value_enum());
         
-        todo!();
+        self.namespaces.get_mut(&self.cur_fn.unwrap()).unwrap().bindings.insert(name.clone(), alloc);
+        
+        Data {
+            data: None,
+            tp: self.builtins.get(&BasicType::Void).unwrap().clone(),
+        }
     }
 }
 
@@ -186,6 +194,7 @@ pub fn generate_code(
         cur_fn: None,
         builtins: HashMap::new(),
         extern_fns: HashMap::new(),
+        namespaces: HashMap::new(),
         no_flags,
     };
 
@@ -218,6 +227,8 @@ pub fn generate_code(
         codegen.module.add_function("main", main_tp, None);
     let basic_block: inkwell::basic_block::BasicBlock =
         codegen.context.append_basic_block(realmain, "entry");
+
+    codegen.namespaces.insert(realmain.clone(), Namespace { bindings: HashMap::new() });
 
     let mut attr: inkwell::attributes::Attribute = codegen.context.create_enum_attribute(
         inkwell::attributes::Attribute::get_named_enum_kind_id("noinline"),
