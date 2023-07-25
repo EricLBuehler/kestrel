@@ -19,6 +19,7 @@ pub struct Lexer<'a> {
     pub current: char,
     pub line: usize,
     pub col: usize,
+    pub raw_col: usize,
     pub chars: Chars<'a>,
     pub info: FileInfo<'a>,
 }
@@ -58,6 +59,7 @@ pub fn new<'a>(info: &mut crate::utils::FileInfo<'a>) -> Lexer<'a> {
         current,
         line: 0,
         col: 0,
+        raw_col: 0,
         chars,
         info: info.clone(),
     }
@@ -65,6 +67,8 @@ pub fn new<'a>(info: &mut crate::utils::FileInfo<'a>) -> Lexer<'a> {
 
 fn advance(lexer: &mut Lexer) {
     let next = lexer.chars.next();
+
+    lexer.raw_col += 1;
 
     if next.is_none() {
         lexer.col += 1;
@@ -116,11 +120,15 @@ pub fn generate_tokens(lexer: &mut Lexer, kwds: &[String]) -> (usize, Vec<Token>
                     line: lexer.line,
                     startcol: lexer.col,
                     endcol: lexer.col + 1,
+                    startcol_raw: lexer.raw_col,
+                    endcol_raw: lexer.raw_col + 1,
                 },
                 end: Position {
                     line: lexer.line,
                     startcol: lexer.col,
                     endcol: lexer.col + 1,
+                    startcol_raw: lexer.raw_col,
+                    endcol_raw: lexer.raw_col + 1,
                 },
             });
             advance(lexer);
@@ -132,11 +140,15 @@ pub fn generate_tokens(lexer: &mut Lexer, kwds: &[String]) -> (usize, Vec<Token>
                     line: lexer.line,
                     startcol: lexer.col,
                     endcol: lexer.col + 1,
+                    startcol_raw: lexer.raw_col,
+                    endcol_raw: lexer.raw_col + 1,
                 },
                 end: Position {
                     line: lexer.line,
                     startcol: lexer.col,
                     endcol: lexer.col + 1,
+                    startcol_raw: lexer.raw_col,
+                    endcol_raw: lexer.raw_col + 1,
                 },
             });
             advance(lexer);
@@ -148,11 +160,15 @@ pub fn generate_tokens(lexer: &mut Lexer, kwds: &[String]) -> (usize, Vec<Token>
                     line: lexer.line,
                     startcol: lexer.col,
                     endcol: lexer.col + 1,
+                    startcol_raw: lexer.raw_col,
+                    endcol_raw: lexer.raw_col + 1,
                 },
                 end: Position {
                     line: lexer.line,
                     startcol: lexer.col,
                     endcol: lexer.col + 1,
+                    startcol_raw: lexer.raw_col,
+                    endcol_raw: lexer.raw_col + 1,
                 },
             });
             advance(lexer);
@@ -170,11 +186,15 @@ pub fn generate_tokens(lexer: &mut Lexer, kwds: &[String]) -> (usize, Vec<Token>
             line: lexer.line,
             startcol: lexer.col,
             endcol: lexer.col + 1,
+            startcol_raw: lexer.raw_col,
+            endcol_raw: lexer.raw_col + 1,
         },
         end: Position {
             line: lexer.line,
             startcol: lexer.col,
             endcol: lexer.col + 1,
+            startcol_raw: lexer.raw_col,
+            endcol_raw: lexer.raw_col + 1,
         },
     });
 
@@ -190,6 +210,8 @@ fn make_number(lexer: &mut Lexer) -> Token {
         line: lexer.line,
         startcol: lexer.col,
         endcol: lexer.col + 1,
+        startcol_raw: lexer.raw_col,
+        endcol_raw: lexer.raw_col + 1,
     };
 
     while (lexer.current).is_numeric() || lexer.current == '_' {
@@ -205,6 +227,8 @@ fn make_number(lexer: &mut Lexer) -> Token {
             line: lexer.line,
             startcol: lexer.col,
             endcol: lexer.col + 1,
+            startcol_raw: lexer.raw_col,
+            endcol_raw: lexer.raw_col + 1,
         },
     }
 }
@@ -216,6 +240,8 @@ fn make_identifier(lexer: &mut Lexer, kwds: &[String]) -> Token {
         line: lexer.line,
         startcol: lexer.col,
         endcol: lexer.col + 1,
+        startcol_raw: lexer.raw_col,
+        endcol_raw: lexer.raw_col + 1,
     };
 
     while is_identi(lexer.current) {
@@ -237,6 +263,8 @@ fn make_identifier(lexer: &mut Lexer, kwds: &[String]) -> Token {
             line: lexer.line,
             startcol: lexer.col,
             endcol: lexer.col + 1,
+            startcol_raw: lexer.raw_col,
+            endcol_raw: lexer.raw_col + 1,
         },
     }
 }

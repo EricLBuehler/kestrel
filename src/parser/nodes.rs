@@ -19,6 +19,8 @@ impl Node {
 pub enum NodeType {
     I32,
     Binary,
+    Identifier,
+    Let,
 }
 
 #[derive(Debug)]
@@ -91,6 +93,44 @@ impl NodeData for BinaryNode {
         value.nodes.insert(String::from("left"), &self.left);
         value.nodes.insert(String::from("right"), &self.right);
         value.op = Some(self.op);
+
+        value
+    }
+}
+
+// ========================
+
+pub struct IdentifierNode {
+    pub value: String,
+}
+
+impl NodeData for IdentifierNode {
+    fn get_data(&self) -> NodeValue {
+        let mut value = NodeValue::new();
+        value
+            .raw
+            .insert(String::from("value"), self.value.to_owned());
+
+        value
+    }
+}
+
+// ========================
+
+pub struct LetNode {
+    pub name: String,
+    pub expr: Node,
+}
+
+impl NodeData for LetNode {
+    fn get_data(&self) -> NodeValue {
+        let mut value = NodeValue::new();
+        value
+            .raw
+            .insert(String::from("name"), self.name.to_owned());
+        value
+            .nodes
+            .insert(String::from("expr"), &self.expr);
 
         value
     }

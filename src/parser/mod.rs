@@ -5,7 +5,7 @@ use crate::{
 };
 
 pub mod nodes;
-use self::nodes::{BinaryNode, DecimalNode, Node, OpType};
+use self::nodes::{BinaryNode, DecimalNode, Node, OpType, IdentifierNode, LetNode};
 
 pub struct Parser<'a> {
     current: Token,
@@ -59,7 +59,6 @@ impl<'a> Parser<'a> {
         self.block()
     }
 
-    #[allow(clippy::type_complexity)]
     fn block(&mut self) -> Vec<Node> {
         let mut nodes = Vec::new();
 
@@ -78,13 +77,33 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_statement(&mut self) -> Node {
-        self.expr(Precedence::Lowest)
+        match self.current.tp {
+            TokenType::Keyword => {
+                self.keyword()
+            }
+            _ => {
+                self.expr(Precedence::Lowest)
+            }
+        }
     }
 
     // =====================
 
     fn current_is_type(&mut self, tp: TokenType) -> bool {
         self.current.tp == tp
+    }
+
+    fn expect(&mut self, typ: TokenType) {
+        if !self.current_is_type(typ.clone()) {
+            self.raise_error(
+                format!(
+                    "Invalid or unexpected token (expected '{}', got '{}').",
+                    typ, self.current.tp
+                )
+                .as_str(),
+                ErrorType::InvalidTok,
+            )
+        }
     }
 
     fn raise_error(&mut self, error: &str, errtp: ErrorType) -> ! {
@@ -95,6 +114,8 @@ impl<'a> Parser<'a> {
                 startcol: self.current.start.startcol,
                 endcol: self.current.end.endcol - 1,
                 line: self.current.start.line,
+                startcol_raw: self.current.start.startcol_raw,
+                endcol_raw: self.current.end.endcol_raw - 1,
             },
             &self.info,
         );
@@ -116,11 +137,15 @@ impl<'a> Parser<'a> {
                         line: 0,
                         startcol: 0,
                         endcol: 0,
+                        startcol_raw: 0,
+                        endcol_raw: 0,
                     },
                     end: Position {
                         line: 0,
                         startcol: 0,
                         endcol: 0,
+                        startcol_raw: 0,
+                        endcol_raw: 0,
                     },
                 };
             }
@@ -135,11 +160,54 @@ impl<'a> Parser<'a> {
         }
     }
 
+    
+    // =======================
+
+    fn keyword(&mut self) -> Node {
+        match self.current.data.as_str() {
+            "let" => {
+                self.generate_let()
+            }
+            _ => {
+                unreachable!();
+            }
+        }
+    }
+    
+    fn generate_let(&mut self) -> Node {
+        self.advance();
+
+        self.expect(TokenType::Identifier);
+
+        let name = self.atom().unwrap();
+
+        self.advance();
+        
+        self.expect(TokenType::Equal);
+
+        self.advance();
+
+        let expr = self.expr(Precedence::Lowest);
+
+        Node::new(
+            Position {
+                startcol: name.pos.startcol,
+                endcol: expr.pos.endcol,
+                line: name.pos.line,
+                startcol_raw: name.pos.startcol_raw,
+                endcol_raw: expr.pos.endcol_raw,
+            },
+            nodes::NodeType::Let,
+            Box::new(LetNode { name: name.data.get_data().raw.get("value").unwrap().clone(), expr }),
+        )
+    }
+
     // =======================
 
     fn atom(&mut self) -> Option<Node> {
         match self.current.tp {
             TokenType::I32 => Some(self.generate_i32()),
+            TokenType::Identifier => Some(self.generate_identifier()),
             _ => None,
         }
     }
@@ -180,9 +248,27 @@ impl<'a> Parser<'a> {
                 startcol: self.current.start.startcol,
                 endcol: self.current.end.endcol - 1,
                 line: self.current.start.line,
+                startcol_raw: self.current.start.startcol_raw,
+                endcol_raw: self.current.end.endcol_raw - 1,
             },
             nodes::NodeType::I32,
             Box::new(DecimalNode {
+                value: self.current.data.clone(),
+            }),
+        )
+    }
+
+    fn generate_identifier(&mut self) -> Node {
+        Node::new(
+            Position {
+                startcol: self.current.start.startcol,
+                endcol: self.current.end.endcol - 1,
+                line: self.current.start.line,
+                startcol_raw: self.current.start.startcol_raw,
+                endcol_raw: self.current.end.endcol_raw - 1,
+            },
+            nodes::NodeType::Identifier,
+            Box::new(IdentifierNode {
                 value: self.current.data.clone(),
             }),
         )
@@ -206,6 +292,8 @@ impl<'a> Parser<'a> {
                 startcol: left.pos.startcol,
                 endcol: right.pos.endcol,
                 line: left.pos.line,
+                startcol_raw: left.pos.startcol_raw,
+                endcol_raw: right.pos.endcol_raw,
             },
             nodes::NodeType::Binary,
             Box::new(BinaryNode { left, op, right }),

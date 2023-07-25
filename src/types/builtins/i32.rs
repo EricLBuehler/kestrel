@@ -106,7 +106,7 @@ fn i32_add<'a>(
                 "Error: i32 addition overflow!\n    {}:{}:{}\n",
                 codegen.info.name,
                 pos.line + 1,
-                pos.startcol + 1
+                pos.startcol_raw + 1
             ),
         );
 

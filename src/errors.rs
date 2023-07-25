@@ -43,7 +43,7 @@ pub fn raise_error(
     info: &crate::utils::FileInfo,
 ) -> ! {
     let header: String = format!("error[E{:0>3}]: {}", errtp as u8 + 1, error);
-    let location: String = format!("{}:{}:{}", info.name, pos.line + 1, pos.startcol + 1);
+    let location: String = format!("{}:{}:{}", info.name, pos.line + 1, pos.startcol_raw + 1);
     println!("{}", header.red().bold());
     println!("{}", location.red());
 

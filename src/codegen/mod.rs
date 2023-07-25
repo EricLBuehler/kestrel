@@ -37,6 +37,7 @@ pub struct CodeGen<'a> {
     pub no_flags: Vec<NoFlag>,
 }
 
+#[derive(Debug)]
 pub struct Data<'a> {
     pub data: Option<BasicMetadataValueEnum<'a>>,
     pub tp: Type<'a>,
@@ -60,6 +61,8 @@ impl<'a> CodeGen<'a> {
         match node.tp {
             NodeType::Binary => self.compile_binary(node),
             NodeType::I32 => self.compile_i32(node),
+            NodeType::Identifier => todo!(),
+            NodeType::Let => self.compile_let(node),
         }
     }
 }
@@ -116,6 +119,18 @@ impl<'a> CodeGen<'a> {
                 }
             }
         }
+    }
+
+    fn compile_let(&mut self, node: &Node) -> Data<'a> {
+        let letnode = node.data.get_data();
+        let name = letnode.raw.get("name").unwrap();
+        let right = self.compile_expr(letnode.nodes.get("expr").unwrap());
+
+        println!("{:?}", name);
+        println!("{:?}", right);
+        self.module.print_to_file(std::path::Path::new("a.ll")).unwrap();
+        
+        todo!();
     }
 }
 

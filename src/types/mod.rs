@@ -12,17 +12,17 @@ pub mod builtins;
 pub type BuiltinTypes<'a> = HashMap<BasicType, Type<'a>>;
 pub type Traits<'a> = HashMap<TraitType, Trait<'a>>;
 
-#[derive(Hash, PartialEq, Eq, PartialOrd, Ord, Clone)]
+#[derive(Hash, PartialEq, Eq, PartialOrd, Ord, Clone, Debug)]
 pub enum Trait<'a> {
     Add(fn(&mut CodeGen<'a>, &Position, Data<'a>, Data<'a>) -> Data<'a>),
 }
 
-#[derive(Hash, PartialEq, Eq, PartialOrd, Ord, Clone)]
+#[derive(Hash, PartialEq, Eq, PartialOrd, Ord, Clone, Debug)]
 pub enum TraitType {
     Add,
 }
 
-#[derive(Hash, PartialEq, Eq, PartialOrd, Ord, Clone)]
+#[derive(Hash, PartialEq, Eq, PartialOrd, Ord, Clone, Debug)]
 pub enum BasicType {
     I32,
     Void,
@@ -41,7 +41,7 @@ impl Display for BasicType {
     }
 }
 
-#[derive(PartialEq, Eq, Clone)]
+#[derive(PartialEq, Eq, Clone, Debug)]
 pub struct Type<'a> {
     pub basictype: BasicType,
     pub traits: Traits<'a>,
