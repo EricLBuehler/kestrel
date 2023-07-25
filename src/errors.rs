@@ -56,7 +56,7 @@ pub fn raise_error(
         "{}",
         String::from_iter(lines.get(pos.line).unwrap().to_vec()).blue()
     );
-    
+
     let mut arrows: String = String::new();
     for idx in 0..snippet.len() {
         if idx >= pos.startcol && idx < pos.endcol {

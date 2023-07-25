@@ -99,6 +99,7 @@ impl<'a> CodeGen<'a> {
             node.data.get_data().raw.get("value").unwrap(),
             inkwell::types::StringRadix::Decimal,
         );
+
         if let Some(int) = res {
             Data {
                 data: Some(int.into()),
@@ -133,6 +134,7 @@ impl<'a> CodeGen<'a> {
         let alloc = self
             .builder
             .build_alloca(right.data.unwrap().into_int_value().get_type(), "ptr");
+
         self.builder.build_store(
             alloc,
             right.data.unwrap().into_int_value().as_basic_value_enum(),
@@ -160,6 +162,7 @@ impl<'a> CodeGen<'a> {
             .unwrap()
             .bindings
             .get(name);
+
         if binding.is_none() {
             let fmt: String = format!("Binding '{}' not found in scope.", name);
             raise_error(&fmt, ErrorType::BindingNotFound, &node.pos, self.info);
@@ -261,7 +264,7 @@ pub fn generate_code(
         codegen.context.append_basic_block(realmain, "entry");
 
     codegen.namespaces.insert(
-        realmain.clone(),
+        realmain,
         Namespace {
             bindings: HashMap::new(),
         },
