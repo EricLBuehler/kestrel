@@ -43,8 +43,20 @@ fn main() {
     if args.flags.is_some() {
         for flag in args.flags.unwrap() {
             if flag == "no-ou-checks" {
+                if flags.contains(&Flags::NoOUChecks) {
+                    raise_error_no_pos(
+                        &format!("'{flag}' was specified multiple times"),
+                        ErrorType::DuplicateFlag,
+                    );
+                }
                 flags.push(Flags::NoOUChecks);
             } else if flag == "sanitize" {
+                if flags.contains(&Flags::Sanitize) {
+                    raise_error_no_pos(
+                        &format!("'{flag}' was specified multiple times"),
+                        ErrorType::DuplicateFlag,
+                    );
+                }
                 flags.push(Flags::Sanitize);
             } else {
                 raise_error_no_pos(

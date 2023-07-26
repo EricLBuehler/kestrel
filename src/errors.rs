@@ -7,6 +7,7 @@ pub enum ErrorType {
     InvalidFlag,
     TypeMismatch,
     BindingNotFound,
+    DuplicateFlag,
 }
 
 impl std::fmt::Display for ErrorType {
@@ -22,6 +23,7 @@ pub fn repr_err(tp: ErrorType) -> &'static str {
         ErrorType::InvalidFlag => "invalid flag passed",
         ErrorType::TypeMismatch => "type mismatch",
         ErrorType::BindingNotFound => "binding not found",
+        ErrorType::DuplicateFlag => "dupicate flag passed",
     }
 }
 
