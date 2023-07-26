@@ -8,27 +8,51 @@ main:                                   # @main
 	.cfi_sections .debug_frame
 	.cfi_startproc
 # %bb.0:
-	movb	$1, %al
-	testb	%al, %al
-	jne	.LBB0_2
-# %bb.1:
-	pushq	%rax
+	pushq	%rbp
 	.cfi_def_cfa_offset 16
-	movl	$.Lstr, %edi
-	callq	puts@PLT
-	addq	$8, %rsp
-	.cfi_def_cfa_offset 8
+	.cfi_offset %rbp, -16
+	movq	%rsp, %rbp
+	.cfi_def_cfa_register %rbp
+                                        # kill: killed $rsi
+                                        # kill: killed $edi
+	movl	$1, %eax
+	addl	$2147483647, %eax               # imm = 0x7FFFFFFF
+	seto	%cl
+	testb	$1, %cl
+	jne	.LBB0_1
+	jmp	.LBB0_2
+.LBB0_1:
+	movabsq	$.L__unnamed_1, %rdi
+	callq	printf@PLT
+	movl	$4294967295, %eax               # imm = 0xFFFFFFFF
+	jmp	.LBB0_3
 .LBB0_2:
+	jmp	.LBB0_3
+.LBB0_3:
+	movq	%rsp, %rcx
+	movq	%rcx, %rdx
+	addq	$-16, %rdx
+	movq	%rdx, %rsp
+	movl	%eax, -16(%rcx)
+	movl	-16(%rcx), %eax
+	movq	%rsp, %rcx
+	addq	$-16, %rcx
+	movq	%rcx, %rsp
+	movl	%eax, (%rcx)
 	xorl	%eax, %eax
+	movq	%rbp, %rsp
+	popq	%rbp
+	.cfi_def_cfa %rsp, 8
 	retq
 .Lfunc_end0:
 	.size	main, .Lfunc_end0-main
 	.cfi_endproc
                                         # -- End function
-	.type	.Lstr,@object                   # @str
-	.section	.rodata.str1.1,"aMS",@progbits,1
-.Lstr:
-	.asciz	"Error: i32 addition overflow!\n    program.ke:1:10"
-	.size	.Lstr, 50
+	.type	.L__unnamed_1,@object           # @0
+	.section	.rodata,"a",@progbits
+	.p2align	4
+.L__unnamed_1:
+	.asciz	"Error: i32 addition overflow!\n    program.ke:1:12\n"
+	.size	.L__unnamed_1, 51
 
 	.section	".note.GNU-stack","",@progbits

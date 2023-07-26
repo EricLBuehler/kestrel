@@ -110,8 +110,6 @@ impl<'a> Parser<'a> {
                 startcol: self.current.start.startcol,
                 endcol: self.current.end.endcol - 1,
                 line: self.current.start.line,
-                startcol_raw: self.current.start.startcol_raw,
-                endcol_raw: self.current.end.endcol_raw - 1,
             },
             &self.info,
         );
@@ -133,15 +131,11 @@ impl<'a> Parser<'a> {
                         line: 0,
                         startcol: 0,
                         endcol: 0,
-                        startcol_raw: 0,
-                        endcol_raw: 0,
                     },
                     end: Position {
                         line: 0,
                         startcol: 0,
                         endcol: 0,
-                        startcol_raw: 0,
-                        endcol_raw: 0,
                     },
                 };
             }
@@ -187,8 +181,6 @@ impl<'a> Parser<'a> {
                 startcol: name.pos.startcol,
                 endcol: expr.pos.endcol,
                 line: name.pos.line,
-                startcol_raw: name.pos.startcol_raw,
-                endcol_raw: expr.pos.endcol_raw,
             },
             nodes::NodeType::Let,
             Box::new(LetNode {
@@ -244,8 +236,6 @@ impl<'a> Parser<'a> {
                 startcol: self.current.start.startcol,
                 endcol: self.current.end.endcol - 1,
                 line: self.current.start.line,
-                startcol_raw: self.current.start.startcol_raw,
-                endcol_raw: self.current.end.endcol_raw - 1,
             },
             nodes::NodeType::I32,
             Box::new(DecimalNode {
@@ -260,8 +250,6 @@ impl<'a> Parser<'a> {
                 startcol: self.current.start.startcol,
                 endcol: self.current.end.endcol - 1,
                 line: self.current.start.line,
-                startcol_raw: self.current.start.startcol_raw,
-                endcol_raw: self.current.end.endcol_raw - 1,
             },
             nodes::NodeType::Identifier,
             Box::new(IdentifierNode {
@@ -288,8 +276,6 @@ impl<'a> Parser<'a> {
                 startcol: left.pos.startcol,
                 endcol: right.pos.endcol,
                 line: left.pos.line,
-                startcol_raw: left.pos.startcol_raw,
-                endcol_raw: right.pos.endcol_raw,
             },
             nodes::NodeType::Binary,
             Box::new(BinaryNode { left, op, right }),
