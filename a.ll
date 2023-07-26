@@ -2,6 +2,8 @@
 source_filename = "program.ke"
 target triple = "x86_64-unknown-linux-gnu"
 
+@0 = private constant [51 x i8] c"Error: i32 addition overflow!\0A    program.ke:1:10\0A\00"
+
 ; Function Attrs: nofree nounwind
 declare noundef i32 @printf(i8* nocapture noundef readonly) local_unnamed_addr #0
 
@@ -11,26 +13,22 @@ define i32 @main(i32 %0, i32** %1) local_unnamed_addr #1 {
   %4 = extractvalue { i32, i1 } %3, 0
   %5 = extractvalue { i32, i1 } %3, 1
   %6 = call i1 @llvm.expect.i1.i1(i1 %5, i1 false)
-  br i1 %6, label %7, label %11
+  br i1 %6, label %7, label %9
 
 7:                                                ; preds = %2
-  %string = alloca { [51 x i8] }, align 8
-  %8 = getelementptr inbounds { [51 x i8] }, { [51 x i8] }* %string, i32 0, i32 0
-  store [51 x i8] c"Error: i32 addition overflow!\0A    program.ke:1:10\0A\00", [51 x i8]* %8, align 1
-  %9 = getelementptr [51 x i8], [51 x i8]* %8, i32 0, i32 0
-  %10 = call i32 @printf(i8* %9)
-  br label %12
+  %8 = call i32 @printf(i8* getelementptr inbounds ([51 x i8], [51 x i8]* @0, i32 0, i32 0))
+  br label %10
 
-11:                                               ; preds = %2
-  br label %12
+9:                                                ; preds = %2
+  br label %10
 
-12:                                               ; preds = %11, %7
-  %13 = phi i32 [ %4, %11 ], [ -1, %7 ]
+10:                                               ; preds = %9, %7
+  %11 = phi i32 [ %4, %9 ], [ -1, %7 ]
+  %12 = alloca i32, align 4
+  store i32 %11, i32* %12, align 4
+  %13 = load i32, i32* %12, align 4
   %14 = alloca i32, align 4
   store i32 %13, i32* %14, align 4
-  %15 = load i32, i32* %14, align 4
-  %16 = alloca i32, align 4
-  store i32 %15, i32* %16, align 4
   ret i32 0
 }
 

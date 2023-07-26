@@ -1,6 +1,6 @@
 use std::{collections::HashMap, fmt::Display};
 
-use inkwell::AddressSpace;
+use inkwell::{AddressSpace, module::Linkage, values::BasicValue};
 
 use crate::{
     codegen::{CodeGen, Data},
@@ -65,25 +65,16 @@ pub fn init_extern_fns(codegen: &mut CodeGen) {
 }
 
 pub fn print_panic(codegen: &mut CodeGen, message: &str) {
-    let mut arrv = Vec::new();
-    for c in message.bytes() {
-        arrv.push(codegen.context.i8_type().const_int(c as u64, false));
-    }
-    arrv.push(codegen.context.i8_type().const_zero());
+    let str = codegen.context.const_string(&message.as_bytes()[..], true);
 
-    let str = codegen.context.i8_type().const_array(&arrv[..]);
+    let global = codegen.module.add_global(str.get_type(), Some(AddressSpace::from(0u16)), "");
+    global.set_constant(true);
+    global.set_linkage(Linkage::Private);
+    global.set_initializer(&str.as_basic_value_enum());
 
-    let strct = codegen.context.struct_type(&[str.get_type().into()], false);
-    let mem = codegen.builder.build_alloca(strct, "string");
-
-    let ptr = codegen
-        .builder
-        .build_struct_gep(mem, 0_u32, "")
-        .expect("GEP error");
-    codegen.builder.build_store(ptr, str);
     let ptr = unsafe {
         codegen.builder.build_gep(
-            ptr,
+            global.as_pointer_value(),
             &[
                 codegen.context.i32_type().const_zero(),
                 codegen.context.i32_type().const_zero(),
