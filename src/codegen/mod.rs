@@ -291,6 +291,7 @@ pub fn generate_code(
         realmain.add_attribute(inkwell::attributes::AttributeLoc::Function, attr);
     }
 
+    //TODO: Ensure this is true 
     attr = codegen.context.create_enum_attribute(
     inkwell::attributes::Attribute::get_named_enum_kind_id("willreturn"),
     0,
