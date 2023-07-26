@@ -16,7 +16,8 @@ use crate::{
     types::{
         builtins::init_builtins, init_extern_fns, BasicType, BuiltinTypes, Trait, TraitType, Type,
     },
-    utils::FileInfo, Flags,
+    utils::FileInfo,
+    Flags,
 };
 
 pub struct Namespace<'a> {
@@ -291,27 +292,24 @@ pub fn generate_code(
     }
 
     for flag in flags {
-        match flag {
-            Flags::Sanitize => {
-                let mut attr = codegen.context.create_enum_attribute(
-                    inkwell::attributes::Attribute::get_named_enum_kind_id("sanitize_address"),
-                    0,
-                );
-                realmain.add_attribute(inkwell::attributes::AttributeLoc::Function, attr);
+        if flag == Flags::Sanitize {
+            let mut attr = codegen.context.create_enum_attribute(
+                inkwell::attributes::Attribute::get_named_enum_kind_id("sanitize_address"),
+                0,
+            );
+            realmain.add_attribute(inkwell::attributes::AttributeLoc::Function, attr);
 
-                attr = codegen.context.create_enum_attribute(
-                    inkwell::attributes::Attribute::get_named_enum_kind_id("sanitize_memory"),
-                    0,
-                );
-                realmain.add_attribute(inkwell::attributes::AttributeLoc::Function, attr);
-                
-                attr = codegen.context.create_enum_attribute(
-                    inkwell::attributes::Attribute::get_named_enum_kind_id("sanitize_thread"),
-                    0,
-                );
-                realmain.add_attribute(inkwell::attributes::AttributeLoc::Function, attr);
-            }
-            _ => { }
+            attr = codegen.context.create_enum_attribute(
+                inkwell::attributes::Attribute::get_named_enum_kind_id("sanitize_memory"),
+                0,
+            );
+            realmain.add_attribute(inkwell::attributes::AttributeLoc::Function, attr);
+
+            attr = codegen.context.create_enum_attribute(
+                inkwell::attributes::Attribute::get_named_enum_kind_id("sanitize_thread"),
+                0,
+            );
+            realmain.add_attribute(inkwell::attributes::AttributeLoc::Function, attr);
         }
     }
 

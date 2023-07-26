@@ -1,4 +1,4 @@
-use clap::{Parser, ArgAction};
+use clap::{ArgAction, Parser};
 use codegen::generate_code;
 use errors::{raise_error_no_pos, ErrorType};
 use utils::FileInfo;
@@ -41,14 +41,12 @@ fn main() {
     let mut flags = Vec::new();
 
     if args.flags.is_some() {
-        for flag in args.flags.unwrap() {           
+        for flag in args.flags.unwrap() {
             if flag == "no-ou-checks" {
                 flags.push(Flags::NoOUChecks);
-            }
-            else if flag == "sanitize" {
+            } else if flag == "sanitize" {
                 flags.push(Flags::Sanitize);
-            }
-            else {
+            } else {
                 raise_error_no_pos(
                     &format!("'{flag}' was not recognized as a valid flag"),
                     ErrorType::InvalidFlag,
@@ -82,6 +80,13 @@ fn main() {
     let mut parser = parser::Parser::new(tokens, &file_info);
     let ast = parser.generate_ast();
 
-    generate_code(&args.name, &args.name, ast, &file_info, flags, args.optimize)
-        .expect("Code generation error.");
+    generate_code(
+        &args.name,
+        &args.name,
+        ast,
+        &file_info,
+        flags,
+        args.optimize,
+    )
+    .expect("Code generation error.");
 }

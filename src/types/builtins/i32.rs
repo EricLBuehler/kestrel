@@ -59,15 +59,13 @@ fn i32_add<'a>(
             .try_as_basic_value()
             .left();
 
-        let result =
-            codegen
-                .builder
-                .build_extract_value(res.unwrap().into_struct_value(), 0, "");
-        let overflow =
-            codegen
-                .builder
-                .build_extract_value(res.unwrap().into_struct_value(), 1, "");
-        
+        let result = codegen
+            .builder
+            .build_extract_value(res.unwrap().into_struct_value(), 0, "");
+        let overflow = codegen
+            .builder
+            .build_extract_value(res.unwrap().into_struct_value(), 1, "");
+
         let overflow_block: inkwell::basic_block::BasicBlock = codegen
             .context
             .append_basic_block(codegen.cur_fn.unwrap(), "");
