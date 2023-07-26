@@ -12,8 +12,9 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-    - name: Install llc
+    - name: Install llvm-14
       run: sudo apt install llvm-14
+    - name: Install llvm
       run: sudo apt install llvm
     - name: Default
       run: make
