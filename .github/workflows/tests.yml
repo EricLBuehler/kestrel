@@ -1,0 +1,28 @@
+name: Test
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Default
+      - run: make
+    - name: Optimized and Sanitized
+      - run: make
+    - name: Optimized and No OU
+      - run: make
+    - name: Optimized and all flags
+      - run: make
+    - name: Not optimized and Sanitized
+      - run: make
+    - name: Not optimized and No OU
+      - run: make
+    - name: Not optimized and all flags
+      - run: make
