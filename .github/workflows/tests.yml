@@ -13,16 +13,16 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Default
-      - run: make
+      run: make
     - name: Optimized and Sanitized
-      - run: make
+      run: make
     - name: Optimized and No OU
-      - run: make
+      run: make
     - name: Optimized and all flags
-      - run: make
+      run: make
     - name: Not optimized and Sanitized
-      - run: make
+      run: make
     - name: Not optimized and No OU
-      - run: make
+      run: make
     - name: Not optimized and all flags
-      - run: make
+      run: make
