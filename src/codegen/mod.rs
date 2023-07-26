@@ -367,6 +367,7 @@ pub fn generate_code(
     res = std::process::Command::new("gcc")
         .arg("a.s")
         .arg("-oa.out")
+        .arg("-no-pie")
         .output()
         .expect("Failed to execute gcc");
     if !res.status.success() {
