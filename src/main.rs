@@ -1,4 +1,4 @@
-use clap::Parser;
+use clap::{Parser, ArgAction};
 use codegen::generate_code;
 use errors::{raise_error_no_pos, ErrorType};
 use utils::FileInfo;
@@ -18,46 +18,50 @@ mod codegen;
 #[command(author, version = "0.1.0", about, long_about = None)]
 struct Args {
     /// File to execute
-    #[arg(required = true, name = "file")]
-    file: String,
+    #[clap(name = "name", required = true)]
+    name: String,
 
-    /// File to execute
-    #[arg(default_value = "", name = "N")]
-    no: String,
+    /// Flags to exclude, no-ou-checks (over and underflow runtime checkss) or sanitize (sanitize address, thread, and memory)
+    #[clap(use_value_delimiter=true, value_delimiter=' ', action=ArgAction::Append, long, short)]
+    flags: Option<Vec<String>>,
+
+    #[clap(long, short, action)]
+    optimize: bool,
 }
 
-#[derive(PartialEq, Eq, PartialOrd, Ord)]
-pub enum NoFlag {
-    OUChecks,
+#[derive(PartialEq, Eq, PartialOrd, Ord, Debug, Clone)]
+pub enum Flags {
+    NoOUChecks,
+    Sanitize,
 }
 
 fn main() {
     let args = Args::parse();
 
-    let tmp_no_flags = args.no.split("--N").collect::<Vec<_>>();
-    let no_flags: Vec<_> = if tmp_no_flags.len() != 1 {
-        tmp_no_flags[1]
-            .split(' ')
-            .map(|x| {
-                if x == "ou-checks" {
-                    NoFlag::OUChecks
-                } else {
-                    raise_error_no_pos(
-                        &format!("'{x}' was not recognized as a valid 'no flag'"),
-                        ErrorType::InvalidNoFlag,
-                    );
-                }
-            })
-            .collect::<Vec<_>>()
-    } else {
-        Vec::new()
-    };
+    let mut flags = Vec::new();
 
-    let res = std::fs::read_to_string(&args.file);
+    if args.flags.is_some() {
+        for flag in args.flags.unwrap() {           
+            if flag == "no-ou-checks" {
+                flags.push(Flags::NoOUChecks);
+            }
+            else if flag == "sanitize" {
+                flags.push(Flags::Sanitize);
+            }
+            else {
+                raise_error_no_pos(
+                    &format!("'{flag}' was not recognized as a valid flag"),
+                    ErrorType::InvalidFlag,
+                );
+            }
+        }
+    }
+
+    let res = std::fs::read_to_string(&args.name);
     let file_data = match res {
         Ok(_) => res.unwrap(),
         Err(_) => {
-            println!("File '{}' is unable to be opened or read.", args.file);
+            println!("File '{}' is unable to be opened or read.", args.name);
             return;
         }
     };
@@ -66,7 +70,7 @@ fn main() {
 
     let mut file_info = FileInfo {
         data: data.clone(),
-        name: args.file.clone(),
+        name: args.name.clone(),
         dir: String::from("."),
     };
 
@@ -78,6 +82,6 @@ fn main() {
     let mut parser = parser::Parser::new(tokens, &file_info);
     let ast = parser.generate_ast();
 
-    generate_code(&args.file, &args.file, ast, &file_info, no_flags)
+    generate_code(&args.name, &args.name, ast, &file_info, flags, args.optimize)
         .expect("Code generation error.");
 }

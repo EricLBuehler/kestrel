@@ -16,8 +16,7 @@ use crate::{
     types::{
         builtins::init_builtins, init_extern_fns, BasicType, BuiltinTypes, Trait, TraitType, Type,
     },
-    utils::FileInfo,
-    NoFlag,
+    utils::FileInfo, Flags,
 };
 
 pub struct Namespace<'a> {
@@ -38,7 +37,7 @@ pub struct CodeGen<'a> {
     pub extern_fns: HashMap<String, FunctionValue<'a>>,
     namespaces: HashMap<FunctionValue<'a>, Namespace<'a>>,
 
-    pub no_flags: Vec<NoFlag>,
+    pub flags: Vec<Flags>,
 }
 
 #[derive(Debug)]
@@ -182,7 +181,8 @@ pub fn generate_code(
     source_name: &str,
     ast: Vec<Node>,
     info: &FileInfo,
-    no_flags: Vec<NoFlag>,
+    flags: Vec<Flags>,
+    optimize: bool,
 ) -> Result<(), Box<dyn Error>> {
     let context: inkwell::context::Context = Context::create();
     let module: inkwell::module::Module = context.create_module(module_name);
@@ -207,7 +207,7 @@ pub fn generate_code(
         &info.name,
         &info.dir,
         "xpl",
-        true,
+        optimize,
         "",
         0,
         "",
@@ -230,7 +230,7 @@ pub fn generate_code(
         builtins: HashMap::new(),
         extern_fns: HashMap::new(),
         namespaces: HashMap::new(),
-        no_flags,
+        flags: flags.clone(),
     };
 
     init_builtins(&mut codegen);
@@ -274,15 +274,46 @@ pub fn generate_code(
         inkwell::attributes::Attribute::get_named_enum_kind_id("noinline"),
         0,
     );
-
     realmain.add_attribute(inkwell::attributes::AttributeLoc::Function, attr);
 
     attr = codegen.context.create_enum_attribute(
-        inkwell::attributes::Attribute::get_named_enum_kind_id("optnone"),
+        inkwell::attributes::Attribute::get_named_enum_kind_id("norecurse"),
         0,
     );
-
     realmain.add_attribute(inkwell::attributes::AttributeLoc::Function, attr);
+
+    if !optimize {
+        attr = codegen.context.create_enum_attribute(
+            inkwell::attributes::Attribute::get_named_enum_kind_id("optnone"),
+            0,
+        );
+        realmain.add_attribute(inkwell::attributes::AttributeLoc::Function, attr);
+    }
+
+    for flag in flags {
+        match flag {
+            Flags::Sanitize => {
+                let mut attr = codegen.context.create_enum_attribute(
+                    inkwell::attributes::Attribute::get_named_enum_kind_id("sanitize_address"),
+                    0,
+                );
+                realmain.add_attribute(inkwell::attributes::AttributeLoc::Function, attr);
+
+                attr = codegen.context.create_enum_attribute(
+                    inkwell::attributes::Attribute::get_named_enum_kind_id("sanitize_memory"),
+                    0,
+                );
+                realmain.add_attribute(inkwell::attributes::AttributeLoc::Function, attr);
+                
+                attr = codegen.context.create_enum_attribute(
+                    inkwell::attributes::Attribute::get_named_enum_kind_id("sanitize_thread"),
+                    0,
+                );
+                realmain.add_attribute(inkwell::attributes::AttributeLoc::Function, attr);
+            }
+            _ => { }
+        }
+    }
 
     codegen.builder.position_at_end(basic_block);
     codegen.cur_block = Some(basic_block);

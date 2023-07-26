@@ -7,7 +7,7 @@ use crate::{
     errors::{raise_error, ErrorType},
     types::{print_panic, BasicType, Trait, TraitType, Type},
     utils::Position,
-    NoFlag,
+    Flags,
 };
 
 fn i32_add<'a>(
@@ -25,7 +25,7 @@ fn i32_add<'a>(
         );
     }
 
-    if !codegen.no_flags.contains(&NoFlag::OUChecks) {
+    if !codegen.flags.contains(&Flags::NoOUChecks) {
         let sadd_i32_intrinsic = Intrinsic::find("llvm.sadd.with.overflow.i32").unwrap();
         let expect_i1 = Intrinsic::find("llvm.expect.i1").unwrap();
 

@@ -4,7 +4,7 @@ use colored::Colorize;
 pub enum ErrorType {
     InvalidTok,
     InvalidLiteralForRadix,
-    InvalidNoFlag,
+    InvalidFlag,
     TypeMismatch,
     BindingNotFound,
 }
@@ -19,7 +19,7 @@ pub fn repr_err(tp: ErrorType) -> &'static str {
     match tp {
         ErrorType::InvalidTok => "invalid token encountered",
         ErrorType::InvalidLiteralForRadix => "invalid literal for radix provided",
-        ErrorType::InvalidNoFlag => "invalid 'no flag' passed",
+        ErrorType::InvalidFlag => "invalid flag passed",
         ErrorType::TypeMismatch => "type mismatch",
         ErrorType::BindingNotFound => "binding not found",
     }
