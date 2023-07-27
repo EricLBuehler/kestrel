@@ -290,10 +290,7 @@ pub fn generate_code(
         );
         realmain.add_attribute(inkwell::attributes::AttributeLoc::Function, attr);
     }
-
-    let ptr = realmain.as_global_value().as_pointer_value();
-    println!("{:?}", ptr.get_type());
-
+    
     //TODO: Ensure this is true
     attr = codegen.context.create_enum_attribute(
         inkwell::attributes::Attribute::get_named_enum_kind_id("willreturn"),
