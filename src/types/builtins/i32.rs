@@ -5,8 +5,8 @@ use inkwell::intrinsics::Intrinsic;
 use crate::{
     codegen::{CodeGen, Data},
     errors::{raise_error, ErrorType},
-    types::{print_panic, BasicType, Trait, TraitType, Type},
-    utils::Position,
+    types::{BasicType, Trait, TraitType, Type},
+    utils::{Position, print_string},
     Flags,
 };
 
@@ -98,7 +98,7 @@ fn i32_add<'a>(
 
         codegen.builder.position_at_end(overflow_block);
 
-        print_panic(
+        print_string(
             codegen,
             &format!(
                 "Error: i32 addition overflow!\n    {}:{}:{}\n",

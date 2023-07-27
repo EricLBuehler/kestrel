@@ -1,6 +1,6 @@
 use std::{collections::HashMap, fmt::Display};
 
-use inkwell::{module::Linkage, values::BasicValue, AddressSpace};
+use inkwell::AddressSpace;
 
 use crate::{
     codegen::{CodeGen, Data},
@@ -62,32 +62,4 @@ pub fn init_extern_fns(codegen: &mut CodeGen) {
             .add_function("printf", printftp, Some(inkwell::module::Linkage::External));
 
     codegen.extern_fns.insert(String::from("printf"), printf);
-}
-
-pub fn print_panic(codegen: &mut CodeGen, message: &str) {
-    let str = codegen.context.const_string(message.as_bytes(), true);
-
-    let global = codegen
-        .module
-        .add_global(str.get_type(), Some(AddressSpace::from(0u16)), "");
-    global.set_constant(true);
-    global.set_linkage(Linkage::Private);
-    global.set_initializer(&str.as_basic_value_enum());
-
-    let ptr = unsafe {
-        codegen.builder.build_gep(
-            global.as_pointer_value(),
-            &[
-                codegen.context.i32_type().const_zero(),
-                codegen.context.i32_type().const_zero(),
-            ],
-            "",
-        )
-    };
-
-    codegen.builder.build_call(
-        *codegen.extern_fns.get("printf").unwrap(),
-        &[ptr.into()],
-        "",
-    );
 }
