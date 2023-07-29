@@ -1,3 +1,5 @@
+use std::{fmt::Display, fs::File, io::Write};
+
 use crate::{
     errors::{raise_error, ErrorType},
     parser::nodes::{Node, NodeType},
@@ -11,7 +13,7 @@ pub struct Mir<'a> {
     instructions: Vec<MirInstruction>,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub enum MirInstruction {
     I32(String, Position),
     Add {
@@ -27,6 +29,31 @@ pub enum MirInstruction {
     },
     Own(usize, Position),
     Load(String, Position),
+}
+
+impl Display for MirInstruction {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            MirInstruction::Add { left, right, pos: _ } => {
+                writeln!(f, "add {left} {right}")
+            }
+            MirInstruction::Declare( name, _) => {
+                writeln!(f, "declare {name}")
+            }
+            MirInstruction::I32( value, _ ) => {
+                writeln!(f, "i32 {value}")
+            }
+            MirInstruction::Load( name, _ ) => {
+                writeln!(f, "load {name}")
+            }
+            MirInstruction::Own( result, _ ) => {
+                writeln!(f, "own {result}")
+            }
+            MirInstruction::Store { name, right, pos: _ } => {
+                writeln!(f, "store {name} {right}")
+            }
+        }
+    }
 }
 
 pub fn new(info: FileInfo<'_>) -> Mir<'_> {
@@ -45,6 +72,14 @@ impl<'a> Mir<'a> {
         for node in ast {
             self.generate_expr(node);
         }
+
+        let mut out = String::new();
+        for (i, instruction) in self.instructions.iter().enumerate() {
+            out.push_str(&format!("{:<5}", format!("{}:", i)));
+            out.push_str(&instruction.to_string());
+        }
+        let mut f = File::create("a.mir").expect("Unable to create MIR output file.");
+        f.write_all(out.as_bytes()).expect("Unable to write MIR.");
 
         self.instructions.clone()
     }
