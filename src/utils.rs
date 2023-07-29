@@ -1,6 +1,6 @@
 use std::str::Chars;
 
-use inkwell::{AddressSpace, module::Linkage, values::BasicValue};
+use inkwell::{module::Linkage, values::BasicValue, AddressSpace};
 
 use crate::codegen::CodeGen;
 

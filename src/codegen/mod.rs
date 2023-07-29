@@ -12,6 +12,7 @@ use std::{collections::HashMap, error::Error};
 
 use crate::{
     errors::{raise_error, ErrorType},
+    mir,
     parser::nodes::{Node, NodeType, OpType},
     types::{
         builtins::init_builtins, init_extern_fns, BasicType, BuiltinTypes, Trait, TraitType, Type,
@@ -117,8 +118,9 @@ impl<'a> CodeGen<'a> {
 
         match binary.op.unwrap() {
             OpType::Add => {
-                if let Some(Trait::Add(fun)) = left.tp.traits.get(&TraitType::Add) {
-                    fun(self, &node.pos, left, right)
+                if let Some(Trait::Add { code, skeleton: _ }) = left.tp.traits.get(&TraitType::Add)
+                {
+                    code(self, &node.pos, left, right)
                 } else {
                     unimplemented!();
                 }
@@ -259,10 +261,14 @@ pub fn generate_code(
         ],
         false,
     );
-    let realmain: inkwell::values::FunctionValue =
-        codegen.module.add_function("main", main_tp, None);
-    let basic_block: inkwell::basic_block::BasicBlock =
-        codegen.context.append_basic_block(realmain, "");
+    let realmain = codegen.module.add_function("main", main_tp, None);
+    let basic_block = codegen.context.append_basic_block(realmain, "");
+
+    // Mir check
+    let mut mir = mir::new(info.clone());
+    let instructions = mir.generate(&ast);
+    mir::check(instructions, codegen.info.clone());
+    //
 
     codegen.namespaces.insert(
         realmain,
@@ -290,7 +296,7 @@ pub fn generate_code(
         );
         realmain.add_attribute(inkwell::attributes::AttributeLoc::Function, attr);
     }
-    
+
     //TODO: Ensure this is true
     attr = codegen.context.create_enum_attribute(
         inkwell::attributes::Attribute::get_named_enum_kind_id("willreturn"),

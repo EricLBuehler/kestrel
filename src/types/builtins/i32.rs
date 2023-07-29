@@ -5,8 +5,9 @@ use inkwell::intrinsics::Intrinsic;
 use crate::{
     codegen::{CodeGen, Data},
     errors::{raise_error, ErrorType},
+    mir::Mir,
     types::{BasicType, Trait, TraitType, Type},
-    utils::{Position, print_string},
+    utils::{print_string, Position},
     Flags,
 };
 
@@ -16,15 +17,6 @@ fn i32_add<'a>(
     this: Data<'a>,
     other: Data<'a>,
 ) -> Data<'a> {
-    if this.tp != other.tp {
-        raise_error(
-            &format!("Expected 'i32', got '{}'", other.tp.basictype),
-            ErrorType::TypeMismatch,
-            pos,
-            codegen.info,
-        );
-    }
-
     if !codegen.flags.contains(&Flags::NoOUChecks) {
         let sadd_i32_intrinsic = Intrinsic::find("llvm.sadd.with.overflow.i32").unwrap();
         let expect_i1 = Intrinsic::find("llvm.expect.i1").unwrap();
@@ -151,10 +143,36 @@ fn i32_add<'a>(
     }
 }
 
+fn i32_add_skeleton<'a>(
+    mir: &mut Mir,
+    pos: &Position,
+    this: Data<'a>,
+    other: Data<'a>,
+) -> Data<'a> {
+    if this.tp != other.tp {
+        raise_error(
+            &format!("Expected 'i32', got '{}'", other.tp.basictype),
+            ErrorType::TypeMismatch,
+            pos,
+            &mir.info,
+        );
+    }
+    Data {
+        data: None,
+        tp: this.tp,
+    }
+}
+
 pub fn init_i32(codegen: &mut CodeGen) {
     let tp = Type {
         basictype: BasicType::I32,
-        traits: HashMap::from([(TraitType::Add, Trait::Add(i32_add))]),
+        traits: HashMap::from([(
+            TraitType::Add,
+            Trait::Add {
+                code: i32_add,
+                skeleton: i32_add_skeleton,
+            },
+        )]),
     };
     codegen.builtins.insert(BasicType::I32, tp);
 }

@@ -9,7 +9,7 @@ declare noundef i32 @printf(i8* nocapture noundef readonly) local_unnamed_addr #
 
 ; Function Attrs: noinline norecurse nounwind optnone willreturn
 define i32 @main(i32 %0, i32** %1) local_unnamed_addr #1 {
-  %3 = call { i32, i1 } @llvm.sadd.with.overflow.i32.i32(i32 1, i32 2147483647)
+  %3 = call { i32, i1 } @llvm.sadd.with.overflow.i32.i32(i32 1, i32 2)
   %4 = extractvalue { i32, i1 } %3, 0
   %5 = extractvalue { i32, i1 } %3, 1
   %6 = call i1 @llvm.expect.i1.i1(i1 %5, i1 false)
@@ -29,6 +29,9 @@ define i32 @main(i32 %0, i32** %1) local_unnamed_addr #1 {
   %13 = load i32, i32* %12, align 4
   %14 = alloca i32, align 4
   store i32 %13, i32* %14, align 4
+  %15 = load i32, i32* %14, align 4
+  %16 = alloca i32, align 4
+  store i32 %15, i32* %16, align 4
   ret i32 0
 }
 

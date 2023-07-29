@@ -1,5 +1,7 @@
 use colored::Colorize;
 
+use crate::utils::{FileInfo, Position};
+
 #[derive(Clone)]
 pub enum ErrorType {
     InvalidTok,
@@ -8,6 +10,7 @@ pub enum ErrorType {
     TypeMismatch,
     BindingNotFound,
     DuplicateFlag,
+    MovedBinding,
 }
 
 impl std::fmt::Display for ErrorType {
@@ -23,7 +26,8 @@ pub fn repr_err(tp: ErrorType) -> &'static str {
         ErrorType::InvalidFlag => "invalid flag passed",
         ErrorType::TypeMismatch => "type mismatch",
         ErrorType::BindingNotFound => "binding not found",
-        ErrorType::DuplicateFlag => "dupicate flag passed",
+        ErrorType::DuplicateFlag => "duplicate flag passed",
+        ErrorType::MovedBinding => "binding was moved",
     }
 }
 
@@ -76,5 +80,48 @@ pub fn raise_error(
 pub fn raise_error_no_pos(error: &str, errtp: ErrorType) -> ! {
     let header: String = format!("error[E{:0>3}]: {}", errtp as u8 + 1, error);
     println!("{}", header.red().bold());
+    std::process::exit(1);
+}
+
+pub fn raise_error_multi(
+    err: Vec<String>,
+    errtp: ErrorType,
+    pos: Vec<&Position>,
+    info: &FileInfo,
+) -> ! {
+    let mut idx: usize = 0;
+    for (error, pos) in std::iter::zip(&err, pos) {
+        let location: String = format!("{}:{}:{}", info.name, pos.line + 1, pos.startcol + 1);
+        if idx == 0 {
+            let header: String = format!("error[E{:0>3}]: {}", errtp.clone() as u8 + 1, error);
+            println!("{}", header.red().bold());
+        }
+        else {
+            let header: String = format!("{}", error);
+            println!("{}", header.yellow());
+        }
+        idx += 1;
+        println!("{}", location.red());
+    
+        let collected = info.data.clone().collect::<Vec<_>>();
+        let lines = Vec::from_iter(collected.split(|num| *num == '\n'));
+    
+        let snippet: String = format!(
+            "{}",
+            String::from_iter(lines.get(pos.line).unwrap().to_vec()).blue()
+        );
+    
+        let mut arrows: String = String::new();
+        for idx in 0..snippet.len() {
+            if idx >= pos.startcol && idx < pos.endcol {
+                arrows += "^";
+            } else {
+                arrows += " ";
+            }
+        }
+        let linestr = (pos.line + 1).to_string().blue().bold();
+        println!("{} | {}", linestr, snippet);
+        println!("{} | {}", " ".repeat(linestr.len()), arrows.green());
+    }
     std::process::exit(1);
 }

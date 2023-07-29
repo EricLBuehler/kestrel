@@ -13,6 +13,8 @@ mod parser;
 
 mod codegen;
 
+mod mir;
+
 //Version: major.minor
 #[derive(Parser, Debug)]
 #[command(author, version = "0.1.0", about, long_about = None)]
@@ -86,8 +88,7 @@ fn main() {
 
     let keywords = vec!["let".into()];
     let mut lexer = lexer::new(&mut file_info);
-    let (len, tokens) = lexer::generate_tokens(&mut lexer, &keywords);
-    lexer::print_tokens(len, &tokens);
+    let (_, tokens) = lexer::generate_tokens(&mut lexer, &keywords);
 
     let mut parser = parser::Parser::new(tokens, &file_info);
     let ast = parser.generate_ast();

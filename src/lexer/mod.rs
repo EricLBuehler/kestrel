@@ -74,7 +74,6 @@ fn advance(lexer: &mut Lexer) {
     }
 
     if next.is_none() {
-        lexer.col += 1;
         lexer.current = '\0';
         return;
     }
@@ -242,8 +241,8 @@ fn make_identifier(lexer: &mut Lexer, kwds: &[String]) -> Token {
         start,
         end: Position {
             line: lexer.line,
-            startcol: lexer.col,
-            endcol: lexer.col,
+            startcol: lexer.col+1,
+            endcol: lexer.col+1,
         },
     }
 }

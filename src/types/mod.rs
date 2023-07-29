@@ -4,6 +4,7 @@ use inkwell::AddressSpace;
 
 use crate::{
     codegen::{CodeGen, Data},
+    mir::Mir,
     utils::Position,
 };
 
@@ -14,7 +15,10 @@ pub type Traits<'a> = HashMap<TraitType, Trait<'a>>;
 
 #[derive(Hash, PartialEq, Eq, PartialOrd, Ord, Clone, Debug)]
 pub enum Trait<'a> {
-    Add(fn(&mut CodeGen<'a>, &Position, Data<'a>, Data<'a>) -> Data<'a>),
+    Add {
+        code: fn(&mut CodeGen<'a>, &Position, Data<'a>, Data<'a>) -> Data<'a>,
+        skeleton: fn(&mut Mir, &Position, Data<'a>, Data<'a>) -> Data<'a>,
+    },
 }
 
 #[derive(Hash, PartialEq, Eq, PartialOrd, Ord, Clone, Debug)]
