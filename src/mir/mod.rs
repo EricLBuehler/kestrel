@@ -34,22 +34,30 @@ pub enum MirInstruction {
 impl Display for MirInstruction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            MirInstruction::Add { left, right, pos: _ } => {
+            MirInstruction::Add {
+                left,
+                right,
+                pos: _,
+            } => {
                 writeln!(f, "add {left} {right}")
             }
-            MirInstruction::Declare( name, _) => {
+            MirInstruction::Declare(name, _) => {
                 writeln!(f, "declare {name}")
             }
-            MirInstruction::I32( value, _ ) => {
+            MirInstruction::I32(value, _) => {
                 writeln!(f, "i32 {value}")
             }
-            MirInstruction::Load( name, _ ) => {
+            MirInstruction::Load(name, _) => {
                 writeln!(f, "load {name}")
             }
-            MirInstruction::Own( result, _ ) => {
+            MirInstruction::Own(result, _) => {
                 writeln!(f, "own {result}")
             }
-            MirInstruction::Store { name, right, pos: _ } => {
+            MirInstruction::Store {
+                name,
+                right,
+                pos: _,
+            } => {
                 writeln!(f, "store {name} {right}")
             }
         }

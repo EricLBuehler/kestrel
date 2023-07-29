@@ -89,28 +89,25 @@ pub fn raise_error_multi(
     pos: Vec<&Position>,
     info: &FileInfo,
 ) -> ! {
-    let mut idx: usize = 0;
-    for (error, pos) in std::iter::zip(&err, pos) {
+    for (i, (error, pos)) in std::iter::zip(&err, pos).enumerate() {
         let location: String = format!("{}:{}:{}", info.name, pos.line + 1, pos.startcol + 1);
-        if idx == 0 {
+        if i == 0 {
             let header: String = format!("error[E{:0>3}]: {}", errtp.clone() as u8 + 1, error);
             println!("{}", header.red().bold());
-        }
-        else {
-            let header: String = format!("{}", error);
+        } else {
+            let header: String = error.to_string();
             println!("{}", header.yellow());
         }
-        idx += 1;
         println!("{}", location.red());
-    
+
         let collected = info.data.clone().collect::<Vec<_>>();
         let lines = Vec::from_iter(collected.split(|num| *num == '\n'));
-    
+
         let snippet: String = format!(
             "{}",
             String::from_iter(lines.get(pos.line).unwrap().to_vec()).blue()
         );
-    
+
         let mut arrows: String = String::new();
         for idx in 0..snippet.len() {
             if idx >= pos.startcol && idx < pos.endcol {

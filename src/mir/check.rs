@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use crate::{
-    errors::{raise_error_multi, ErrorType, raise_error},
+    errors::{raise_error, raise_error_multi, ErrorType},
     utils::FileInfo,
 };
 
@@ -73,17 +73,15 @@ pub fn check(mut instructions: Vec<MirInstruction>, info: FileInfo<'_>) {
                         vec![pos, oldpos],
                         &info,
                     );
-                }
-                else {
+                } else {
                     namespace.get_mut(name).unwrap().1.owner = Some(i);
                 }
             }
-            MirInstruction::Own(ref item, _) => match instructions.get_mut(*item).unwrap() {
-                MirInstruction::Load(ref name, _) => {
+            MirInstruction::Own(ref item, _) => {
+                if let MirInstruction::Load(ref name, _) = instructions.get_mut(*item).unwrap() {
                     namespace.get_mut(name).unwrap().1.isowned = false;
                 }
-                _ => {}
-            },
+            }
             MirInstruction::Store {
                 ref name,
                 ref right,
