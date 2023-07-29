@@ -13,28 +13,30 @@ main:                                   # @main
 	.cfi_offset %rbp, -16
 	movq	%rsp, %rbp
 	.cfi_def_cfa_register %rbp
+	pushq	%rbx
+	pushq	%rax
+	.cfi_offset %rbx, -24
                                         # kill: killed $rsi
                                         # kill: killed $edi
-	movl	$1, %eax
-	addl	$2, %eax
-	seto	%cl
-	testb	$1, %cl
+	movl	$1, %ebx
+	addl	$2, %ebx
+	seto	%al
+	testb	$1, %al
 	jne	.LBB0_1
 	jmp	.LBB0_2
 .LBB0_1:
 	movabsq	$.L__unnamed_1, %rdi
 	callq	printf@PLT
-	movl	$4294967295, %eax               # imm = 0xFFFFFFFF
 	jmp	.LBB0_3
 .LBB0_2:
 	jmp	.LBB0_3
 .LBB0_3:
-	movq	%rsp, %rcx
-	movq	%rcx, %rdx
-	addq	$-16, %rdx
-	movq	%rdx, %rsp
-	movl	%eax, -16(%rcx)
-	movl	-16(%rcx), %eax
+	movq	%rsp, %rax
+	movq	%rax, %rcx
+	addq	$-16, %rcx
+	movq	%rcx, %rsp
+	movl	%ebx, -16(%rax)
+	movl	-16(%rax), %eax
 	movq	%rsp, %rcx
 	movq	%rcx, %rdx
 	addq	$-16, %rdx
@@ -46,7 +48,8 @@ main:                                   # @main
 	movq	%rcx, %rsp
 	movl	%eax, (%rcx)
 	xorl	%eax, %eax
-	movq	%rbp, %rsp
+	leaq	-8(%rbp), %rsp
+	popq	%rbx
 	popq	%rbp
 	.cfi_def_cfa %rsp, 8
 	retq

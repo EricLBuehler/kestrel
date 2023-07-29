@@ -118,10 +118,7 @@ fn i32_add<'a>(
             .build_phi(this.data.unwrap().into_int_value().get_type(), "");
 
         phi.add_incoming(&[(&result.unwrap(), end_block)]);
-        phi.add_incoming(&[(
-            &codegen.context.i32_type().const_int(u32::MAX.into(), false),
-            overflow_block,
-        )]);
+        phi.add_incoming(&[(&result.unwrap(), overflow_block)]);
 
         codegen.cur_block = Some(done_block);
 
