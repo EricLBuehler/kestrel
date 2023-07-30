@@ -8,7 +8,7 @@
 7:   declare 😀
 8:   own 6
 9:   store 😀 6 -> std::void['static]
-10:  load 😀 -> std::i32['static]
+10:  load 😀🤠 -> std::i32['static]
 11:  load 😀 -> std::i32['static]
 12:  add 10 11 -> std::i32['static]
 13:  declare 🤠

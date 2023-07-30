@@ -19,11 +19,13 @@ pub enum Trait<'a> {
         code: fn(&mut CodeGen<'a>, &Position, Data<'a>, Data<'a>) -> Data<'a>,
         skeleton: fn(&mut Mir, &Position, Type<'a>, Type<'a>) -> Type<'a>,
     },
+    Copy,
 }
 
 #[derive(Hash, PartialEq, Eq, PartialOrd, Ord, Clone, Debug)]
 pub enum TraitType {
     Add,
+    Copy,
 }
 
 #[derive(Hash, PartialEq, Eq, PartialOrd, Ord, Clone, Debug)]

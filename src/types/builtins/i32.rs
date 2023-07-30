@@ -166,7 +166,8 @@ pub fn init_i32(codegen: &mut CodeGen) {
                 code: i32_add,
                 skeleton: i32_add_skeleton,
             },
-        )]),
+        ),
+        (TraitType::Copy, Trait::Copy)]),
         qualname: "std::i32".into(),
         lifetime: Lifetime::Static,
     };

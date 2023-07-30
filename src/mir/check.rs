@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use crate::{
     errors::{raise_error, raise_error_multi, ErrorType},
-    utils::FileInfo,
+    utils::FileInfo, types::TraitType,
 };
 
 use super::{MirInstruction, RawMirInstruction};
@@ -39,19 +39,19 @@ pub fn check(mut instructions: Vec<MirInstruction>, info: FileInfo<'_>) {
                     raise_error(&fmt, ErrorType::BindingNotFound, &instruction.pos, &info);
                 }
 
-                let oldpos = &instructions
+                let old_instruction = &instructions
                     .get(namespace.get(name).unwrap().1.owner.unwrap())
-                    .unwrap()
-                    .pos;
-
-                if !namespace.get(name).unwrap().1.isowned {
+                    .unwrap();
+                
+                if !(old_instruction.tp.is_some() && old_instruction.tp.as_ref().unwrap().traits.contains_key(&TraitType::Copy))
+                && !namespace.get(name).unwrap().1.isowned {
                     raise_error_multi(
                         vec![
                             format!("Binding '{name}' is not owned"),
                             "It was moved here:".into(),
                         ],
                         ErrorType::MovedBinding,
-                        vec![&instruction.pos, oldpos],
+                        vec![&instruction.pos, &old_instruction.pos],
                         &info,
                     );
                 } else {

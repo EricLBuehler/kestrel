@@ -39,7 +39,7 @@ main:                                   # @main
 	addq	$-16, %rcx
 	movq	%rcx, %rsp
 	movl	%eax, (%rcx)
-	movl	(%rcx), %eax
+	movl	(%rdx), %eax
 	addl	(%rcx), %eax
 	seto	%cl
 	testb	$1, %cl
