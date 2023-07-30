@@ -265,7 +265,7 @@ pub fn generate_code(
     let basic_block = codegen.context.append_basic_block(realmain, "");
 
     // Mir check
-    let mut mir = mir::new(info.clone());
+    let mut mir = mir::new(info.clone(), codegen.builtins.clone());
     let instructions = mir.generate(&ast);
     mir::check(instructions, codegen.info.clone());
     //

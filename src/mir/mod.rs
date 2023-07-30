@@ -3,14 +3,15 @@ use std::{fmt::Display, fs::File, io::Write};
 use crate::{
     errors::{raise_error, ErrorType},
     parser::nodes::{Node, NodeType},
-    utils::{FileInfo, Position},
+    utils::{FileInfo, Position}, types::{BuiltinTypes, BasicType, Type},
 };
 
 mod check;
 
 pub struct Mir<'a> {
     pub info: FileInfo<'a>,
-    instructions: Vec<MirInstruction>,
+    instructions: Vec<MirInstruction<'a>>,
+    builtins: BuiltinTypes<'a>,
 }
 
 #[derive(Clone)]
@@ -24,40 +25,44 @@ pub enum RawMirInstruction {
 }
 
 #[derive(Clone)]
-pub struct MirInstruction {
+pub struct MirInstruction<'a> {
     instruction: RawMirInstruction,
     pos: Position,
+    tp: Type<'a>,
 }
+
+type MirResult<'a> = (usize, Type<'a>);
 
 impl Display for RawMirInstruction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             RawMirInstruction::Add { left, right } => {
-                writeln!(f, "add {left} {right}")
+                write!(f, "add {left} {right}")
             }
             RawMirInstruction::Declare(name) => {
-                writeln!(f, "declare {name}")
+                write!(f, "declare {name}")
             }
             RawMirInstruction::I32(value) => {
-                writeln!(f, "i32 {value}")
+                write!(f, "i32 {value}")
             }
             RawMirInstruction::Load(name) => {
-                writeln!(f, "load {name}")
+                write!(f, "load {name}")
             }
             RawMirInstruction::Own(result) => {
-                writeln!(f, "own {result}")
+                write!(f, "own {result}")
             }
             RawMirInstruction::Store { name, right } => {
-                writeln!(f, "store {name} {right}")
+                write!(f, "store {name} {right}")
             }
         }
     }
 }
 
-pub fn new(info: FileInfo<'_>) -> Mir<'_> {
+pub fn new<'a>(info: FileInfo<'a>, builtins: BuiltinTypes<'a>) -> Mir<'a> {
     Mir {
         info,
         instructions: Vec::new(),
+        builtins,
     }
 }
 
@@ -66,7 +71,7 @@ pub fn check(instructions: Vec<MirInstruction>, info: FileInfo<'_>) {
 }
 
 impl<'a> Mir<'a> {
-    pub fn generate(&mut self, ast: &Vec<Node>) -> Vec<MirInstruction> {
+    pub fn generate(&mut self, ast: &Vec<Node>) -> Vec<MirInstruction<'a>> {
         for node in ast {
             self.generate_expr(node);
         }
@@ -75,6 +80,7 @@ impl<'a> Mir<'a> {
         for (i, instruction) in self.instructions.iter().enumerate() {
             out.push_str(&format!("{:<5}", format!("{}:", i)));
             out.push_str(&instruction.instruction.to_string());
+            out.push_str(&format!(" -> {}\n", instruction.tp.qualname));
         }
         let mut f = File::create("a.mir").expect("Unable to create MIR output file.");
         f.write_all(out.as_bytes()).expect("Unable to write MIR.");
@@ -82,7 +88,7 @@ impl<'a> Mir<'a> {
         self.instructions.clone()
     }
 
-    fn generate_expr(&mut self, node: &Node) -> usize {
+    fn generate_expr(&mut self, node: &Node) -> MirResult<'a> {
         match node.tp {
             NodeType::I32 => self.generate_i32(node),
             NodeType::Binary => self.generate_binary(node),
@@ -93,7 +99,7 @@ impl<'a> Mir<'a> {
 }
 
 impl<'a> Mir<'a> {
-    fn generate_i32(&mut self, node: &Node) -> usize {
+    fn generate_i32(&mut self, node: &Node) -> MirResult<'a> {
         if node
             .data
             .get_data()
@@ -121,23 +127,27 @@ impl<'a> Mir<'a> {
                 node.data.get_data().raw.get("value").unwrap().to_string(),
             ),
             pos: node.pos.clone(),
+            tp: self.builtins.get(&BasicType::I32).unwrap().clone(),
         });
-        self.instructions.len() - 1
+        
+        (self.instructions.len() - 1, self.builtins.get(&BasicType::I32).unwrap().clone())
     }
 
-    fn generate_binary(&mut self, node: &Node) -> usize {
+    fn generate_binary(&mut self, node: &Node) -> MirResult<'a> {
         let binary = node.data.get_data();
         let left = self.generate_expr(binary.nodes.get("left").unwrap());
         let right = self.generate_expr(binary.nodes.get("right").unwrap());
 
         self.instructions.push(MirInstruction {
-            instruction: RawMirInstruction::Add { left, right },
+            instruction: RawMirInstruction::Add { left: left.0, right: right.0 },
             pos: node.pos.clone(),
+            tp: self.builtins.get(&BasicType::I32).unwrap().clone(),
         });
-        self.instructions.len() - 1
+        
+        (self.instructions.len() - 1, self.builtins.get(&BasicType::I32).unwrap().clone())
     }
 
-    fn generate_let(&mut self, node: &Node) -> usize {
+    fn generate_let(&mut self, node: &Node) -> MirResult<'a> {
         let letnode = node.data.get_data();
         let name = letnode.raw.get("name").unwrap();
         let right = self.generate_expr(letnode.nodes.get("expr").unwrap());
@@ -145,29 +155,35 @@ impl<'a> Mir<'a> {
         self.instructions.push(MirInstruction {
             instruction: RawMirInstruction::Declare(name.to_string()),
             pos: node.pos.clone(),
+            tp: self.builtins.get(&BasicType::Void).unwrap().clone(),
         });
         self.instructions.push(MirInstruction {
-            instruction: RawMirInstruction::Own(right),
+            instruction: RawMirInstruction::Own(right.0),
             pos: node.pos.clone(),
+            tp: self.builtins.get(&BasicType::Void).unwrap().clone(),
         });
         self.instructions.push(MirInstruction {
             instruction: RawMirInstruction::Store {
                 name: name.to_string(),
-                right,
+                right: right.0,
             },
             pos: node.pos.clone(),
+            tp: self.builtins.get(&BasicType::Void).unwrap().clone(),
         });
-        self.instructions.len() - 1
+        
+        (self.instructions.len() - 1, self.builtins.get(&BasicType::I32).unwrap().clone())
     }
 
-    fn generate_load(&mut self, node: &Node) -> usize {
+    fn generate_load(&mut self, node: &Node) -> MirResult<'a> {
         let identifiernode = node.data.get_data();
         let name = identifiernode.raw.get("value").unwrap();
 
         self.instructions.push(MirInstruction {
             instruction: RawMirInstruction::Load(name.to_string()),
             pos: node.pos.clone(),
+            tp: self.builtins.get(&BasicType::I32).unwrap().clone(),
         });
-        self.instructions.len() - 1
+        
+        (self.instructions.len() - 1, self.builtins.get(&BasicType::I32).unwrap().clone())
     }
 }
