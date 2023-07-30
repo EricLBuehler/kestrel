@@ -126,7 +126,7 @@ impl<'a> CodeGen<'a> {
                         &format!("Type '{}' does not implement Add.", left.tp.qualname),
                         ErrorType::TypeMismatch,
                         &node.pos,
-                        &self.info,
+                        self.info,
                     );
                 }
             }

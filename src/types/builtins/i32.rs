@@ -160,14 +160,16 @@ fn i32_add_skeleton<'a>(
 pub fn init_i32(codegen: &mut CodeGen) {
     let tp = Type {
         basictype: BasicType::I32,
-        traits: HashMap::from([(
-            TraitType::Add,
-            Trait::Add {
-                code: i32_add,
-                skeleton: i32_add_skeleton,
-            },
-        ),
-        (TraitType::Copy, Trait::Copy)]),
+        traits: HashMap::from([
+            (
+                TraitType::Add,
+                Trait::Add {
+                    code: i32_add,
+                    skeleton: i32_add_skeleton,
+                },
+            ),
+            (TraitType::Copy, Trait::Copy),
+        ]),
         qualname: "std::i32".into(),
         lifetime: Lifetime::Static,
     };
