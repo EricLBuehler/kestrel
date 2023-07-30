@@ -16,7 +16,7 @@ main:                                   # @main
                                         # kill: killed $rsi
                                         # kill: killed $edi
 	movl	$1, %eax
-	addl	$2, %eax
+	addl	$2147483647, %eax               # imm = 0x7FFFFFFF
 	seto	%cl
 	testb	$1, %cl
 	jne	.LBB0_1
