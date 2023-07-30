@@ -16,7 +16,7 @@ main:                                   # @main
                                         # kill: killed $rsi
                                         # kill: killed $edi
 	movl	$1, %eax
-	addl	$2147483647, %eax               # imm = 0x7FFFFFFF
+	addl	$2, %eax
 	seto	%cl
 	testb	$1, %cl
 	jne	.LBB0_1
@@ -36,11 +36,23 @@ main:                                   # @main
 	movl	%eax, -16(%rcx)
 	movl	-16(%rcx), %eax
 	movq	%rsp, %rcx
-	movq	%rcx, %rdx
-	addq	$-16, %rdx
-	movq	%rdx, %rsp
-	movl	%eax, -16(%rcx)
-	movl	-16(%rcx), %eax
+	addq	$-16, %rcx
+	movq	%rcx, %rsp
+	movl	%eax, (%rcx)
+	movl	(%rcx), %eax
+	addl	(%rcx), %eax
+	seto	%cl
+	testb	$1, %cl
+	jne	.LBB0_4
+	jmp	.LBB0_5
+.LBB0_4:
+	movabsq	$.L__unnamed_2, %rdi
+	callq	printf@PLT
+                                        # implicit-def: $eax
+	jmp	.LBB0_6
+.LBB0_5:
+	jmp	.LBB0_6
+.LBB0_6:
 	movq	%rsp, %rcx
 	addq	$-16, %rcx
 	movq	%rcx, %rsp
@@ -60,5 +72,11 @@ main:                                   # @main
 .L__unnamed_1:
 	.asciz	"Error: i32 addition overflow!\n    program.ke:1:12\n"
 	.size	.L__unnamed_1, 51
+
+	.type	.L__unnamed_2,@object           # @1
+	.p2align	4
+.L__unnamed_2:
+	.asciz	"Error: i32 addition overflow!\n    program.ke:3:10\n"
+	.size	.L__unnamed_2, 51
 
 	.section	".note.GNU-stack","",@progbits
