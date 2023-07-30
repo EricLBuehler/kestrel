@@ -23,7 +23,7 @@ define i32 @main(i32 %0, i32** %1) local_unnamed_addr #1 {
   br label %10
 
 10:                                               ; preds = %9, %7
-  %11 = phi i32 [ %4, %9 ], [ %4, %7 ]
+  %11 = phi i32 [ %4, %9 ], [ undef, %7 ]
   %12 = alloca i32, align 4
   store i32 %11, i32* %12, align 4
   %13 = load i32, i32* %12, align 4
