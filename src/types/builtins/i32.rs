@@ -6,7 +6,7 @@ use crate::{
     codegen::{CodeGen, Data},
     errors::{raise_error, ErrorType},
     mir::Mir,
-    types::{BasicType, Trait, TraitType, Type},
+    types::{BasicType, Trait, TraitType, Type, Lifetime},
     utils::{print_string, Position},
     Flags,
 };
@@ -143,21 +143,18 @@ fn i32_add<'a>(
 fn i32_add_skeleton<'a>(
     mir: &mut Mir,
     pos: &Position,
-    this: Data<'a>,
-    other: Data<'a>,
-) -> Data<'a> {
-    if this.tp != other.tp {
+    this: Type<'a>,
+    other: Type<'a>,
+) -> Type<'a> {
+    if this != other {
         raise_error(
-            &format!("Expected 'i32', got '{}'", other.tp.basictype),
+            &format!("Expected 'i32', got '{}'", other.basictype),
             ErrorType::TypeMismatch,
             pos,
             &mir.info,
         );
     }
-    Data {
-        data: None,
-        tp: this.tp,
-    }
+    this
 }
 
 pub fn init_i32(codegen: &mut CodeGen) {
@@ -171,6 +168,7 @@ pub fn init_i32(codegen: &mut CodeGen) {
             },
         )]),
         qualname: "std::i32".into(),
+        lifetime: Lifetime::Static,
     };
     codegen.builtins.insert(BasicType::I32, tp);
 }

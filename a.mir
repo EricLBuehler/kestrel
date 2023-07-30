@@ -1,14 +1,14 @@
-0:   i32 1 -> std::i32
-1:   i32 2147483647 -> std::i32
-2:   add 0 1 -> std::i32
-3:   declare 😀🤠 -> std::void
-4:   own 2 -> std::void
-5:   store 😀🤠 2 -> std::void
-6:   load 😀🤠 -> std::i32
-7:   declare 😀 -> std::void
-8:   own 6 -> std::void
-9:   store 😀 6 -> std::void
-10:  load 😀 -> std::i32
-11:  declare 🤠 -> std::void
-12:  own 10 -> std::void
-13:  store 🤠 10 -> std::void
+0:   i32 1 -> std::i32['static]
+1:   i32 2147483647 -> std::i32['static]
+2:   add 0 1 -> std::i32['static]
+3:   declare 😀🤠 -> std::void['static]
+4:   own 2 -> std::void['static]
+5:   store 😀🤠 2 -> std::void['static]
+6:   load 😀🤠 -> std::i32['static]
+7:   declare 😀 -> std::void['static]
+8:   own 6 -> std::void['static]
+9:   store 😀 6 -> std::void['static]
+10:  load 😀 -> std::i32['static]
+11:  declare 🤠 -> std::void['static]
+12:  own 10 -> std::void['static]
+13:  store 🤠 10 -> std::void['static]

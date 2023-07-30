@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use crate::{
     codegen::CodeGen,
-    types::{BasicType, Type},
+    types::{BasicType, Type, Lifetime},
 };
 
 pub fn init_void(codegen: &mut CodeGen) {
@@ -10,6 +10,7 @@ pub fn init_void(codegen: &mut CodeGen) {
         basictype: BasicType::Void,
         traits: HashMap::new(),
         qualname: "std::void".into(),
+        lifetime: Lifetime::Static,
     };
     codegen.builtins.insert(BasicType::Void, tp);
 }

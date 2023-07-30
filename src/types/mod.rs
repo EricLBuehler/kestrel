@@ -17,7 +17,7 @@ pub type Traits<'a> = HashMap<TraitType, Trait<'a>>;
 pub enum Trait<'a> {
     Add {
         code: fn(&mut CodeGen<'a>, &Position, Data<'a>, Data<'a>) -> Data<'a>,
-        skeleton: fn(&mut Mir, &Position, Data<'a>, Data<'a>) -> Data<'a>,
+        skeleton: fn(&mut Mir, &Position, Type<'a>, Type<'a>) -> Type<'a>,
     },
 }
 
@@ -50,7 +50,24 @@ pub struct Type<'a> {
     pub basictype: BasicType,
     pub traits: Traits<'a>,
     pub qualname: String,
+    pub lifetime: Lifetime,
 }
+
+#[derive(PartialEq, Eq, Clone, Debug)]
+pub enum Lifetime {
+    Static,
+}
+
+impl Display for Lifetime {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Lifetime::Static => {
+                write!(f, "['static]")
+            }
+        }
+    }
+}
+
 
 pub fn init_extern_fns(codegen: &mut CodeGen) {
     let printftp = codegen.context.i32_type().fn_type(

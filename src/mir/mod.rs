@@ -2,8 +2,8 @@ use std::{fmt::Display, fs::File, io::Write};
 
 use crate::{
     errors::{raise_error, ErrorType},
-    parser::nodes::{Node, NodeType},
-    utils::{FileInfo, Position}, types::{BuiltinTypes, BasicType, Type},
+    parser::nodes::{Node, NodeType, OpType},
+    utils::{FileInfo, Position}, types::{BuiltinTypes, BasicType, Type, Trait, TraitType},
 };
 
 mod check;
@@ -80,7 +80,8 @@ impl<'a> Mir<'a> {
         for (i, instruction) in self.instructions.iter().enumerate() {
             out.push_str(&format!("{:<5}", format!("{}:", i)));
             out.push_str(&instruction.instruction.to_string());
-            out.push_str(&format!(" -> {}\n", instruction.tp.qualname));
+            out.push_str(&format!(" -> {}", instruction.tp.qualname));
+            out.push_str(&format!("{}\n", instruction.tp.lifetime));
         }
         let mut f = File::create("a.mir").expect("Unable to create MIR output file.");
         f.write_all(out.as_bytes()).expect("Unable to write MIR.");
@@ -137,6 +138,17 @@ impl<'a> Mir<'a> {
         let binary = node.data.get_data();
         let left = self.generate_expr(binary.nodes.get("left").unwrap());
         let right = self.generate_expr(binary.nodes.get("right").unwrap());
+
+        match binary.op.unwrap() {
+            OpType::Add => {
+                if let Some(Trait::Add { code: _, skeleton }) = left.1.traits.get(&TraitType::Add)
+                {
+                    skeleton(self, &node.pos, left.1, right.1);
+                } else {
+                    unimplemented!();
+                }
+            }
+        }
 
         self.instructions.push(MirInstruction {
             instruction: RawMirInstruction::Add { left: left.0, right: right.0 },
