@@ -14,50 +14,40 @@ pub struct Mir<'a> {
 }
 
 #[derive(Clone)]
-pub enum MirInstruction {
-    I32(String, Position),
-    Add {
-        left: usize,
-        right: usize,
-        pos: Position,
-    },
-    Declare(String, Position),
-    Store {
-        name: String,
-        right: usize,
-        pos: Position,
-    },
-    Own(usize, Position),
-    Load(String, Position),
+pub enum RawMirInstruction {
+    I32(String),
+    Add { left: usize, right: usize },
+    Declare(String),
+    Store { name: String, right: usize },
+    Own(usize),
+    Load(String),
 }
 
-impl Display for MirInstruction {
+#[derive(Clone)]
+pub struct MirInstruction {
+    instruction: RawMirInstruction,
+    pos: Position,
+}
+
+impl Display for RawMirInstruction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            MirInstruction::Add {
-                left,
-                right,
-                pos: _,
-            } => {
+            RawMirInstruction::Add { left, right } => {
                 writeln!(f, "add {left} {right}")
             }
-            MirInstruction::Declare(name, _) => {
+            RawMirInstruction::Declare(name) => {
                 writeln!(f, "declare {name}")
             }
-            MirInstruction::I32(value, _) => {
+            RawMirInstruction::I32(value) => {
                 writeln!(f, "i32 {value}")
             }
-            MirInstruction::Load(name, _) => {
+            RawMirInstruction::Load(name) => {
                 writeln!(f, "load {name}")
             }
-            MirInstruction::Own(result, _) => {
+            RawMirInstruction::Own(result) => {
                 writeln!(f, "own {result}")
             }
-            MirInstruction::Store {
-                name,
-                right,
-                pos: _,
-            } => {
+            RawMirInstruction::Store { name, right } => {
                 writeln!(f, "store {name} {right}")
             }
         }
@@ -84,7 +74,7 @@ impl<'a> Mir<'a> {
         let mut out = String::new();
         for (i, instruction) in self.instructions.iter().enumerate() {
             out.push_str(&format!("{:<5}", format!("{}:", i)));
-            out.push_str(&instruction.to_string());
+            out.push_str(&instruction.instruction.to_string());
         }
         let mut f = File::create("a.mir").expect("Unable to create MIR output file.");
         f.write_all(out.as_bytes()).expect("Unable to write MIR.");
@@ -126,10 +116,12 @@ impl<'a> Mir<'a> {
             );
         }
 
-        self.instructions.push(MirInstruction::I32(
-            node.data.get_data().raw.get("value").unwrap().to_string(),
-            node.pos.clone(),
-        ));
+        self.instructions.push(MirInstruction {
+            instruction: RawMirInstruction::I32(
+                node.data.get_data().raw.get("value").unwrap().to_string(),
+            ),
+            pos: node.pos.clone(),
+        });
         self.instructions.len() - 1
     }
 
@@ -138,9 +130,8 @@ impl<'a> Mir<'a> {
         let left = self.generate_expr(binary.nodes.get("left").unwrap());
         let right = self.generate_expr(binary.nodes.get("right").unwrap());
 
-        self.instructions.push(MirInstruction::Add {
-            left,
-            right,
+        self.instructions.push(MirInstruction {
+            instruction: RawMirInstruction::Add { left, right },
             pos: node.pos.clone(),
         });
         self.instructions.len() - 1
@@ -151,13 +142,19 @@ impl<'a> Mir<'a> {
         let name = letnode.raw.get("name").unwrap();
         let right = self.generate_expr(letnode.nodes.get("expr").unwrap());
 
-        self.instructions
-            .push(MirInstruction::Declare(name.to_string(), node.pos.clone()));
-        self.instructions
-            .push(MirInstruction::Own(right, node.pos.clone()));
-        self.instructions.push(MirInstruction::Store {
-            name: name.to_string(),
-            right,
+        self.instructions.push(MirInstruction {
+            instruction: RawMirInstruction::Declare(name.to_string()),
+            pos: node.pos.clone(),
+        });
+        self.instructions.push(MirInstruction {
+            instruction: RawMirInstruction::Own(right),
+            pos: node.pos.clone(),
+        });
+        self.instructions.push(MirInstruction {
+            instruction: RawMirInstruction::Store {
+                name: name.to_string(),
+                right,
+            },
             pos: node.pos.clone(),
         });
         self.instructions.len() - 1
@@ -167,8 +164,10 @@ impl<'a> Mir<'a> {
         let identifiernode = node.data.get_data();
         let name = identifiernode.raw.get("value").unwrap();
 
-        self.instructions
-            .push(MirInstruction::Load(name.to_string(), node.pos.clone()));
+        self.instructions.push(MirInstruction {
+            instruction: RawMirInstruction::Load(name.to_string()),
+            pos: node.pos.clone(),
+        });
         self.instructions.len() - 1
     }
 }

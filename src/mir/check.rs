@@ -5,7 +5,7 @@ use crate::{
     utils::FileInfo,
 };
 
-use super::MirInstruction;
+use super::{MirInstruction, RawMirInstruction};
 
 #[derive(Debug)]
 struct MirTag {
@@ -18,14 +18,10 @@ pub fn check(mut instructions: Vec<MirInstruction>, info: FileInfo<'_>) {
 
     for i in 0..instructions.len() {
         let instruction = instructions.get(i).unwrap().clone();
-        match instruction {
-            MirInstruction::I32(_, _) => {}
-            MirInstruction::Add {
-                left: _,
-                right: _,
-                pos: _,
-            } => {}
-            MirInstruction::Declare(ref name, _) => {
+        match instruction.instruction {
+            RawMirInstruction::I32(_) => {}
+            RawMirInstruction::Add { left: _, right: _ } => {}
+            RawMirInstruction::Declare(ref name) => {
                 namespace.insert(
                     name.clone(),
                     (
@@ -37,31 +33,16 @@ pub fn check(mut instructions: Vec<MirInstruction>, info: FileInfo<'_>) {
                     ),
                 );
             }
-            MirInstruction::Load(ref name, ref pos) => {
+            RawMirInstruction::Load(ref name) => {
                 if namespace.get(name).is_none() {
                     let fmt: String = format!("Binding '{}' not found in scope.", name);
-                    raise_error(&fmt, ErrorType::BindingNotFound, pos, &info);
+                    raise_error(&fmt, ErrorType::BindingNotFound, &instruction.pos, &info);
                 }
 
-                let oldpos = match instructions
+                let oldpos = &instructions
                     .get(namespace.get(name).unwrap().1.owner.unwrap())
                     .unwrap()
-                {
-                    MirInstruction::Add {
-                        left: _,
-                        right: _,
-                        pos,
-                    } => pos,
-                    MirInstruction::Declare(_, pos) => pos,
-                    MirInstruction::I32(_, pos) => pos,
-                    MirInstruction::Load(_, pos) => pos,
-                    MirInstruction::Store {
-                        name: _,
-                        right: _,
-                        pos,
-                    } => pos,
-                    MirInstruction::Own(_, pos) => pos,
-                };
+                    .pos;
 
                 if !namespace.get(name).unwrap().1.isowned {
                     raise_error_multi(
@@ -70,22 +51,23 @@ pub fn check(mut instructions: Vec<MirInstruction>, info: FileInfo<'_>) {
                             "It was moved here:".into(),
                         ],
                         ErrorType::MovedBinding,
-                        vec![pos, oldpos],
+                        vec![&instruction.pos, oldpos],
                         &info,
                     );
                 } else {
                     namespace.get_mut(name).unwrap().1.owner = Some(i);
                 }
             }
-            MirInstruction::Own(ref item, _) => {
-                if let MirInstruction::Load(ref name, _) = instructions.get_mut(*item).unwrap() {
+            RawMirInstruction::Own(ref item) => {
+                if let RawMirInstruction::Load(ref name) =
+                    instructions.get_mut(*item).unwrap().instruction
+                {
                     namespace.get_mut(name).unwrap().1.isowned = false;
                 }
             }
-            MirInstruction::Store {
+            RawMirInstruction::Store {
                 ref name,
                 ref right,
-                pos: _,
             } => {
                 namespace.insert(
                     name.clone(),
