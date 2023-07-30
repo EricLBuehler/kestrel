@@ -49,6 +49,7 @@ impl Display for BasicType {
 pub struct Type<'a> {
     pub basictype: BasicType,
     pub traits: Traits<'a>,
+    pub qualname: String,
 }
 
 pub fn init_extern_fns(codegen: &mut CodeGen) {

@@ -170,6 +170,7 @@ pub fn init_i32(codegen: &mut CodeGen) {
                 skeleton: i32_add_skeleton,
             },
         )]),
+        qualname: "std::i32".into(),
     };
     codegen.builtins.insert(BasicType::I32, tp);
 }

@@ -7,8 +7,9 @@ use crate::{
 
 pub fn init_void(codegen: &mut CodeGen) {
     let tp = Type {
-        basictype: BasicType::I32,
+        basictype: BasicType::Void,
         traits: HashMap::new(),
+        qualname: "std::void".into(),
     };
     codegen.builtins.insert(BasicType::Void, tp);
 }
