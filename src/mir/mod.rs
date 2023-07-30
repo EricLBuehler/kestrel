@@ -1,4 +1,4 @@
-use std::{fmt::Display, fs::File, io::Write};
+use std::{fmt::Display, fs::File, io::Write, collections::HashMap};
 
 use crate::{
     errors::{raise_error, ErrorType},
@@ -13,6 +13,7 @@ pub struct Mir<'a> {
     pub info: FileInfo<'a>,
     instructions: Vec<MirInstruction<'a>>,
     builtins: BuiltinTypes<'a>,
+    namespace: HashMap<String, Type<'a>>,
 }
 
 #[derive(Clone)]
@@ -29,7 +30,7 @@ pub enum RawMirInstruction {
 pub struct MirInstruction<'a> {
     instruction: RawMirInstruction,
     pos: Position,
-    tp: Type<'a>,
+    tp: Option<Type<'a>>,
 }
 
 type MirResult<'a> = (usize, Type<'a>);
@@ -64,6 +65,7 @@ pub fn new<'a>(info: FileInfo<'a>, builtins: BuiltinTypes<'a>) -> Mir<'a> {
         info,
         instructions: Vec::new(),
         builtins,
+        namespace: HashMap::new(),
     }
 }
 
@@ -81,8 +83,11 @@ impl<'a> Mir<'a> {
         for (i, instruction) in self.instructions.iter().enumerate() {
             out.push_str(&format!("{:<5}", format!("{}:", i)));
             out.push_str(&instruction.instruction.to_string());
-            out.push_str(&format!(" -> {}", instruction.tp.qualname));
-            out.push_str(&format!("{}\n", instruction.tp.lifetime));
+            if instruction.tp.is_some() {
+                out.push_str(&format!(" -> {}", instruction.tp.as_ref().unwrap().qualname));
+                out.push_str(&format!("{}", instruction.tp.as_ref().unwrap().lifetime));
+            }
+            out.push_str("\n");
         }
         let mut f = File::create("a.mir").expect("Unable to create MIR output file.");
         f.write_all(out.as_bytes()).expect("Unable to write MIR.");
@@ -129,7 +134,7 @@ impl<'a> Mir<'a> {
                 node.data.get_data().raw.get("value").unwrap().to_string(),
             ),
             pos: node.pos.clone(),
-            tp: self.builtins.get(&BasicType::I32).unwrap().clone(),
+            tp: Some(self.builtins.get(&BasicType::I32).unwrap().clone()),
         });
 
         (
@@ -143,10 +148,10 @@ impl<'a> Mir<'a> {
         let left = self.generate_expr(binary.nodes.get("left").unwrap());
         let right = self.generate_expr(binary.nodes.get("right").unwrap());
 
-        match binary.op.unwrap() {
+        let res = match binary.op.unwrap() {
             OpType::Add => {
                 if let Some(Trait::Add { code: _, skeleton }) = left.1.traits.get(&TraitType::Add) {
-                    skeleton(self, &node.pos, left.1, right.1);
+                    skeleton(self, &node.pos, left.1, right.1)
                 } else {
                     raise_error(
                         &format!("Type '{}' does not implement Add.", left.1.qualname),
@@ -156,7 +161,7 @@ impl<'a> Mir<'a> {
                     );
                 }
             }
-        }
+        };
 
         self.instructions.push(MirInstruction {
             instruction: RawMirInstruction::Add {
@@ -164,7 +169,7 @@ impl<'a> Mir<'a> {
                 right: right.0,
             },
             pos: node.pos.clone(),
-            tp: self.builtins.get(&BasicType::I32).unwrap().clone(),
+            tp: Some(res),
         });
 
         (
@@ -181,12 +186,12 @@ impl<'a> Mir<'a> {
         self.instructions.push(MirInstruction {
             instruction: RawMirInstruction::Declare(name.to_string()),
             pos: node.pos.clone(),
-            tp: self.builtins.get(&BasicType::Void).unwrap().clone(),
+            tp: None,
         });
         self.instructions.push(MirInstruction {
             instruction: RawMirInstruction::Own(right.0),
             pos: node.pos.clone(),
-            tp: self.builtins.get(&BasicType::Void).unwrap().clone(),
+            tp: None,
         });
         self.instructions.push(MirInstruction {
             instruction: RawMirInstruction::Store {
@@ -194,12 +199,14 @@ impl<'a> Mir<'a> {
                 right: right.0,
             },
             pos: node.pos.clone(),
-            tp: self.builtins.get(&BasicType::Void).unwrap().clone(),
+            tp: Some(self.builtins.get(&BasicType::Void).unwrap().clone()),
         });
+
+        self.namespace.insert(name.clone(), right.1);
 
         (
             self.instructions.len() - 1,
-            self.builtins.get(&BasicType::I32).unwrap().clone(),
+            self.builtins.get(&BasicType::Void).unwrap().clone(),
         )
     }
 
@@ -207,15 +214,20 @@ impl<'a> Mir<'a> {
         let identifiernode = node.data.get_data();
         let name = identifiernode.raw.get("value").unwrap();
 
+        if self.namespace.get(name).is_none() {
+            let fmt: String = format!("Binding '{}' not found in scope.", name);
+            raise_error(&fmt, ErrorType::BindingNotFound, &node.pos, &self.info);
+        }
+
         self.instructions.push(MirInstruction {
             instruction: RawMirInstruction::Load(name.to_string()),
             pos: node.pos.clone(),
-            tp: self.builtins.get(&BasicType::I32).unwrap().clone(),
+            tp: Some(self.namespace.get(name).unwrap().clone()),
         });
 
         (
             self.instructions.len() - 1,
-            self.builtins.get(&BasicType::I32).unwrap().clone(),
+            self.namespace.get(name).unwrap().clone(),
         )
     }
 }
