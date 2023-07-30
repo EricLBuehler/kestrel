@@ -68,7 +68,6 @@ impl Display for Lifetime {
     }
 }
 
-
 pub fn init_extern_fns(codegen: &mut CodeGen) {
     let printftp = codegen.context.i32_type().fn_type(
         &[codegen

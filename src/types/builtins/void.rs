@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use crate::{
     codegen::CodeGen,
-    types::{BasicType, Type, Lifetime},
+    types::{BasicType, Lifetime, Type},
 };
 
 pub fn init_void(codegen: &mut CodeGen) {

@@ -6,7 +6,7 @@ use crate::{
     codegen::{CodeGen, Data},
     errors::{raise_error, ErrorType},
     mir::Mir,
-    types::{BasicType, Trait, TraitType, Type, Lifetime},
+    types::{BasicType, Lifetime, Trait, TraitType, Type},
     utils::{print_string, Position},
     Flags,
 };

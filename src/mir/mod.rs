@@ -3,7 +3,8 @@ use std::{fmt::Display, fs::File, io::Write};
 use crate::{
     errors::{raise_error, ErrorType},
     parser::nodes::{Node, NodeType, OpType},
-    utils::{FileInfo, Position}, types::{BuiltinTypes, BasicType, Type, Trait, TraitType},
+    types::{BasicType, BuiltinTypes, Trait, TraitType, Type},
+    utils::{FileInfo, Position},
 };
 
 mod check;
@@ -130,8 +131,11 @@ impl<'a> Mir<'a> {
             pos: node.pos.clone(),
             tp: self.builtins.get(&BasicType::I32).unwrap().clone(),
         });
-        
-        (self.instructions.len() - 1, self.builtins.get(&BasicType::I32).unwrap().clone())
+
+        (
+            self.instructions.len() - 1,
+            self.builtins.get(&BasicType::I32).unwrap().clone(),
+        )
     }
 
     fn generate_binary(&mut self, node: &Node) -> MirResult<'a> {
@@ -141,8 +145,7 @@ impl<'a> Mir<'a> {
 
         match binary.op.unwrap() {
             OpType::Add => {
-                if let Some(Trait::Add { code: _, skeleton }) = left.1.traits.get(&TraitType::Add)
-                {
+                if let Some(Trait::Add { code: _, skeleton }) = left.1.traits.get(&TraitType::Add) {
                     skeleton(self, &node.pos, left.1, right.1);
                 } else {
                     unimplemented!();
@@ -151,12 +154,18 @@ impl<'a> Mir<'a> {
         }
 
         self.instructions.push(MirInstruction {
-            instruction: RawMirInstruction::Add { left: left.0, right: right.0 },
+            instruction: RawMirInstruction::Add {
+                left: left.0,
+                right: right.0,
+            },
             pos: node.pos.clone(),
             tp: self.builtins.get(&BasicType::I32).unwrap().clone(),
         });
-        
-        (self.instructions.len() - 1, self.builtins.get(&BasicType::I32).unwrap().clone())
+
+        (
+            self.instructions.len() - 1,
+            self.builtins.get(&BasicType::I32).unwrap().clone(),
+        )
     }
 
     fn generate_let(&mut self, node: &Node) -> MirResult<'a> {
@@ -182,8 +191,11 @@ impl<'a> Mir<'a> {
             pos: node.pos.clone(),
             tp: self.builtins.get(&BasicType::Void).unwrap().clone(),
         });
-        
-        (self.instructions.len() - 1, self.builtins.get(&BasicType::I32).unwrap().clone())
+
+        (
+            self.instructions.len() - 1,
+            self.builtins.get(&BasicType::I32).unwrap().clone(),
+        )
     }
 
     fn generate_load(&mut self, node: &Node) -> MirResult<'a> {
@@ -195,7 +207,10 @@ impl<'a> Mir<'a> {
             pos: node.pos.clone(),
             tp: self.builtins.get(&BasicType::I32).unwrap().clone(),
         });
-        
-        (self.instructions.len() - 1, self.builtins.get(&BasicType::I32).unwrap().clone())
+
+        (
+            self.instructions.len() - 1,
+            self.builtins.get(&BasicType::I32).unwrap().clone(),
+        )
     }
 }
