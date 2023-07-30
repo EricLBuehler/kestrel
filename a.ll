@@ -3,7 +3,7 @@ source_filename = "program.ke"
 target triple = "x86_64-unknown-linux-gnu"
 
 @0 = private constant [51 x i8] c"Error: i32 addition overflow!\0A    program.ke:1:12\0A\00"
-@1 = private constant [51 x i8] c"Error: i32 addition overflow!\0A    program.ke:3:10\0A\00"
+@1 = private constant [51 x i8] c"Error: i32 addition overflow!\0A    program.ke:4:10\0A\00"
 
 ; Function Attrs: nofree nounwind
 declare noundef i32 @printf(i8* nocapture noundef readonly) local_unnamed_addr #0
@@ -31,24 +31,27 @@ define i32 @main(i32 %0, i32** %1) local_unnamed_addr #1 {
   %14 = alloca i32, align 4
   store i32 %13, i32* %14, align 4
   %15 = load i32, i32* %12, align 4
-  %16 = load i32, i32* %14, align 4
-  %17 = call { i32, i1 } @llvm.sadd.with.overflow.i32.i32(i32 %15, i32 %16)
-  %18 = extractvalue { i32, i1 } %17, 0
-  %19 = extractvalue { i32, i1 } %17, 1
-  %20 = call i1 @llvm.expect.i1.i1(i1 %19, i1 false)
-  br i1 %20, label %21, label %23
-
-21:                                               ; preds = %10
-  %22 = call i32 @printf(i8* getelementptr inbounds ([51 x i8], [51 x i8]* @1, i32 0, i32 0))
-  br label %24
+  %16 = alloca i32, align 4
+  store i32 %15, i32* %16, align 4
+  %17 = load i32, i32* %16, align 4
+  %18 = load i32, i32* %14, align 4
+  %19 = call { i32, i1 } @llvm.sadd.with.overflow.i32.i32(i32 %17, i32 %18)
+  %20 = extractvalue { i32, i1 } %19, 0
+  %21 = extractvalue { i32, i1 } %19, 1
+  %22 = call i1 @llvm.expect.i1.i1(i1 %21, i1 false)
+  br i1 %22, label %23, label %25
 
 23:                                               ; preds = %10
-  br label %24
+  %24 = call i32 @printf(i8* getelementptr inbounds ([51 x i8], [51 x i8]* @1, i32 0, i32 0))
+  br label %26
 
-24:                                               ; preds = %23, %21
-  %25 = phi i32 [ %18, %23 ], [ undef, %21 ]
-  %26 = alloca i32, align 4
-  store i32 %25, i32* %26, align 4
+25:                                               ; preds = %10
+  br label %26
+
+26:                                               ; preds = %25, %23
+  %27 = phi i32 [ %20, %25 ], [ undef, %23 ]
+  %28 = alloca i32, align 4
+  store i32 %27, i32* %28, align 4
   ret i32 0
 }
 

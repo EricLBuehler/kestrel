@@ -35,12 +35,18 @@ main:                                   # @main
 	movq	%rdx, %rsp
 	movl	%eax, -16(%rcx)
 	movl	-16(%rcx), %eax
+	movq	%rsp, %rdx
+	movq	%rdx, %rsi
+	addq	$-16, %rsi
+	movq	%rsi, %rsp
+	movl	%eax, -16(%rdx)
+	movl	-16(%rcx), %eax
 	movq	%rsp, %rcx
 	addq	$-16, %rcx
 	movq	%rcx, %rsp
 	movl	%eax, (%rcx)
-	movl	(%rdx), %eax
-	addl	(%rcx), %eax
+	movl	(%rcx), %eax
+	addl	(%rsi), %eax
 	seto	%cl
 	testb	$1, %cl
 	jne	.LBB0_4
@@ -76,7 +82,7 @@ main:                                   # @main
 	.type	.L__unnamed_2,@object           # @1
 	.p2align	4
 .L__unnamed_2:
-	.asciz	"Error: i32 addition overflow!\n    program.ke:3:10\n"
+	.asciz	"Error: i32 addition overflow!\n    program.ke:4:10\n"
 	.size	.L__unnamed_2, 51
 
 	.section	".note.GNU-stack","",@progbits

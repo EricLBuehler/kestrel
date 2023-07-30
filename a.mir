@@ -9,8 +9,12 @@
 8:   own 6
 9:   store 😀 6 -> std::void['static]
 10:  load 😀🤠 -> std::i32['static]
-11:  load 😀 -> std::i32['static]
-12:  add 10 11 -> std::i32['static]
-13:  declare 🤠
-14:  own 12
-15:  store 🤠 12 -> std::void['static]
+11:  declare 🤠😀
+12:  own 10
+13:  store 🤠😀 10 -> std::void['static]
+14:  load 🤠😀 -> std::i32['static]
+15:  load 😀 -> std::i32['static]
+16:  add 14 15 -> std::i32['static]
+17:  declare 🤠
+18:  own 16
+19:  store 🤠 16 -> std::void['static]
