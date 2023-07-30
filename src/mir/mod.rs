@@ -148,7 +148,12 @@ impl<'a> Mir<'a> {
                 if let Some(Trait::Add { code: _, skeleton }) = left.1.traits.get(&TraitType::Add) {
                     skeleton(self, &node.pos, left.1, right.1);
                 } else {
-                    unimplemented!();
+                    raise_error(
+                        &format!("Type '{}' does not implement Add.", left.1.qualname),
+                        ErrorType::TypeMismatch,
+                        &node.pos,
+                        &self.info,
+                    );
                 }
             }
         }

@@ -122,7 +122,12 @@ impl<'a> CodeGen<'a> {
                 {
                     code(self, &node.pos, left, right)
                 } else {
-                    unimplemented!();
+                    raise_error(
+                        &format!("Type '{}' does not implement Add.", left.tp.qualname),
+                        ErrorType::TypeMismatch,
+                        &node.pos,
+                        &self.info,
+                    );
                 }
             }
         }
