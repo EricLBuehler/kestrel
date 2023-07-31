@@ -89,6 +89,28 @@ impl<'a> Parser<'a> {
         self.current.tp == tp
     }
 
+    fn current_is_keyword(&mut self, name: &str) -> bool {
+        if !self.current_is_type(TokenType::Keyword) {
+            return false;
+        }
+        self.current.data == name
+    }
+
+    fn if_kwd_expect_keyword(&mut self, name: &str) {
+        if self.current_is_type(TokenType::Keyword) {
+            if self.current.data != name {   
+                self.raise_error(
+                    format!(
+                        "Because there is a keyword here, '{}' was expected, but got '{}'.",
+                        name, self.current.data
+                    )
+                    .as_str(),
+                    ErrorType::InvalidTok,
+                )
+            }
+        }
+    }
+
     fn expect(&mut self, typ: TokenType) {
         if !self.current_is_type(typ.clone()) {
             self.raise_error(
@@ -108,7 +130,7 @@ impl<'a> Parser<'a> {
             errtp,
             &Position {
                 startcol: self.current.start.startcol,
-                endcol: self.current.end.endcol - 1,
+                endcol: self.current.end.endcol,
                 line: self.current.start.line,
             },
             &self.info,
@@ -164,6 +186,12 @@ impl<'a> Parser<'a> {
     fn generate_let(&mut self) -> Node {
         self.advance();
 
+        let is_mut = self.current_is_keyword("mut");
+        self.if_kwd_expect_keyword("mut");
+        if is_mut {
+            self.advance();
+        }
+
         self.expect(TokenType::Identifier);
 
         let name = self.atom().unwrap();
@@ -186,6 +214,7 @@ impl<'a> Parser<'a> {
             Box::new(LetNode {
                 name: name.data.get_data().raw.get("value").unwrap().clone(),
                 expr,
+                is_mut,
             }),
         )
     }

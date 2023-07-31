@@ -31,6 +31,7 @@ pub struct NodeValue<'a> {
     pub nodearr: Option<&'a Vec<Node>>,
     pub args: Option<Vec<String>>,
     pub mapping: Option<&'a Vec<(Node, Node)>>,
+    pub booleans: HashMap<String, bool>,
 }
 
 pub trait NodeData {
@@ -52,6 +53,7 @@ impl<'a> NodeValue<'a> {
             nodearr: None,
             args: None,
             mapping: None,
+            booleans: HashMap::new(),
         }
     }
 }
@@ -120,6 +122,7 @@ impl NodeData for IdentifierNode {
 pub struct LetNode {
     pub name: String,
     pub expr: Node,
+    pub is_mut: bool,
 }
 
 impl NodeData for LetNode {
@@ -127,6 +130,7 @@ impl NodeData for LetNode {
         let mut value = NodeValue::new();
         value.raw.insert(String::from("name"), self.name.to_owned());
         value.nodes.insert(String::from("expr"), &self.expr);
+        value.booleans.insert(String::from("is_mut"), self.is_mut);
 
         value
     }

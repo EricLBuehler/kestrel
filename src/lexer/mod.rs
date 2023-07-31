@@ -210,7 +210,7 @@ fn make_number(lexer: &mut Lexer) -> Token {
         end: Position {
             line: lexer.line,
             startcol: lexer.col,
-            endcol: lexer.col + 1,
+            endcol: lexer.col,
         },
     }
 }
@@ -241,8 +241,8 @@ fn make_identifier(lexer: &mut Lexer, kwds: &[String]) -> Token {
         start,
         end: Position {
             line: lexer.line,
-            startcol: lexer.col + 1,
-            endcol: lexer.col + 1,
+            startcol: lexer.col,
+            endcol: lexer.col,
         },
     }
 }
