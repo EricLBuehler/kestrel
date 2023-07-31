@@ -20,7 +20,7 @@ pub fn check(mut instructions: Vec<MirInstruction>, info: FileInfo<'_>) {
     let mut leftime_num = 0;
 
     for i in 0..instructions.len() {
-        let instruction = instructions.get(i).unwrap().clone();
+        let mut instruction = instructions.get(i).unwrap().clone();
         match instruction.instruction {
             RawMirInstruction::I32(_) => {}
             RawMirInstruction::Add { left: _, right: _ } => {}
@@ -103,6 +103,11 @@ pub fn check(mut instructions: Vec<MirInstruction>, info: FileInfo<'_>) {
                 } else {
                     namespace.get_mut(name).unwrap().1.owner = Some(i);
                 }
+
+                instructions.remove(i);
+                let mutable_type = instruction.tp.as_mut().unwrap();
+                mutable_type.lifetime = namespace.get_mut(name).unwrap().1.lifetime.clone();
+                instructions.insert(i, instruction);
             }
             RawMirInstruction::Own(ref item) => {
                 if let RawMirInstruction::Load(ref name) =
