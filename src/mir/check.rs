@@ -29,16 +29,17 @@ pub fn check(mut instructions: Vec<MirInstruction>, info: FileInfo<'_>) {
 
                 let mut end_mir = i;
                 for j in i..instructions.len() {
-                    if let RawMirInstruction::Load(load_name) = &instructions.get(j).as_ref().unwrap().instruction {
+                    if let RawMirInstruction::Load(load_name) =
+                        &instructions.get(j).as_ref().unwrap().instruction
+                    {
                         if name == load_name {
                             break;
                         }
-                    }
-                    else {
-                        end_mir+=1;
+                    } else {
+                        end_mir += 1;
                     }
                 }
-                
+
                 namespace.insert(
                     name.clone(),
                     (
@@ -46,7 +47,11 @@ pub fn check(mut instructions: Vec<MirInstruction>, info: FileInfo<'_>) {
                         MirTag {
                             isowned: true,
                             owner: None,
-                            lifetime: Lifetime::ImplicitLifetime { name: leftime_num.to_string(), start_mir: i, end_mir: end_mir.clamp(0, instructions.len()-1) },
+                            lifetime: Lifetime::ImplicitLifetime {
+                                name: leftime_num.to_string(),
+                                start_mir: i,
+                                end_mir: end_mir.clamp(0, instructions.len() - 1),
+                            },
                         },
                     ),
                 );
@@ -108,7 +113,7 @@ pub fn check(mut instructions: Vec<MirInstruction>, info: FileInfo<'_>) {
             }
         }
     }
-    
+
     let mut out = String::new();
     for (i, instruction) in instructions.iter().enumerate() {
         out.push_str(&format!("{:<5}", format!("{}:", i)));
