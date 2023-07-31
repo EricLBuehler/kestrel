@@ -13,9 +13,10 @@ main:                                   # @main
 	.cfi_offset %rbp, -16
 	movq	%rsp, %rbp
 	.cfi_def_cfa_register %rbp
+	pushq	%r14
 	pushq	%rbx
-	pushq	%rax
-	.cfi_offset %rbx, -24
+	.cfi_offset %rbx, -32
+	.cfi_offset %r14, -24
                                         # kill: killed $rsi
                                         # kill: killed $edi
 	movl	$1, %eax
@@ -33,9 +34,9 @@ main:                                   # @main
 	jmp	.LBB0_3
 .LBB0_3:
 	movq	%rsp, %rcx
-	movq	%rcx, %rdx
-	addq	$-16, %rdx
-	movq	%rdx, %rsp
+	movq	%rcx, %r14
+	addq	$-16, %r14
+	movq	%r14, %rsp
 	movl	%eax, -16(%rcx)
 	movl	-16(%rcx), %eax
 	movq	%rsp, %rdx
@@ -67,7 +68,7 @@ main:                                   # @main
 	movq	%rcx, %rsp
 	movl	%eax, (%rcx)
 	movl	(%rbx), %eax
-	incl	%eax
+	addl	(%r14), %eax
 	seto	%al
 	testb	$1, %al
 	jne	.LBB0_7
@@ -80,8 +81,9 @@ main:                                   # @main
 	jmp	.LBB0_9
 .LBB0_9:
 	xorl	%eax, %eax
-	leaq	-8(%rbp), %rsp
+	leaq	-16(%rbp), %rsp
 	popq	%rbx
+	popq	%r14
 	popq	%rbp
 	.cfi_def_cfa %rsp, 8
 	retq
