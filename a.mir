@@ -1,21 +1,21 @@
 .0:   i32 1 -> std::i32['static]
 .1:   i32 2 -> std::i32['static]
 .2:   add .0 .1 -> std::i32['static]
-.3:   declare 😀🤠['1 .3 => .24]
+.3:   declare  😀🤠['1 .3 => .24]
 .4:   own .2
 .5:   store 😀🤠 .2 -> std::void['static]
 .6:   load 😀🤠 -> std::i32['static]
-.7:   declare 😀['2 .7 => .15]
+.7:   declare  😀['2 .7 => .15]
 .8:   own .6
 .9:   store 😀 .6 -> std::void['static]
 .10:  load 😀🤠 -> std::i32['static]
-.11:  declare 🤠😀['3 .11 => .23]
+.11:  declare  🤠😀['3 .11 => .23]
 .12:  own .10
 .13:  store 🤠😀 .10 -> std::void['static]
 .14:  load 🤠😀 -> std::i32['static]
 .15:  load 😀 -> std::i32['static]
 .16:  add .14 .15 -> std::i32['static]
-.17:  declare 🤠['4 .17 => .21]
+.17:  declare mut 🤠['4 .17 => .21]
 .18:  own .16
 .19:  store 🤠 .16 -> std::void['static]
 .20:  i32 0 -> std::i32['static]

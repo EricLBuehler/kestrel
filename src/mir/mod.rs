@@ -20,7 +20,7 @@ pub struct Mir<'a> {
 pub enum RawMirInstruction {
     I32(String),
     Add { left: usize, right: usize },
-    Declare(String),
+    Declare{name: String, is_mut: bool},
     Store { name: String, right: usize },
     Own(usize),
     Load(String),
@@ -41,8 +41,8 @@ impl Display for RawMirInstruction {
             RawMirInstruction::Add { left, right } => {
                 write!(f, "add .{left} .{right}")
             }
-            RawMirInstruction::Declare(name) => {
-                write!(f, "declare {name}")
+            RawMirInstruction::Declare{name, is_mut} => {
+                write!(f, "declare {} {}", if *is_mut {"mut"} else {""}, name)
             }
             RawMirInstruction::I32(value) => {
                 write!(f, "i32 {value}")
@@ -173,7 +173,7 @@ impl<'a> Mir<'a> {
         let is_mut = letnode.booleans.get("is_mut").unwrap();
 
         self.instructions.push(MirInstruction {
-            instruction: RawMirInstruction::Declare(name.to_string()),
+            instruction: RawMirInstruction::Declare{name:name.to_string(), is_mut: *is_mut},
             pos: node.pos.clone(),
             tp: None,
         });
