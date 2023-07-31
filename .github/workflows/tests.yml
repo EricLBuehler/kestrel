@@ -18,7 +18,7 @@ jobs:
     - name: Install llvm
       run: sudo apt install llvm
     - name: Default
-      run: ./kestrel program.ke
+      run: pwd
     - name: Optimized and Sanitized
       run: ./kestrel program.ke -o -fsanitize
     - name: Optimized and No OU
