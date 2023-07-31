@@ -39,7 +39,7 @@ impl Display for RawMirInstruction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             RawMirInstruction::Add { left, right } => {
-                write!(f, "add {left} {right}")
+                write!(f, "add #{left} #{right}")
             }
             RawMirInstruction::Declare(name) => {
                 write!(f, "declare {name}")
@@ -51,10 +51,10 @@ impl Display for RawMirInstruction {
                 write!(f, "load {name}")
             }
             RawMirInstruction::Own(result) => {
-                write!(f, "own {result}")
+                write!(f, "own #{result}")
             }
             RawMirInstruction::Store { name, right } => {
-                write!(f, "store {name} {right}")
+                write!(f, "store {name} #{right}")
             }
         }
     }

@@ -76,7 +76,7 @@ impl Display for Lifetime {
                 start_mir,
                 end_mir,
             } => {
-                write!(f, "['{} {} => {}]", name, start_mir, end_mir)
+                write!(f, "['{} #{} => #{}]", name, start_mir, end_mir)
             }
         }
     }
