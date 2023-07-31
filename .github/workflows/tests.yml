@@ -18,16 +18,16 @@ jobs:
     - name: Install llvm
       run: sudo apt install llvm
     - name: Default
-      run: make
+      run: ./kestrel program.ke
     - name: Optimized and Sanitized
-      run: make
+      run: ./kestrel program.ke -o -fsanitize
     - name: Optimized and No OU
-      run: make
+      run: ./kestrel program.ke -o -fno-ou-checks
     - name: Optimized and all flags
-      run: make
+      run: ./kestrel program.ke -o -fno-ou-checks -fsanitize
     - name: Not optimized and Sanitized
-      run: make
+      run: ./kestrel program.ke -fsanitize
     - name: Not optimized and No OU
-      run: make
+      run: ./kestrel program.ke -fno-ou-checks
     - name: Not optimized and all flags
-      run: make
+      run: ./kestrel program.ke -fno-ou-checks -fsanitize
