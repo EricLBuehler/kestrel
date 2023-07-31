@@ -1,11 +1,13 @@
 use crate::{
-    errors::{ErrorType, raise_error},
+    errors::{raise_error, ErrorType},
     lexer::{Token, TokenType},
     utils::{FileInfo, Position},
 };
 
 pub mod nodes;
-use self::nodes::{BinaryNode, DecimalNode, IdentifierNode, LetNode, Node, OpType, StoreNode, NodeType};
+use self::nodes::{
+    BinaryNode, DecimalNode, IdentifierNode, LetNode, Node, NodeType, OpType, StoreNode,
+};
 
 pub struct Parser<'a> {
     current: Token,
@@ -105,17 +107,15 @@ impl<'a> Parser<'a> {
     }
 
     fn if_kwd_expect_keyword(&mut self, name: &str) {
-        if self.current_is_type(TokenType::Keyword) {
-            if self.current.data != name {   
-                self.raise_error(
-                    format!(
-                        "Because there is a keyword here, '{}' was expected, but got '{}'.",
-                        name, self.current.data
-                    )
-                    .as_str(),
-                    ErrorType::InvalidTok,
+        if self.current_is_type(TokenType::Keyword) && self.current.data != name {
+            self.raise_error(
+                format!(
+                    "Because there is a keyword here, '{}' was expected, but got '{}'.",
+                    name, self.current.data
                 )
-            }
+                .as_str(),
+                ErrorType::InvalidTok,
+            )
         }
     }
 
@@ -353,10 +353,7 @@ impl<'a> Parser<'a> {
 
         if left.tp != NodeType::Identifier {
             raise_error(
-                format!(
-                    "Expected identifier node."
-                )
-                .as_str(),
+                "Expected identifier node.",
                 ErrorType::InvalidTok,
                 &left.pos,
                 &self.info,
@@ -375,7 +372,7 @@ impl<'a> Parser<'a> {
             nodes::NodeType::Store,
             Box::new(StoreNode {
                 name: left.data.get_data().raw.get("value").unwrap().clone(),
-                expr
+                expr,
             }),
         )
     }

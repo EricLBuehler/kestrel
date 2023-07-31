@@ -123,7 +123,7 @@ fn i32_add<'a>(
         codegen.cur_block = Some(done_block);
 
         Data {
-            data: Some(phi.as_basic_value().into()),
+            data: Some(phi.as_basic_value()),
             tp: this.tp,
         }
     } else {

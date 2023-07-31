@@ -1,10 +1,11 @@
 use std::{collections::HashMap, fmt::Display};
 
 use crate::{
+    codegen::BindingTags,
     errors::{raise_error, ErrorType},
     parser::nodes::{Node, NodeType, OpType},
     types::{BasicType, BuiltinTypes, Trait, TraitType, Type},
-    utils::{FileInfo, Position}, codegen::BindingTags,
+    utils::{FileInfo, Position},
 };
 
 mod check;
@@ -20,7 +21,7 @@ pub struct Mir<'a> {
 pub enum RawMirInstruction {
     I32(String),
     Add { left: usize, right: usize },
-    Declare{name: String, is_mut: bool},
+    Declare { name: String, is_mut: bool },
     Store { name: String, right: usize },
     Own(usize),
     Load(String),
@@ -41,8 +42,8 @@ impl Display for RawMirInstruction {
             RawMirInstruction::Add { left, right } => {
                 write!(f, "add .{left} .{right}")
             }
-            RawMirInstruction::Declare{name, is_mut} => {
-                write!(f, "declare {} {}", if *is_mut {"mut"} else {""}, name)
+            RawMirInstruction::Declare { name, is_mut } => {
+                write!(f, "declare {} {}", if *is_mut { "mut" } else { "" }, name)
             }
             RawMirInstruction::I32(value) => {
                 write!(f, "i32 {value}")
@@ -173,7 +174,10 @@ impl<'a> Mir<'a> {
         let is_mut = letnode.booleans.get("is_mut").unwrap();
 
         self.instructions.push(MirInstruction {
-            instruction: RawMirInstruction::Declare{name:name.to_string(), is_mut: *is_mut},
+            instruction: RawMirInstruction::Declare {
+                name: name.to_string(),
+                is_mut: *is_mut,
+            },
             pos: node.pos.clone(),
             tp: None,
         });
@@ -191,7 +195,8 @@ impl<'a> Mir<'a> {
             tp: Some(self.builtins.get(&BasicType::Void).unwrap().clone()),
         });
 
-        self.namespace.insert(name.clone(), (right.1, BindingTags { is_mut: *is_mut }));
+        self.namespace
+            .insert(name.clone(), (right.1, BindingTags { is_mut: *is_mut }));
 
         (
             self.instructions.len() - 1,
@@ -230,12 +235,15 @@ impl<'a> Mir<'a> {
             let fmt: String = format!("Binding '{}' not found in scope.", name);
             raise_error(&fmt, ErrorType::BindingNotFound, &node.pos, &self.info);
         }
-        
+
         let binding = self.namespace.get(name).unwrap();
-        
+
         if right.1 != binding.0 {
             raise_error(
-                &format!("Expected '{}', got '{}'", binding.0.qualname, right.1.qualname),
+                &format!(
+                    "Expected '{}', got '{}'",
+                    binding.0.qualname, right.1.qualname
+                ),
                 ErrorType::TypeMismatch,
                 &expr.pos,
                 &self.info,
@@ -244,7 +252,10 @@ impl<'a> Mir<'a> {
 
         if !binding.1.is_mut {
             raise_error(
-                &format!("Binding '{}' is not mutable, so it cannot be assigned to.", name),
+                &format!(
+                    "Binding '{}' is not mutable, so it cannot be assigned to.",
+                    name
+                ),
                 ErrorType::BindingNotMutable,
                 &node.pos,
                 &self.info,
@@ -252,7 +263,10 @@ impl<'a> Mir<'a> {
         }
 
         self.instructions.push(MirInstruction {
-            instruction: RawMirInstruction::Store { name: name.to_string(), right: right.0 },
+            instruction: RawMirInstruction::Store {
+                name: name.to_string(),
+                right: right.0,
+            },
             pos: node.pos.clone(),
             tp: Some(self.namespace.get(name).unwrap().0.clone()),
         });

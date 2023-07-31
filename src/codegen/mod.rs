@@ -6,7 +6,7 @@ use inkwell::{
     module::FlagBehavior,
     module::Module,
     passes::PassManagerSubType,
-    values::{BasicValue, FunctionValue, PointerValue, BasicValueEnum},
+    values::{BasicValue, BasicValueEnum, FunctionValue, PointerValue},
 };
 use std::{collections::HashMap, error::Error};
 
@@ -152,12 +152,15 @@ impl<'a> CodeGen<'a> {
             alloc,
             right.data.unwrap().into_int_value().as_basic_value_enum(),
         );
-        
+
         self.namespaces
             .get_mut(&self.cur_fn.unwrap())
             .unwrap()
             .bindings
-            .insert(name.clone(), (alloc, right.tp, BindingTags { is_mut: *is_mut }));
+            .insert(
+                name.clone(),
+                (alloc, right.tp, BindingTags { is_mut: *is_mut }),
+            );
 
         Data {
             data: None,
@@ -184,7 +187,7 @@ impl<'a> CodeGen<'a> {
         let binding = binding.unwrap();
 
         Data {
-            data: Some(self.builder.build_load(binding.0, "").into()),
+            data: Some(self.builder.build_load(binding.0, "")),
             tp: binding.1.clone(),
         }
     }
@@ -211,19 +214,25 @@ impl<'a> CodeGen<'a> {
 
         if right.tp != binding.1 {
             raise_error(
-                &format!("Expected '{}', got '{}'", binding.1.qualname, right.tp.qualname),
+                &format!(
+                    "Expected '{}', got '{}'",
+                    binding.1.qualname, right.tp.qualname
+                ),
                 ErrorType::TypeMismatch,
                 &expr.pos,
-                &self.info,
+                self.info,
             );
         }
 
         if !binding.2.is_mut {
             raise_error(
-                &format!("Binding '{}' is not mutable, so it cannot be assigned to.", name),
+                &format!(
+                    "Binding '{}' is not mutable, so it cannot be assigned to.",
+                    name
+                ),
                 ErrorType::BindingNotMutable,
                 &node.pos,
-                &self.info,
+                self.info,
             );
         }
 

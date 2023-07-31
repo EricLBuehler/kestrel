@@ -24,7 +24,10 @@ pub fn check(mut instructions: Vec<MirInstruction>, info: FileInfo<'_>) {
         match instruction.instruction {
             RawMirInstruction::I32(_) => {}
             RawMirInstruction::Add { left: _, right: _ } => {}
-            RawMirInstruction::Declare{ref name, is_mut: _} => {
+            RawMirInstruction::Declare {
+                ref name,
+                is_mut: _,
+            } => {
                 leftime_num += 1;
 
                 let mut uses = Vec::new();
@@ -131,7 +134,7 @@ pub fn check(mut instructions: Vec<MirInstruction>, info: FileInfo<'_>) {
     for (i, instruction) in instructions.iter().enumerate() {
         out.push_str(&format!(".{:<5}", format!("{}:", i)));
         out.push_str(&instruction.instruction.to_string());
-        if let RawMirInstruction::Declare{name, is_mut: _} = &instruction.instruction {
+        if let RawMirInstruction::Declare { name, is_mut: _ } = &instruction.instruction {
             out.push_str(&namespace.get(name).unwrap().1.lifetime.to_string());
         }
         if instruction.tp.is_some() {

@@ -21,7 +21,7 @@ pub enum NodeType {
     Binary,
     Identifier,
     Let,
-    Store
+    Store,
 }
 
 #[derive(Debug)]
