@@ -4,6 +4,7 @@ target triple = "x86_64-unknown-linux-gnu"
 
 @0 = private constant [51 x i8] c"Error: i32 addition overflow!\0A    program.ke:1:12\0A\00"
 @1 = private constant [51 x i8] c"Error: i32 addition overflow!\0A    program.ke:4:10\0A\00"
+@2 = private constant [50 x i8] c"Error: i32 addition overflow!\0A    program.ke:5:1\0A\00"
 
 ; Function Attrs: nofree nounwind
 declare noundef i32 @printf(i8* nocapture noundef readonly) local_unnamed_addr #0
@@ -52,6 +53,22 @@ define i32 @main(i32 %0, i32** %1) local_unnamed_addr #1 {
   %27 = phi i32 [ %20, %25 ], [ undef, %23 ]
   %28 = alloca i32, align 4
   store i32 %27, i32* %28, align 4
+  %29 = load i32, i32* %16, align 4
+  %30 = call { i32, i1 } @llvm.sadd.with.overflow.i32.i32(i32 %29, i32 1)
+  %31 = extractvalue { i32, i1 } %30, 0
+  %32 = extractvalue { i32, i1 } %30, 1
+  %33 = call i1 @llvm.expect.i1.i1(i1 %32, i1 false)
+  br i1 %33, label %34, label %36
+
+34:                                               ; preds = %26
+  %35 = call i32 @printf(i8* getelementptr inbounds ([50 x i8], [50 x i8]* @2, i32 0, i32 0))
+  br label %37
+
+36:                                               ; preds = %26
+  br label %37
+
+37:                                               ; preds = %36, %34
+  %38 = phi i32 [ %31, %36 ], [ undef, %34 ]
   ret i32 0
 }
 

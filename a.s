@@ -13,6 +13,9 @@ main:                                   # @main
 	.cfi_offset %rbp, -16
 	movq	%rsp, %rbp
 	.cfi_def_cfa_register %rbp
+	pushq	%rbx
+	pushq	%rax
+	.cfi_offset %rbx, -24
                                         # kill: killed $rsi
                                         # kill: killed $edi
 	movl	$1, %eax
@@ -41,11 +44,11 @@ main:                                   # @main
 	movq	%rsi, %rsp
 	movl	%eax, -16(%rdx)
 	movl	-16(%rcx), %eax
-	movq	%rsp, %rcx
-	addq	$-16, %rcx
-	movq	%rcx, %rsp
-	movl	%eax, (%rcx)
-	movl	(%rcx), %eax
+	movq	%rsp, %rbx
+	addq	$-16, %rbx
+	movq	%rbx, %rsp
+	movl	%eax, (%rbx)
+	movl	(%rbx), %eax
 	addl	(%rsi), %eax
 	seto	%cl
 	testb	$1, %cl
@@ -63,8 +66,22 @@ main:                                   # @main
 	addq	$-16, %rcx
 	movq	%rcx, %rsp
 	movl	%eax, (%rcx)
+	movl	(%rbx), %eax
+	incl	%eax
+	seto	%al
+	testb	$1, %al
+	jne	.LBB0_7
+	jmp	.LBB0_8
+.LBB0_7:
+	movabsq	$.L__unnamed_3, %rdi
+	callq	printf@PLT
+	jmp	.LBB0_9
+.LBB0_8:
+	jmp	.LBB0_9
+.LBB0_9:
 	xorl	%eax, %eax
-	movq	%rbp, %rsp
+	leaq	-8(%rbp), %rsp
+	popq	%rbx
 	popq	%rbp
 	.cfi_def_cfa %rsp, 8
 	retq
@@ -84,5 +101,11 @@ main:                                   # @main
 .L__unnamed_2:
 	.asciz	"Error: i32 addition overflow!\n    program.ke:4:10\n"
 	.size	.L__unnamed_2, 51
+
+	.type	.L__unnamed_3,@object           # @2
+	.p2align	4
+.L__unnamed_3:
+	.asciz	"Error: i32 addition overflow!\n    program.ke:5:1\n"
+	.size	.L__unnamed_3, 50
 
 	.section	".note.GNU-stack","",@progbits

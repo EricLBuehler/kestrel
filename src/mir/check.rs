@@ -27,17 +27,30 @@ pub fn check(mut instructions: Vec<MirInstruction>, info: FileInfo<'_>) {
             RawMirInstruction::Declare(ref name) => {
                 leftime_num += 1;
 
-                let mut end_mir = i;
+                let mut uses = Vec::new();
                 for j in i..instructions.len() {
                     if let RawMirInstruction::Load(load_name) =
                         &instructions.get(j).as_ref().unwrap().instruction
                     {
                         if name == load_name {
-                            break;
+                            uses.push(j);
                         }
-                    } else {
-                        end_mir += 1;
+                    } 
+                    
+                    if let RawMirInstruction::Store{name: load_name, right: _} =
+                        &instructions.get(j).as_ref().unwrap().instruction
+                    {
+                        if name == load_name {
+                            uses.push(j);
+                        }
                     }
+                }
+                let end_mir: usize;
+                if uses.is_empty() {
+                    end_mir = i;
+                }
+                else {
+                    end_mir = *uses.last().unwrap();
                 }
 
                 namespace.insert(
@@ -50,7 +63,7 @@ pub fn check(mut instructions: Vec<MirInstruction>, info: FileInfo<'_>) {
                             lifetime: Lifetime::ImplicitLifetime {
                                 name: leftime_num.to_string(),
                                 start_mir: i,
-                                end_mir: end_mir.clamp(0, instructions.len() - 1),
+                                end_mir: end_mir,
                             },
                         },
                     ),
