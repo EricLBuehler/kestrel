@@ -68,7 +68,7 @@ impl Display for Lifetime {
                 write!(f, "['static]")
             }
             Lifetime::ImplicitLifetime { name, start_mir, end_mir} => {
-                write!(f, "['{} {}-{}]", name,start_mir,end_mir)
+                write!(f, "['{} {} => {}]", name,start_mir,end_mir)
             }
         }
     }
