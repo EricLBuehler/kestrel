@@ -4,7 +4,7 @@ use crate::{
     errors::{raise_error, ErrorType},
     parser::nodes::{Node, NodeType, OpType},
     types::{BasicType, BuiltinTypes, Trait, TraitType, Type},
-    utils::{FileInfo, Position},
+    utils::{FileInfo, Position}, codegen::BindingTags,
 };
 
 mod check;
@@ -13,7 +13,7 @@ pub struct Mir<'a> {
     pub info: FileInfo<'a>,
     instructions: Vec<MirInstruction<'a>>,
     builtins: BuiltinTypes<'a>,
-    namespace: HashMap<String, Type<'a>>,
+    namespace: HashMap<String, (Type<'a>, BindingTags)>,
 }
 
 #[derive(Clone)]
@@ -88,7 +88,7 @@ impl<'a> Mir<'a> {
             NodeType::Binary => self.generate_binary(node),
             NodeType::Let => self.generate_let(node),
             NodeType::Identifier => self.generate_load(node),
-            NodeType::Store => todo!(),
+            NodeType::Store => self.generate_store(node),
         }
     }
 }
@@ -170,6 +170,7 @@ impl<'a> Mir<'a> {
         let letnode = node.data.get_data();
         let name = letnode.raw.get("name").unwrap();
         let right = self.generate_expr(letnode.nodes.get("expr").unwrap());
+        let is_mut = letnode.booleans.get("is_mut").unwrap();
 
         self.instructions.push(MirInstruction {
             instruction: RawMirInstruction::Declare(name.to_string()),
@@ -190,7 +191,7 @@ impl<'a> Mir<'a> {
             tp: Some(self.builtins.get(&BasicType::Void).unwrap().clone()),
         });
 
-        self.namespace.insert(name.clone(), right.1);
+        self.namespace.insert(name.clone(), (right.1, BindingTags { is_mut: *is_mut }));
 
         (
             self.instructions.len() - 1,
@@ -210,12 +211,55 @@ impl<'a> Mir<'a> {
         self.instructions.push(MirInstruction {
             instruction: RawMirInstruction::Load(name.to_string()),
             pos: node.pos.clone(),
-            tp: Some(self.namespace.get(name).unwrap().clone()),
+            tp: Some(self.namespace.get(name).unwrap().0.clone()),
         });
 
         (
             self.instructions.len() - 1,
-            self.namespace.get(name).unwrap().clone(),
+            self.namespace.get(name).unwrap().0.clone(),
+        )
+    }
+
+    fn generate_store(&mut self, node: &Node) -> MirResult<'a> {
+        let storenode = node.data.get_data();
+        let name = storenode.raw.get("name").unwrap();
+        let expr = storenode.nodes.get("expr").unwrap();
+        let right = self.generate_expr(expr);
+
+        if self.namespace.get(name).is_none() {
+            let fmt: String = format!("Binding '{}' not found in scope.", name);
+            raise_error(&fmt, ErrorType::BindingNotFound, &node.pos, &self.info);
+        }
+        
+        let binding = self.namespace.get(name).unwrap();
+        
+        if right.1 != binding.0 {
+            raise_error(
+                &format!("Expected '{}', got '{}'", binding.0.qualname, right.1.qualname),
+                ErrorType::TypeMismatch,
+                &expr.pos,
+                &self.info,
+            );
+        }
+
+        if !binding.1.is_mut {
+            raise_error(
+                &format!("Binding '{}' is not mutable, so it cannot be assigned to.", name),
+                ErrorType::BindingNotMutable,
+                &node.pos,
+                &self.info,
+            );
+        }
+
+        self.instructions.push(MirInstruction {
+            instruction: RawMirInstruction::Store { name: name.to_string(), right: right.0 },
+            pos: node.pos.clone(),
+            tp: Some(self.namespace.get(name).unwrap().0.clone()),
+        });
+
+        (
+            self.instructions.len() - 1,
+            self.namespace.get(name).unwrap().0.clone(),
         )
     }
 }

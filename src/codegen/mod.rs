@@ -6,7 +6,7 @@ use inkwell::{
     module::FlagBehavior,
     module::Module,
     passes::PassManagerSubType,
-    values::{BasicMetadataValueEnum, BasicValue, FunctionValue, PointerValue},
+    values::{BasicValue, FunctionValue, PointerValue, BasicValueEnum},
 };
 use std::{collections::HashMap, error::Error};
 
@@ -21,8 +21,8 @@ use crate::{
     Flags,
 };
 
-struct BindingTags {
-    is_mut: bool,
+pub struct BindingTags {
+    pub is_mut: bool,
 }
 
 pub struct Namespace<'a> {
@@ -48,7 +48,7 @@ pub struct CodeGen<'a> {
 
 #[derive(Debug)]
 pub struct Data<'a> {
-    pub data: Option<BasicMetadataValueEnum<'a>>,
+    pub data: Option<BasicValueEnum<'a>>,
     pub tp: Type<'a>,
 }
 
@@ -72,7 +72,7 @@ impl<'a> CodeGen<'a> {
             NodeType::I32 => self.compile_i32(node),
             NodeType::Identifier => self.compile_load(node),
             NodeType::Let => self.compile_let(node),
-            NodeType::Store => todo!(),
+            NodeType::Store => self.compile_store(node),
         }
     }
 }
@@ -186,6 +186,54 @@ impl<'a> CodeGen<'a> {
         Data {
             data: Some(self.builder.build_load(binding.0, "").into()),
             tp: binding.1.clone(),
+        }
+    }
+
+    fn compile_store(&mut self, node: &Node) -> Data<'a> {
+        let storenode = node.data.get_data();
+        let name = storenode.raw.get("name").unwrap();
+        let expr = storenode.nodes.get("expr").unwrap();
+        let right = self.compile_expr(expr);
+
+        let binding = self
+            .namespaces
+            .get_mut(&self.cur_fn.unwrap())
+            .unwrap()
+            .bindings
+            .get(name);
+
+        if binding.is_none() {
+            let fmt: String = format!("Binding '{}' not found in scope.", name);
+            raise_error(&fmt, ErrorType::BindingNotFound, &node.pos, self.info);
+        }
+
+        let binding = binding.unwrap();
+
+        if right.tp != binding.1 {
+            raise_error(
+                &format!("Expected '{}', got '{}'", binding.1.qualname, right.tp.qualname),
+                ErrorType::TypeMismatch,
+                &expr.pos,
+                &self.info,
+            );
+        }
+
+        if !binding.2.is_mut {
+            raise_error(
+                &format!("Binding '{}' is not mutable, so it cannot be assigned to.", name),
+                ErrorType::BindingNotMutable,
+                &node.pos,
+                &self.info,
+            );
+        }
+
+        if right.data.is_some() {
+            self.builder.build_store(binding.0, right.data.unwrap());
+        }
+
+        Data {
+            data: None,
+            tp: self.builtins.get(&BasicType::Void).unwrap().clone(),
         }
     }
 }

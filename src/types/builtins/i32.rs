@@ -45,7 +45,7 @@ fn i32_add<'a>(
             .builder
             .build_call(
                 sadd_i32_function,
-                &[this.data.unwrap(), other.data.unwrap()],
+                &[this.data.unwrap().into(), other.data.unwrap().into()],
                 "",
             )
             .try_as_basic_value()

@@ -11,6 +11,7 @@ pub enum ErrorType {
     BindingNotFound,
     DuplicateFlag,
     MovedBinding,
+    BindingNotMutable,
 }
 
 impl std::fmt::Display for ErrorType {
@@ -28,6 +29,7 @@ pub fn repr_err(tp: ErrorType) -> &'static str {
         ErrorType::BindingNotFound => "binding not found",
         ErrorType::DuplicateFlag => "duplicate flag passed",
         ErrorType::MovedBinding => "binding was moved",
+        ErrorType::BindingNotMutable => "binding not mutable",
     }
 }
 
