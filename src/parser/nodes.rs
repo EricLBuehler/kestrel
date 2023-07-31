@@ -21,6 +21,7 @@ pub enum NodeType {
     Binary,
     Identifier,
     Let,
+    Store
 }
 
 #[derive(Debug)]
@@ -131,6 +132,23 @@ impl NodeData for LetNode {
         value.raw.insert(String::from("name"), self.name.to_owned());
         value.nodes.insert(String::from("expr"), &self.expr);
         value.booleans.insert(String::from("is_mut"), self.is_mut);
+
+        value
+    }
+}
+
+// ========================
+
+pub struct StoreNode {
+    pub name: String,
+    pub expr: Node,
+}
+
+impl NodeData for StoreNode {
+    fn get_data(&self) -> NodeValue {
+        let mut value = NodeValue::new();
+        value.raw.insert(String::from("name"), self.name.to_owned());
+        value.nodes.insert(String::from("expr"), &self.expr);
 
         value
     }

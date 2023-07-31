@@ -1,11 +1,11 @@
 use crate::{
-    errors::ErrorType,
+    errors::{ErrorType, raise_error},
     lexer::{Token, TokenType},
     utils::{FileInfo, Position},
 };
 
 pub mod nodes;
-use self::nodes::{BinaryNode, DecimalNode, IdentifierNode, LetNode, Node, OpType};
+use self::nodes::{BinaryNode, DecimalNode, IdentifierNode, LetNode, Node, OpType, StoreNode, NodeType};
 
 pub struct Parser<'a> {
     current: Token,
@@ -89,6 +89,14 @@ impl<'a> Parser<'a> {
         self.current.tp == tp
     }
 
+    #[allow(dead_code)]
+    fn next_is_type(&mut self, tp: TokenType) -> bool {
+        self.advance();
+        let res = self.current.tp == tp;
+        self.backadvance();
+        res
+    }
+
     fn current_is_keyword(&mut self, name: &str) -> bool {
         if !self.current_is_type(TokenType::Keyword) {
             return false;
@@ -111,12 +119,12 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn expect(&mut self, typ: TokenType) {
-        if !self.current_is_type(typ.clone()) {
+    fn expect(&mut self, tp: TokenType) {
+        if !self.current_is_type(tp.clone()) {
             self.raise_error(
                 format!(
                     "Invalid or unexpected token (expected '{}', got '{}').",
-                    typ, self.current.tp
+                    tp, self.current.tp
                 )
                 .as_str(),
                 ErrorType::InvalidTok,
@@ -164,9 +172,37 @@ impl<'a> Parser<'a> {
         }
     }
 
+    fn backadvance(&mut self) {
+        let next = self.tokens.get(self.idx);
+        self.idx -= 1;
+
+        match next {
+            Some(v) => {
+                self.current = v.to_owned();
+            }
+            None => {
+                self.current = Token {
+                    data: String::from("\0"),
+                    tp: TokenType::Eof,
+                    start: Position {
+                        line: 0,
+                        startcol: 0,
+                        endcol: 0,
+                    },
+                    end: Position {
+                        line: 0,
+                        startcol: 0,
+                        endcol: 0,
+                    },
+                };
+            }
+        }
+    }
+
     fn get_precedence(&self) -> Precedence {
         match self.current.tp {
             TokenType::Plus => Precedence::Sum,
+            TokenType::Equal => Precedence::Assign,
 
             _ => Precedence::Lowest,
         }
@@ -246,6 +282,7 @@ impl<'a> Parser<'a> {
         {
             match self.current.tp {
                 TokenType::Plus => left = self.generate_binary(left, self.get_precedence()),
+                TokenType::Equal => left = self.generate_assign(left),
                 _ => {
                     break;
                 }
@@ -263,7 +300,7 @@ impl<'a> Parser<'a> {
         Node::new(
             Position {
                 startcol: self.current.start.startcol,
-                endcol: self.current.end.endcol - 1,
+                endcol: self.current.end.endcol,
                 line: self.current.start.line,
             },
             nodes::NodeType::I32,
@@ -277,7 +314,7 @@ impl<'a> Parser<'a> {
         Node::new(
             Position {
                 startcol: self.current.start.startcol,
-                endcol: self.current.end.endcol - 1,
+                endcol: self.current.end.endcol,
                 line: self.current.start.line,
             },
             nodes::NodeType::Identifier,
@@ -308,6 +345,38 @@ impl<'a> Parser<'a> {
             },
             nodes::NodeType::Binary,
             Box::new(BinaryNode { left, op, right }),
+        )
+    }
+
+    fn generate_assign(&mut self, left: Node) -> Node {
+        self.advance();
+
+        if left.tp != NodeType::Identifier {
+            raise_error(
+                format!(
+                    "Expected identifier node."
+                )
+                .as_str(),
+                ErrorType::InvalidTok,
+                &left.pos,
+                &self.info,
+            )
+        }
+
+        let expr = self.expr(Precedence::Lowest);
+        self.backadvance();
+
+        Node::new(
+            Position {
+                startcol: left.pos.startcol,
+                endcol: expr.pos.endcol,
+                line: left.pos.line,
+            },
+            nodes::NodeType::Store,
+            Box::new(StoreNode {
+                name: left.data.get_data().raw.get("value").unwrap().clone(),
+                expr
+            }),
         )
     }
 }

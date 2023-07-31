@@ -88,6 +88,7 @@ impl<'a> Mir<'a> {
             NodeType::Binary => self.generate_binary(node),
             NodeType::Let => self.generate_let(node),
             NodeType::Identifier => self.generate_load(node),
+            NodeType::Store => todo!(),
         }
     }
 }

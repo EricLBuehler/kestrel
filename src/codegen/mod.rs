@@ -21,8 +21,12 @@ use crate::{
     Flags,
 };
 
+struct BindingTags {
+    is_mut: bool,
+}
+
 pub struct Namespace<'a> {
-    bindings: HashMap<String, (PointerValue<'a>, Type<'a>)>,
+    bindings: HashMap<String, (PointerValue<'a>, Type<'a>, BindingTags)>,
 }
 
 pub struct CodeGen<'a> {
@@ -68,6 +72,7 @@ impl<'a> CodeGen<'a> {
             NodeType::I32 => self.compile_i32(node),
             NodeType::Identifier => self.compile_load(node),
             NodeType::Let => self.compile_let(node),
+            NodeType::Store => todo!(),
         }
     }
 }
@@ -137,6 +142,7 @@ impl<'a> CodeGen<'a> {
         let letnode = node.data.get_data();
         let name = letnode.raw.get("name").unwrap();
         let right = self.compile_expr(letnode.nodes.get("expr").unwrap());
+        let is_mut = letnode.booleans.get("is_mut").unwrap();
 
         let alloc = self
             .builder
@@ -146,12 +152,12 @@ impl<'a> CodeGen<'a> {
             alloc,
             right.data.unwrap().into_int_value().as_basic_value_enum(),
         );
-
+        
         self.namespaces
             .get_mut(&self.cur_fn.unwrap())
             .unwrap()
             .bindings
-            .insert(name.clone(), (alloc, right.tp));
+            .insert(name.clone(), (alloc, right.tp, BindingTags { is_mut: *is_mut }));
 
         Data {
             data: None,
