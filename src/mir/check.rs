@@ -116,7 +116,7 @@ pub fn check(mut instructions: Vec<MirInstruction>, info: FileInfo<'_>) {
 
     let mut out = String::new();
     for (i, instruction) in instructions.iter().enumerate() {
-        out.push_str(&format!("#{:<5}", format!("{}:", i)));
+        out.push_str(&format!(".{:<5}", format!("{}:", i)));
         out.push_str(&instruction.instruction.to_string());
         if let RawMirInstruction::Declare(name) = &instruction.instruction {
             out.push_str(&namespace.get(name).unwrap().1.lifetime.to_string());
