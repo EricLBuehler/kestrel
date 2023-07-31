@@ -361,7 +361,6 @@ impl<'a> Parser<'a> {
         }
 
         let expr = self.expr(Precedence::Lowest);
-        self.backadvance();
 
         Node::new(
             Position {

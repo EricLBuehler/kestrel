@@ -55,23 +55,22 @@ define i32 @main(i32 %0, i32** %1) local_unnamed_addr #1 {
   store i32 %27, i32* %28, align 4
   store i32 0, i32* %28, align 4
   %29 = load i32, i32* %16, align 4
-  %30 = load i32, i32* %16, align 4
-  %31 = load i32, i32* %12, align 4
-  %32 = call { i32, i1 } @llvm.sadd.with.overflow.i32.i32(i32 %30, i32 %31)
-  %33 = extractvalue { i32, i1 } %32, 0
-  %34 = extractvalue { i32, i1 } %32, 1
-  %35 = call i1 @llvm.expect.i1.i1(i1 %34, i1 false)
-  br i1 %35, label %36, label %38
+  %30 = load i32, i32* %12, align 4
+  %31 = call { i32, i1 } @llvm.sadd.with.overflow.i32.i32(i32 %29, i32 %30)
+  %32 = extractvalue { i32, i1 } %31, 0
+  %33 = extractvalue { i32, i1 } %31, 1
+  %34 = call i1 @llvm.expect.i1.i1(i1 %33, i1 false)
+  br i1 %34, label %35, label %37
 
-36:                                               ; preds = %26
-  %37 = call i32 @printf(i8* getelementptr inbounds ([50 x i8], [50 x i8]* @2, i32 0, i32 0))
-  br label %39
+35:                                               ; preds = %26
+  %36 = call i32 @printf(i8* getelementptr inbounds ([50 x i8], [50 x i8]* @2, i32 0, i32 0))
+  br label %38
 
-38:                                               ; preds = %26
-  br label %39
+37:                                               ; preds = %26
+  br label %38
 
-39:                                               ; preds = %38, %36
-  %40 = phi i32 [ %33, %38 ], [ undef, %36 ]
+38:                                               ; preds = %37, %35
+  %39 = phi i32 [ %32, %37 ], [ undef, %35 ]
   ret i32 0
 }
 
