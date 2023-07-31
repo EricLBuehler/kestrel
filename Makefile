@@ -4,6 +4,10 @@ default:
 	./kestrel program.ke
 	./a.out
 
+build:
+	cargo build
+	cp target/debug/kestrel .
+
 opt_sanitize:
 	cargo build
 	cp target/debug/kestrel .

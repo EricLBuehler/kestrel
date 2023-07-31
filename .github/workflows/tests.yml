@@ -17,8 +17,10 @@ jobs:
       run: sudo apt install llvm-14
     - name: Install llvm
       run: sudo apt install llvm
+    - name: Build
+      run: make build
     - name: Default
-      run: ls
+      run: ./kestrel program.ke
     - name: Optimized and Sanitized
       run: ./kestrel program.ke -o -fsanitize
     - name: Optimized and No OU
