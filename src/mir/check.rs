@@ -35,23 +35,23 @@ pub fn check(mut instructions: Vec<MirInstruction>, info: FileInfo<'_>) {
                         if name == load_name {
                             uses.push(j);
                         }
-                    } 
-                    
-                    if let RawMirInstruction::Store{name: load_name, right: _} =
-                        &instructions.get(j).as_ref().unwrap().instruction
+                    }
+
+                    if let RawMirInstruction::Store {
+                        name: load_name,
+                        right: _,
+                    } = &instructions.get(j).as_ref().unwrap().instruction
                     {
                         if name == load_name {
                             uses.push(j);
                         }
                     }
                 }
-                let end_mir: usize;
-                if uses.is_empty() {
-                    end_mir = i;
-                }
-                else {
-                    end_mir = *uses.last().unwrap();
-                }
+                let end_mir = if uses.is_empty() {
+                    i
+                } else {
+                    *uses.last().unwrap()
+                };
 
                 namespace.insert(
                     name.clone(),
@@ -63,7 +63,7 @@ pub fn check(mut instructions: Vec<MirInstruction>, info: FileInfo<'_>) {
                             lifetime: Lifetime::ImplicitLifetime {
                                 name: leftime_num.to_string(),
                                 start_mir: i,
-                                end_mir: end_mir,
+                                end_mir,
                             },
                         },
                     ),
