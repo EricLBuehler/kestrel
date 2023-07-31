@@ -58,6 +58,7 @@ pub struct Type<'a> {
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub enum Lifetime {
     Static,
+    ImplicitLifetime{name: String, start_mir: usize, end_mir: usize},
 }
 
 impl Display for Lifetime {
@@ -65,6 +66,9 @@ impl Display for Lifetime {
         match self {
             Lifetime::Static => {
                 write!(f, "['static]")
+            }
+            Lifetime::ImplicitLifetime { name, start_mir, end_mir} => {
+                write!(f, "['{} {}-{}]", name,start_mir,end_mir)
             }
         }
     }

@@ -1,8 +1,8 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, fs::File, io::Write};
 
 use crate::{
     errors::{raise_error, raise_error_multi, ErrorType},
-    types::TraitType,
+    types::{Lifetime, TraitType},
     utils::FileInfo,
 };
 
@@ -12,10 +12,12 @@ use super::{MirInstruction, RawMirInstruction};
 struct MirTag {
     isowned: bool,
     owner: Option<usize>,
+    lifetime: Lifetime,
 }
 
 pub fn check(mut instructions: Vec<MirInstruction>, info: FileInfo<'_>) {
     let mut namespace: HashMap<String, (Option<usize>, MirTag)> = HashMap::new();
+    let mut leftime_num = 0;
 
     for i in 0..instructions.len() {
         let instruction = instructions.get(i).unwrap().clone();
@@ -23,6 +25,20 @@ pub fn check(mut instructions: Vec<MirInstruction>, info: FileInfo<'_>) {
             RawMirInstruction::I32(_) => {}
             RawMirInstruction::Add { left: _, right: _ } => {}
             RawMirInstruction::Declare(ref name) => {
+                leftime_num += 1;
+
+                let mut end_mir = i;
+                for j in i..instructions.len() {
+                    if let RawMirInstruction::Load(load_name) = &instructions.get(j).as_ref().unwrap().instruction {
+                        if name == load_name {
+                            break;
+                        }
+                    }
+                    else {
+                        end_mir+=1;
+                    }
+                }
+                
                 namespace.insert(
                     name.clone(),
                     (
@@ -30,6 +46,7 @@ pub fn check(mut instructions: Vec<MirInstruction>, info: FileInfo<'_>) {
                         MirTag {
                             isowned: true,
                             owner: None,
+                            lifetime: Lifetime::ImplicitLifetime { name: leftime_num.to_string(), start_mir: i, end_mir: end_mir.clamp(0, instructions.len()-1) },
                         },
                     ),
                 );
@@ -84,10 +101,30 @@ pub fn check(mut instructions: Vec<MirInstruction>, info: FileInfo<'_>) {
                         MirTag {
                             isowned: true,
                             owner: Some(*right),
+                            lifetime: namespace.get(name).unwrap().1.lifetime.clone(),
                         },
                     ),
                 );
             }
         }
     }
+    
+    let mut out = String::new();
+    for (i, instruction) in instructions.iter().enumerate() {
+        out.push_str(&format!("{:<5}", format!("{}:", i)));
+        out.push_str(&instruction.instruction.to_string());
+        if let RawMirInstruction::Declare(name) = &instruction.instruction {
+            out.push_str(&namespace.get(name).unwrap().1.lifetime.to_string());
+        }
+        if instruction.tp.is_some() {
+            out.push_str(&format!(
+                " -> {}",
+                instruction.tp.as_ref().unwrap().qualname
+            ));
+            out.push_str(&format!("{}", instruction.tp.as_ref().unwrap().lifetime));
+        }
+        out.push('\n');
+    }
+    let mut f = File::create("a.mir").expect("Unable to create MIR output file.");
+    f.write_all(out.as_bytes()).expect("Unable to write MIR.");
 }

@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fmt::Display, fs::File, io::Write};
+use std::{collections::HashMap, fmt::Display};
 
 use crate::{
     errors::{raise_error, ErrorType},
@@ -78,22 +78,6 @@ impl<'a> Mir<'a> {
         for node in ast {
             self.generate_expr(node);
         }
-
-        let mut out = String::new();
-        for (i, instruction) in self.instructions.iter().enumerate() {
-            out.push_str(&format!("{:<5}", format!("{}:", i)));
-            out.push_str(&instruction.instruction.to_string());
-            if instruction.tp.is_some() {
-                out.push_str(&format!(
-                    " -> {}",
-                    instruction.tp.as_ref().unwrap().qualname
-                ));
-                out.push_str(&format!("{}", instruction.tp.as_ref().unwrap().lifetime));
-            }
-            out.push('\n');
-        }
-        let mut f = File::create("a.mir").expect("Unable to create MIR output file.");
-        f.write_all(out.as_bytes()).expect("Unable to write MIR.");
 
         self.instructions.clone()
     }
