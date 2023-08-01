@@ -59,18 +59,18 @@ pub fn generate_lifetimes(
 
     for i in 0..instructions.len() {
         let mut instruction = instructions.get(i).unwrap().clone();
-        match instruction.instruction {
+        match &instruction.instruction {
             RawMirInstruction::I32(_) => {}
             RawMirInstruction::Add { left, right } => {
-                let left_tp = instructions.get(left).unwrap().tp.as_ref().unwrap();
-                let right_tp = instructions.get(right).unwrap().tp.as_ref().unwrap();
+                let left_tp = instructions.get(*left).unwrap().tp.as_ref().unwrap();
+                let right_tp = instructions.get(*right).unwrap().tp.as_ref().unwrap();
                 //_res will be used in the future with custom lifetimes
                 let _res = if let Some(Trait::Add { code: _, skeleton }) =
                     left_tp.traits.get(&TraitType::Add)
                 {
                     skeleton(
                         this,
-                        &instructions.get(left).unwrap().pos,
+                        &instructions.get(*left).unwrap().pos,
                         left_tp.clone(),
                         right_tp.clone(),
                     )
@@ -78,23 +78,10 @@ pub fn generate_lifetimes(
                     raise_error(
                         &format!("Type '{}' does not implement Add.", left_tp.qualname),
                         ErrorType::TypeMismatch,
-                        &instructions.get(left).unwrap().pos,
+                        &instructions.get(*left).unwrap().pos,
                         &this.info,
                     );
                 };
-
-                let end_mir = calculate_last_use(&i, instructions); //Do this before the removal!
-                instructions.remove(i);
-
-                let mutable_type = instruction.tp.as_mut().unwrap();
-
-                mutable_type.lifetime = Lifetime::ImplicitLifetime {
-                    name: leftime_num.to_string(),
-                    start_mir: i,
-                    end_mir,
-                };
-                
-                instructions.insert(i, instruction);
             }
             RawMirInstruction::Declare {
                 ref name,
@@ -180,11 +167,6 @@ pub fn generate_lifetimes(
                 } else {
                     namespace.get_mut(name).unwrap().1.owner = Some(i);
                 }
-
-                instructions.remove(i);
-                let mutable_type = instruction.tp.as_mut().unwrap();
-                mutable_type.lifetime = namespace.get_mut(name).unwrap().1.lifetime.clone();
-                instructions.insert(i, instruction);
             }
             RawMirInstruction::Own(ref item) => {
                 if let RawMirInstruction::Load(ref name) =
@@ -209,20 +191,24 @@ pub fn generate_lifetimes(
                     ),
                 );
             }
-            RawMirInstruction::Reference(_) => {
+            RawMirInstruction::Reference(_) => { }
+        }
+
+        if let RawMirInstruction::Declare { name: _, is_mut: _ } = instruction.instruction { }
+        else {            
+            if instruction.tp.is_some() {
                 leftime_num += 1;
-
                 let end_mir = calculate_last_use(&i, instructions); //Do this before the removal!
-
                 instructions.remove(i);
-
+                
                 let mutable_type = instruction.tp.as_mut().unwrap();
+
                 mutable_type.lifetime = Lifetime::ImplicitLifetime {
                     name: leftime_num.to_string(),
                     start_mir: i,
                     end_mir,
                 };
-
+                
                 instructions.insert(i, instruction);
             }
         }

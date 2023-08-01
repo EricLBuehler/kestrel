@@ -35,6 +35,12 @@ main:                                   # @main
 	movq	%rdx, %rsp
 	movl	%eax, -16(%rcx)
 	movl	-16(%rcx), %eax
+	movq	%rsp, %rdx
+	movq	%rdx, %rsi
+	addq	$-16, %rsi
+	movq	%rsi, %rsp
+	movl	%eax, -16(%rdx)
+	movl	-16(%rcx), %eax
 	movq	%rsp, %rcx
 	addq	$-16, %rcx
 	movq	%rcx, %rsp
