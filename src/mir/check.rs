@@ -15,7 +15,7 @@ struct MirTag {
     lifetime: Lifetime,
 }
 
-pub fn check(this: &mut Mir, mut instructions: Vec<MirInstruction>, info: FileInfo<'_>) {
+pub fn lifetime_gen(this: &mut Mir, instructions: &mut Vec<MirInstruction>, info: FileInfo<'_>) {
     let mut namespace: HashMap<String, (Option<usize>, MirTag)> = HashMap::new();
     let mut leftime_num = 0;
 

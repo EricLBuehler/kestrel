@@ -334,8 +334,8 @@ pub fn generate_code(
 
     // Mir check
     let mut mir = mir::new(info.clone(), codegen.builtins.clone());
-    let instructions = mir.generate(&ast);
-    mir::check(&mut mir, instructions, codegen.info.clone());
+    let mut instructions = mir.generate(&ast);
+    mir::check(&mut mir, &mut instructions, codegen.info.clone());
     //
 
     codegen.namespaces.insert(
