@@ -191,26 +191,24 @@ pub fn generate_lifetimes(
                     ),
                 );
             }
-            RawMirInstruction::Reference(_) => { }
+            RawMirInstruction::Reference(_) => {}
         }
 
-        if let RawMirInstruction::Declare { name: _, is_mut: _ } = instruction.instruction { }
-        else {            
-            if instruction.tp.is_some() {
-                leftime_num += 1;
-                let end_mir = calculate_last_use(&i, instructions); //Do this before the removal!
-                instructions.remove(i);
-                
-                let mutable_type = instruction.tp.as_mut().unwrap();
+        if let RawMirInstruction::Declare { name: _, is_mut: _ } = instruction.instruction {
+        } else if instruction.tp.is_some() {
+            leftime_num += 1;
+            let end_mir = calculate_last_use(&i, instructions); //Do this before the removal!
+            instructions.remove(i);
 
-                mutable_type.lifetime = Lifetime::ImplicitLifetime {
-                    name: leftime_num.to_string(),
-                    start_mir: i,
-                    end_mir,
-                };
-                
-                instructions.insert(i, instruction);
-            }
+            let mutable_type = instruction.tp.as_mut().unwrap();
+
+            mutable_type.lifetime = Lifetime::ImplicitLifetime {
+                name: leftime_num.to_string(),
+                start_mir: i,
+                end_mir,
+            };
+
+            instructions.insert(i, instruction);
         }
     }
 
