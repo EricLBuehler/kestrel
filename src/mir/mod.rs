@@ -269,7 +269,7 @@ impl<'a> Mir<'a> {
                 right: right.0,
             },
             pos: node.pos.clone(),
-            tp: Some(self.namespace.get(name).unwrap().0.clone()),
+            tp: Some(self.builtins.get(&BasicType::Void).unwrap().clone()),
         });
 
         (
