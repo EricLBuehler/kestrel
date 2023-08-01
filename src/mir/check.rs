@@ -122,7 +122,7 @@ pub fn generate_lifetimes(this: &mut Mir, instructions: &mut Vec<MirInstruction>
                 {
                     raise_error_multi(
                         vec![
-                            format!("Binding '{name}' is not owned"),
+                            format!("Use of binding '{name}' after move."),
                             "It was moved here:".into(),
                         ],
                         ErrorType::MovedBinding,
