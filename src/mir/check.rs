@@ -14,7 +14,10 @@ pub struct MirTag {
     lifetime: Lifetime,
 }
 
-pub fn generate_lifetimes(this: &mut Mir, instructions: &mut Vec<MirInstruction>) -> HashMap<String, (Option<usize>, MirTag)> {
+pub fn generate_lifetimes(
+    this: &mut Mir,
+    instructions: &mut Vec<MirInstruction>,
+) -> HashMap<String, (Option<usize>, MirTag)> {
     let mut namespace: HashMap<String, (Option<usize>, MirTag)> = HashMap::new();
     let mut leftime_num = 0;
 
