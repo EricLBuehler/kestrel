@@ -8,13 +8,13 @@ use crate::{
 use super::{Mir, MirInstruction, RawMirInstruction};
 
 #[derive(Debug)]
-struct MirTag {
+pub struct MirTag {
     isowned: bool,
     owner: Option<usize>,
     lifetime: Lifetime,
 }
 
-pub fn generate_lifetimes(this: &mut Mir, instructions: &mut Vec<MirInstruction>) {
+pub fn generate_lifetimes(this: &mut Mir, instructions: &mut Vec<MirInstruction>) -> HashMap<String, (Option<usize>, MirTag)> {
     let mut namespace: HashMap<String, (Option<usize>, MirTag)> = HashMap::new();
     let mut leftime_num = 0;
 
@@ -182,6 +182,8 @@ pub fn generate_lifetimes(this: &mut Mir, instructions: &mut Vec<MirInstruction>
     }
     let mut f = File::create("a.mir").expect("Unable to create MIR output file.");
     f.write_all(out.as_bytes()).expect("Unable to write MIR.");
+
+    namespace
 }
 
 pub fn check(_this: &mut Mir, _instructions: &mut Vec<MirInstruction>) {}
