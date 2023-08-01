@@ -3,7 +3,6 @@ use std::{collections::HashMap, fs::File, io::Write};
 use crate::{
     errors::{raise_error, raise_error_multi, ErrorType},
     types::{Lifetime, Trait, TraitType},
-    utils::FileInfo,
 };
 
 use super::{Mir, MirInstruction, RawMirInstruction};
@@ -15,7 +14,7 @@ struct MirTag {
     lifetime: Lifetime,
 }
 
-pub fn lifetime_gen(this: &mut Mir, instructions: &mut Vec<MirInstruction>, info: FileInfo<'_>) {
+pub fn generate_lifetimes(this: &mut Mir, instructions: &mut Vec<MirInstruction>) {
     let mut namespace: HashMap<String, (Option<usize>, MirTag)> = HashMap::new();
     let mut leftime_num = 0;
 
@@ -40,7 +39,7 @@ pub fn lifetime_gen(this: &mut Mir, instructions: &mut Vec<MirInstruction>, info
                         &format!("Type '{}' does not implement Add.", left_tp.qualname),
                         ErrorType::TypeMismatch,
                         &instructions.get(left).unwrap().pos,
-                        &info,
+                        &this.info,
                     );
                 };
 
@@ -100,7 +99,12 @@ pub fn lifetime_gen(this: &mut Mir, instructions: &mut Vec<MirInstruction>, info
             RawMirInstruction::Load(ref name) => {
                 if namespace.get(name).is_none() {
                     let fmt: String = format!("Binding '{}' not found in scope.", name);
-                    raise_error(&fmt, ErrorType::BindingNotFound, &instruction.pos, &info);
+                    raise_error(
+                        &fmt,
+                        ErrorType::BindingNotFound,
+                        &instruction.pos,
+                        &this.info,
+                    );
                 }
 
                 let old_instruction = &instructions
@@ -123,7 +127,7 @@ pub fn lifetime_gen(this: &mut Mir, instructions: &mut Vec<MirInstruction>, info
                         ],
                         ErrorType::MovedBinding,
                         vec![&instruction.pos, &old_instruction.pos],
-                        &info,
+                        &this.info,
                     );
                 } else {
                     namespace.get_mut(name).unwrap().1.owner = Some(i);
@@ -179,3 +183,5 @@ pub fn lifetime_gen(this: &mut Mir, instructions: &mut Vec<MirInstruction>, info
     let mut f = File::create("a.mir").expect("Unable to create MIR output file.");
     f.write_all(out.as_bytes()).expect("Unable to write MIR.");
 }
+
+pub fn check(_this: &mut Mir, _instructions: &mut Vec<MirInstruction>) {}
