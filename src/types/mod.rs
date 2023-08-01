@@ -59,9 +59,9 @@ pub struct Type<'a> {
 impl<'a> Type<'a> {
     pub fn qualname(&self) -> String {
         if self.is_ref {
-            "&".to_string()+&self.qualname
-        }else {
-        self.qualname.clone()
+            "&".to_string() + &self.qualname
+        } else {
+            self.qualname.clone()
         }
     }
 }

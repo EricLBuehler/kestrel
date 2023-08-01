@@ -123,8 +123,14 @@ impl<'a> CodeGen<'a> {
 
     fn compile_binary(&mut self, node: &Node, _flags: ExprFlags) -> Data<'a> {
         let binary = node.data.get_data();
-        let left = self.compile_expr(binary.nodes.get("left").unwrap(), ExprFlags { get_ref: false });
-        let right = self.compile_expr(binary.nodes.get("right").unwrap(), ExprFlags { get_ref: false });
+        let left = self.compile_expr(
+            binary.nodes.get("left").unwrap(),
+            ExprFlags { get_ref: false },
+        );
+        let right = self.compile_expr(
+            binary.nodes.get("right").unwrap(),
+            ExprFlags { get_ref: false },
+        );
 
         match binary.op.unwrap() {
             OpType::Add => {
@@ -146,7 +152,10 @@ impl<'a> CodeGen<'a> {
     fn compile_let(&mut self, node: &Node, _flags: ExprFlags) -> Data<'a> {
         let letnode = node.data.get_data();
         let name = letnode.raw.get("name").unwrap();
-        let right = self.compile_expr(letnode.nodes.get("expr").unwrap(), ExprFlags { get_ref: false });
+        let right = self.compile_expr(
+            letnode.nodes.get("expr").unwrap(),
+            ExprFlags { get_ref: false },
+        );
         let is_mut = letnode.booleans.get("is_mut").unwrap();
 
         if right.data.is_some() {
@@ -154,28 +163,24 @@ impl<'a> CodeGen<'a> {
                 .builder
                 .build_alloca(right.data.unwrap().get_type(), "");
 
-            self.builder.build_store(
-                alloc,
-                right.data.unwrap()
-            );
+            self.builder.build_store(alloc, right.data.unwrap());
             self.namespaces
-            .get_mut(&self.cur_fn.unwrap())
-            .unwrap()
-            .bindings
-            .insert(
-                name.clone(),
-                (Some(alloc), right.tp, BindingTags { is_mut: *is_mut }),
-            );
-        }
-        else {
-        self.namespaces
-            .get_mut(&self.cur_fn.unwrap())
-            .unwrap()
-            .bindings
-            .insert(
-                name.clone(),
-                (None, right.tp, BindingTags { is_mut: *is_mut }),
-            );
+                .get_mut(&self.cur_fn.unwrap())
+                .unwrap()
+                .bindings
+                .insert(
+                    name.clone(),
+                    (Some(alloc), right.tp, BindingTags { is_mut: *is_mut }),
+                );
+        } else {
+            self.namespaces
+                .get_mut(&self.cur_fn.unwrap())
+                .unwrap()
+                .bindings
+                .insert(
+                    name.clone(),
+                    (None, right.tp, BindingTags { is_mut: *is_mut }),
+                );
         }
 
         Data {
@@ -203,7 +208,15 @@ impl<'a> CodeGen<'a> {
         let binding = binding.unwrap();
 
         Data {
-            data: if binding.0.is_some() { Some(if flags.get_ref {binding.0.unwrap().into()} else {self.builder.build_load(binding.0.unwrap(), "")}) } else {None},
+            data: if binding.0.is_some() {
+                Some(if flags.get_ref {
+                    binding.0.unwrap().into()
+                } else {
+                    self.builder.build_load(binding.0.unwrap(), "")
+                })
+            } else {
+                None
+            },
             tp: binding.1.clone(),
         }
     }
@@ -232,7 +245,8 @@ impl<'a> CodeGen<'a> {
             raise_error(
                 &format!(
                     "Expected '{}', got '{}'",
-                    binding.1.qualname(), right.tp.qualname()
+                    binding.1.qualname(),
+                    right.tp.qualname()
                 ),
                 ErrorType::TypeMismatch,
                 &expr.pos,
@@ -254,7 +268,8 @@ impl<'a> CodeGen<'a> {
 
         if right.data.is_some() {
             debug_assert!(binding.0.is_some());
-            self.builder.build_store(binding.0.unwrap(), right.data.unwrap());
+            self.builder
+                .build_store(binding.0.unwrap(), right.data.unwrap());
         }
 
         Data {
@@ -265,7 +280,10 @@ impl<'a> CodeGen<'a> {
 
     fn compile_reference(&mut self, node: &Node, _flags: ExprFlags) -> Data<'a> {
         let referencenode = node.data.get_data();
-        let mut expr = self.compile_expr(referencenode.nodes.get("expr").unwrap(), ExprFlags { get_ref: true });
+        let mut expr = self.compile_expr(
+            referencenode.nodes.get("expr").unwrap(),
+            ExprFlags { get_ref: true },
+        );
 
         expr.tp.is_ref = true;
 

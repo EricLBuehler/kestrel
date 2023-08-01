@@ -248,7 +248,8 @@ impl<'a> Mir<'a> {
             raise_error(
                 &format!(
                     "Expected '{}', got '{}'",
-                    binding.0.qualname(), right.1.qualname()
+                    binding.0.qualname(),
+                    right.1.qualname()
                 ),
                 ErrorType::TypeMismatch,
                 &expr.pos,
