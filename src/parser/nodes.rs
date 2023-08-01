@@ -22,6 +22,7 @@ pub enum NodeType {
     Identifier,
     Let,
     Store,
+    Reference,
 }
 
 #[derive(Debug)]
@@ -148,6 +149,21 @@ impl NodeData for StoreNode {
     fn get_data(&self) -> NodeValue {
         let mut value = NodeValue::new();
         value.raw.insert(String::from("name"), self.name.to_owned());
+        value.nodes.insert(String::from("expr"), &self.expr);
+
+        value
+    }
+}
+
+// ========================
+
+pub struct ReferenceNode {
+    pub expr: Node,
+}
+
+impl NodeData for ReferenceNode {
+    fn get_data(&self) -> NodeValue {
+        let mut value = NodeValue::new();
         value.nodes.insert(String::from("expr"), &self.expr);
 
         value

@@ -73,6 +73,7 @@ impl<'a> CodeGen<'a> {
             NodeType::Identifier => self.compile_load(node),
             NodeType::Let => self.compile_let(node),
             NodeType::Store => self.compile_store(node),
+            NodeType::Reference => self.compile_reference(node),
         }
     }
 }
@@ -244,6 +245,15 @@ impl<'a> CodeGen<'a> {
             data: None,
             tp: self.builtins.get(&BasicType::Void).unwrap().clone(),
         }
+    }
+
+    fn compile_reference(&mut self, node: &Node) -> Data<'a> {
+        let referencenode = node.data.get_data();
+        let mut expr = self.compile_expr(referencenode.nodes.get("expr").unwrap());
+
+        expr.tp.is_ref = true;
+
+        expr
     }
 }
 

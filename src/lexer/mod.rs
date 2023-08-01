@@ -13,6 +13,7 @@ pub enum TokenType {
     Equal,
     Identifier,
     Keyword,
+    Ampersand,
 }
 
 pub struct Lexer<'a> {
@@ -48,6 +49,7 @@ impl std::fmt::Display for TokenType {
             TokenType::Equal => write!(f, "equal"),
             TokenType::Identifier => write!(f, "identifier"),
             TokenType::Keyword => write!(f, "keyword"),
+            TokenType::Ampersand => write!(f, "ampersand"),
         }
     }
 }
@@ -150,6 +152,22 @@ pub fn generate_tokens(lexer: &mut Lexer, kwds: &[String]) -> (usize, Vec<Token>
             tokens.push(Token {
                 data: String::from("="),
                 tp: TokenType::Equal,
+                start: Position {
+                    line: lexer.line,
+                    startcol: lexer.col,
+                    endcol: lexer.col + 1,
+                },
+                end: Position {
+                    line: lexer.line,
+                    startcol: lexer.col,
+                    endcol: lexer.col + 1,
+                },
+            });
+            advance(lexer);
+        } else if cur == '&' {
+            tokens.push(Token {
+                data: String::from("&"),
+                tp: TokenType::Ampersand,
                 start: Position {
                     line: lexer.line,
                     startcol: lexer.col,

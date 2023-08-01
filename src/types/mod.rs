@@ -53,6 +53,7 @@ pub struct Type<'a> {
     pub traits: Traits<'a>,
     pub qualname: String,
     pub lifetime: Lifetime,
+    pub is_ref: bool,
 }
 
 impl<'a> PartialEq for Type<'a> {
@@ -60,6 +61,7 @@ impl<'a> PartialEq for Type<'a> {
         self.basictype == other.basictype
             && self.traits == other.traits
             && self.qualname == other.qualname
+            && self.is_ref == other.is_ref
     }
 }
 

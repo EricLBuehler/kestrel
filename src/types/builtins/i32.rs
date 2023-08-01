@@ -172,6 +172,7 @@ pub fn init_i32(codegen: &mut CodeGen) {
         ]),
         qualname: "std::i32".into(),
         lifetime: Lifetime::Static,
+        is_ref: false,
     };
     codegen.builtins.insert(BasicType::I32, tp);
 }

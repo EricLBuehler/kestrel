@@ -14,6 +14,42 @@ pub struct MirTag {
     lifetime: Lifetime,
 }
 
+pub fn calculate_last_use(i: &usize, instructions: &mut Vec<MirInstruction>) -> usize {
+    let mut uses = Vec::new();
+    for j in (*i)..instructions.len() {
+        match &instructions.get(j).as_ref().unwrap().instruction {
+            RawMirInstruction::Add { left, right } => {
+                if i == left || i == right {
+                    uses.push(j);
+                }
+            }
+            RawMirInstruction::Declare { name: _, is_mut: _ } => {}
+            RawMirInstruction::I32(_) => {}
+            RawMirInstruction::Load(_) => {}
+            RawMirInstruction::Own(result) => {
+                if i == result {
+                    uses.push(j);
+                }
+            }
+            RawMirInstruction::Store { name: _, right } => {
+                if i == right {
+                    uses.push(j);
+                }
+            }
+            RawMirInstruction::Reference(right) => {
+                if i == right {
+                    uses.push(j);
+                }
+            }
+        }
+    }
+
+    match uses.len() {
+        0 => *i,
+        _ => *uses.last().unwrap(),
+    }
+}
+
 pub fn generate_lifetimes(
     this: &mut Mir,
     instructions: &mut Vec<MirInstruction>,
@@ -28,7 +64,8 @@ pub fn generate_lifetimes(
             RawMirInstruction::Add { left, right } => {
                 let left_tp = instructions.get(left).unwrap().tp.as_ref().unwrap();
                 let right_tp = instructions.get(right).unwrap().tp.as_ref().unwrap();
-                let res = if let Some(Trait::Add { code: _, skeleton }) =
+                //_res will be used in the future with custom lifetimes
+                let _res = if let Some(Trait::Add { code: _, skeleton }) =
                     left_tp.traits.get(&TraitType::Add)
                 {
                     skeleton(
@@ -46,9 +83,17 @@ pub fn generate_lifetimes(
                     );
                 };
 
+                let end_mir = calculate_last_use(&i, instructions); //Do this before the removal!
                 instructions.remove(i);
+
                 let mutable_type = instruction.tp.as_mut().unwrap();
-                mutable_type.lifetime = res.lifetime;
+
+                mutable_type.lifetime = Lifetime::ImplicitLifetime {
+                    name: leftime_num.to_string(),
+                    start_mir: i,
+                    end_mir,
+                };
+                
                 instructions.insert(i, instruction);
             }
             RawMirInstruction::Declare {
@@ -163,6 +208,22 @@ pub fn generate_lifetimes(
                         },
                     ),
                 );
+            }
+            RawMirInstruction::Reference(_) => {
+                leftime_num += 1;
+
+                let end_mir = calculate_last_use(&i, instructions); //Do this before the removal!
+
+                instructions.remove(i);
+
+                let mutable_type = instruction.tp.as_mut().unwrap();
+                mutable_type.lifetime = Lifetime::ImplicitLifetime {
+                    name: leftime_num.to_string(),
+                    start_mir: i,
+                    end_mir,
+                };
+
+                instructions.insert(i, instruction);
             }
         }
     }

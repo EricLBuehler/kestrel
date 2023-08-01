@@ -6,7 +6,8 @@ use crate::{
 
 pub mod nodes;
 use self::nodes::{
-    BinaryNode, DecimalNode, IdentifierNode, LetNode, Node, NodeType, OpType, StoreNode,
+    BinaryNode, DecimalNode, IdentifierNode, LetNode, Node, NodeType, OpType, ReferenceNode,
+    StoreNode,
 };
 
 pub struct Parser<'a> {
@@ -261,6 +262,7 @@ impl<'a> Parser<'a> {
         match self.current.tp {
             TokenType::I32 => Some(self.generate_i32()),
             TokenType::Identifier => Some(self.generate_identifier()),
+            TokenType::Ampersand => Some(self.generate_reference()),
             _ => None,
         }
     }
@@ -321,6 +323,21 @@ impl<'a> Parser<'a> {
             Box::new(IdentifierNode {
                 value: self.current.data.clone(),
             }),
+        )
+    }
+
+    fn generate_reference(&mut self) -> Node {
+        self.advance();
+        let expr = self.expr(Precedence::Lowest);
+        self.backadvance();
+        Node::new(
+            Position {
+                startcol: self.current.start.startcol,
+                endcol: self.current.end.endcol,
+                line: self.current.start.line,
+            },
+            nodes::NodeType::Reference,
+            Box::new(ReferenceNode { expr }),
         )
     }
 

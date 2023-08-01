@@ -25,6 +25,7 @@ pub enum RawMirInstruction {
     Store { name: String, right: usize },
     Own(usize),
     Load(String),
+    Reference(usize),
 }
 
 #[derive(Clone)]
@@ -56,6 +57,9 @@ impl Display for RawMirInstruction {
             }
             RawMirInstruction::Store { name, right } => {
                 write!(f, "store {name} .{right}")
+            }
+            RawMirInstruction::Reference(right) => {
+                write!(f, "ref .{right}")
             }
         }
     }
@@ -91,6 +95,7 @@ impl<'a> Mir<'a> {
             NodeType::Let => self.generate_let(node),
             NodeType::Identifier => self.generate_load(node),
             NodeType::Store => self.generate_store(node),
+            NodeType::Reference => self.generate_reference(node),
         }
     }
 }
@@ -276,5 +281,20 @@ impl<'a> Mir<'a> {
             self.instructions.len() - 1,
             self.namespace.get(name).unwrap().0.clone(),
         )
+    }
+
+    fn generate_reference(&mut self, node: &Node) -> MirResult<'a> {
+        let referencenode = node.data.get_data();
+        let mut expr = self.generate_expr(referencenode.nodes.get("expr").unwrap());
+
+        expr.1.is_ref = true;
+
+        self.instructions.push(MirInstruction {
+            instruction: RawMirInstruction::Reference(expr.0),
+            pos: node.pos.clone(),
+            tp: Some(expr.1.clone()),
+        });
+
+        (self.instructions.len() - 1, expr.1.clone())
     }
 }
