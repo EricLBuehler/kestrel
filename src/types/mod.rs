@@ -51,9 +51,19 @@ impl Display for BasicType {
 pub struct Type<'a> {
     pub basictype: BasicType,
     pub traits: Traits<'a>,
-    pub qualname: String,
+    qualname: String,
     pub lifetime: Lifetime,
     pub is_ref: bool,
+}
+
+impl<'a> Type<'a> {
+    pub fn qualname(&self) -> String {
+        if self.is_ref {
+            "&".to_string()+&self.qualname
+        }else {
+        self.qualname.clone()
+        }
+    }
 }
 
 impl<'a> PartialEq for Type<'a> {

@@ -149,7 +149,7 @@ impl<'a> Mir<'a> {
                     skeleton(self, &node.pos, left.1, right.1)
                 } else {
                     raise_error(
-                        &format!("Type '{}' does not implement Add.", left.1.qualname),
+                        &format!("Type '{}' does not implement Add.", left.1.qualname()),
                         ErrorType::TypeMismatch,
                         &node.pos,
                         &self.info,
@@ -248,7 +248,7 @@ impl<'a> Mir<'a> {
             raise_error(
                 &format!(
                     "Expected '{}', got '{}'",
-                    binding.0.qualname, right.1.qualname
+                    binding.0.qualname(), right.1.qualname()
                 ),
                 ErrorType::TypeMismatch,
                 &expr.pos,

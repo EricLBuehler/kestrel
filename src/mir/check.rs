@@ -76,7 +76,7 @@ pub fn generate_lifetimes(
                     )
                 } else {
                     raise_error(
-                        &format!("Type '{}' does not implement Add.", left_tp.qualname),
+                        &format!("Type '{}' does not implement Add.", left_tp.qualname()),
                         ErrorType::TypeMismatch,
                         &instructions.get(*left).unwrap().pos,
                         &this.info,
@@ -222,7 +222,7 @@ pub fn generate_lifetimes(
         if instruction.tp.is_some() {
             out.push_str(&format!(
                 " -> {}",
-                instruction.tp.as_ref().unwrap().qualname
+                instruction.tp.as_ref().unwrap().qualname()
             ));
             out.push_str(&format!("{}", instruction.tp.as_ref().unwrap().lifetime));
         }

@@ -34,17 +34,10 @@ main:                                   # @main
 	addq	$-16, %rdx
 	movq	%rdx, %rsp
 	movl	%eax, -16(%rcx)
-	movl	-16(%rcx), %eax
-	movq	%rsp, %rdx
-	movq	%rdx, %rsi
-	addq	$-16, %rsi
-	movq	%rsi, %rsp
-	movl	%eax, -16(%rdx)
-	movl	-16(%rcx), %eax
-	movq	%rsp, %rcx
-	addq	$-16, %rcx
-	movq	%rcx, %rsp
-	movl	%eax, (%rcx)
+	movq	%rsp, %rax
+	addq	$-16, %rax
+	movq	%rax, %rsp
+	movq	%rdx, (%rax)
 	xorl	%eax, %eax
 	movq	%rbp, %rsp
 	popq	%rbp

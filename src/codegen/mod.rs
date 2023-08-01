@@ -6,7 +6,7 @@ use inkwell::{
     module::FlagBehavior,
     module::Module,
     passes::PassManagerSubType,
-    values::{BasicValue, BasicValueEnum, FunctionValue, PointerValue},
+    values::{BasicValueEnum, FunctionValue, PointerValue},
 };
 use std::{collections::HashMap, error::Error};
 
@@ -26,7 +26,7 @@ pub struct BindingTags {
 }
 
 pub struct Namespace<'a> {
-    bindings: HashMap<String, (PointerValue<'a>, Type<'a>, BindingTags)>,
+    bindings: HashMap<String, (Option<PointerValue<'a>>, Type<'a>, BindingTags)>,
 }
 
 pub struct CodeGen<'a> {
@@ -52,6 +52,10 @@ pub struct Data<'a> {
     pub tp: Type<'a>,
 }
 
+struct ExprFlags {
+    get_ref: bool,
+}
+
 impl<'a> CodeGen<'a> {
     fn compile(&mut self, ast: Vec<Node>) -> Data<'a> {
         let mut res = Data {
@@ -60,26 +64,26 @@ impl<'a> CodeGen<'a> {
         };
 
         for node in ast {
-            res = self.compile_expr(&node);
+            res = self.compile_expr(&node, ExprFlags { get_ref: false });
         }
 
         res
     }
 
-    fn compile_expr(&mut self, node: &Node) -> Data<'a> {
+    fn compile_expr(&mut self, node: &Node, flags: ExprFlags) -> Data<'a> {
         match node.tp {
-            NodeType::Binary => self.compile_binary(node),
-            NodeType::I32 => self.compile_i32(node),
-            NodeType::Identifier => self.compile_load(node),
-            NodeType::Let => self.compile_let(node),
-            NodeType::Store => self.compile_store(node),
-            NodeType::Reference => self.compile_reference(node),
+            NodeType::Binary => self.compile_binary(node, flags),
+            NodeType::I32 => self.compile_i32(node, flags),
+            NodeType::Identifier => self.compile_load(node, flags),
+            NodeType::Let => self.compile_let(node, flags),
+            NodeType::Store => self.compile_store(node, flags),
+            NodeType::Reference => self.compile_reference(node, flags),
         }
     }
 }
 
 impl<'a> CodeGen<'a> {
-    fn compile_i32(&mut self, node: &Node) -> Data<'a> {
+    fn compile_i32(&mut self, node: &Node, _flags: ExprFlags) -> Data<'a> {
         if node
             .data
             .get_data()
@@ -117,10 +121,10 @@ impl<'a> CodeGen<'a> {
         }
     }
 
-    fn compile_binary(&mut self, node: &Node) -> Data<'a> {
+    fn compile_binary(&mut self, node: &Node, _flags: ExprFlags) -> Data<'a> {
         let binary = node.data.get_data();
-        let left = self.compile_expr(binary.nodes.get("left").unwrap());
-        let right = self.compile_expr(binary.nodes.get("right").unwrap());
+        let left = self.compile_expr(binary.nodes.get("left").unwrap(), ExprFlags { get_ref: false });
+        let right = self.compile_expr(binary.nodes.get("right").unwrap(), ExprFlags { get_ref: false });
 
         match binary.op.unwrap() {
             OpType::Add => {
@@ -129,7 +133,7 @@ impl<'a> CodeGen<'a> {
                     code(self, &node.pos, left, right)
                 } else {
                     raise_error(
-                        &format!("Type '{}' does not implement Add.", left.tp.qualname),
+                        &format!("Type '{}' does not implement Add.", left.tp.qualname()),
                         ErrorType::TypeMismatch,
                         &node.pos,
                         self.info,
@@ -139,29 +143,40 @@ impl<'a> CodeGen<'a> {
         }
     }
 
-    fn compile_let(&mut self, node: &Node) -> Data<'a> {
+    fn compile_let(&mut self, node: &Node, _flags: ExprFlags) -> Data<'a> {
         let letnode = node.data.get_data();
         let name = letnode.raw.get("name").unwrap();
-        let right = self.compile_expr(letnode.nodes.get("expr").unwrap());
+        let right = self.compile_expr(letnode.nodes.get("expr").unwrap(), ExprFlags { get_ref: false });
         let is_mut = letnode.booleans.get("is_mut").unwrap();
 
-        let alloc = self
-            .builder
-            .build_alloca(right.data.unwrap().into_int_value().get_type(), "");
+        if right.data.is_some() {
+            let alloc = self
+                .builder
+                .build_alloca(right.data.unwrap().get_type(), "");
 
-        self.builder.build_store(
-            alloc,
-            right.data.unwrap().into_int_value().as_basic_value_enum(),
-        );
-
+            self.builder.build_store(
+                alloc,
+                right.data.unwrap()
+            );
+            self.namespaces
+            .get_mut(&self.cur_fn.unwrap())
+            .unwrap()
+            .bindings
+            .insert(
+                name.clone(),
+                (Some(alloc), right.tp, BindingTags { is_mut: *is_mut }),
+            );
+        }
+        else {
         self.namespaces
             .get_mut(&self.cur_fn.unwrap())
             .unwrap()
             .bindings
             .insert(
                 name.clone(),
-                (alloc, right.tp, BindingTags { is_mut: *is_mut }),
+                (None, right.tp, BindingTags { is_mut: *is_mut }),
             );
+        }
 
         Data {
             data: None,
@@ -169,7 +184,7 @@ impl<'a> CodeGen<'a> {
         }
     }
 
-    fn compile_load(&mut self, node: &Node) -> Data<'a> {
+    fn compile_load(&mut self, node: &Node, flags: ExprFlags) -> Data<'a> {
         let identifiernode = node.data.get_data();
         let name = identifiernode.raw.get("value").unwrap();
 
@@ -188,16 +203,16 @@ impl<'a> CodeGen<'a> {
         let binding = binding.unwrap();
 
         Data {
-            data: Some(self.builder.build_load(binding.0, "")),
+            data: if binding.0.is_some() { Some(if flags.get_ref {binding.0.unwrap().into()} else {self.builder.build_load(binding.0.unwrap(), "")}) } else {None},
             tp: binding.1.clone(),
         }
     }
 
-    fn compile_store(&mut self, node: &Node) -> Data<'a> {
+    fn compile_store(&mut self, node: &Node, _flags: ExprFlags) -> Data<'a> {
         let storenode = node.data.get_data();
         let name = storenode.raw.get("name").unwrap();
         let expr = storenode.nodes.get("expr").unwrap();
-        let right = self.compile_expr(expr);
+        let right = self.compile_expr(expr, ExprFlags { get_ref: false });
 
         let binding = self
             .namespaces
@@ -217,7 +232,7 @@ impl<'a> CodeGen<'a> {
             raise_error(
                 &format!(
                     "Expected '{}', got '{}'",
-                    binding.1.qualname, right.tp.qualname
+                    binding.1.qualname(), right.tp.qualname()
                 ),
                 ErrorType::TypeMismatch,
                 &expr.pos,
@@ -238,7 +253,8 @@ impl<'a> CodeGen<'a> {
         }
 
         if right.data.is_some() {
-            self.builder.build_store(binding.0, right.data.unwrap());
+            debug_assert!(binding.0.is_some());
+            self.builder.build_store(binding.0.unwrap(), right.data.unwrap());
         }
 
         Data {
@@ -247,9 +263,9 @@ impl<'a> CodeGen<'a> {
         }
     }
 
-    fn compile_reference(&mut self, node: &Node) -> Data<'a> {
+    fn compile_reference(&mut self, node: &Node, _flags: ExprFlags) -> Data<'a> {
         let referencenode = node.data.get_data();
-        let mut expr = self.compile_expr(referencenode.nodes.get("expr").unwrap());
+        let mut expr = self.compile_expr(referencenode.nodes.get("expr").unwrap(), ExprFlags { get_ref: true });
 
         expr.tp.is_ref = true;
 
