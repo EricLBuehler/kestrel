@@ -2,11 +2,11 @@ use std::{collections::HashMap, fs::File, io::Write};
 
 use crate::{
     errors::{raise_error, raise_error_multi, ErrorType},
-    types::{Lifetime, TraitType},
+    types::{Lifetime, Trait, TraitType},
     utils::FileInfo,
 };
 
-use super::{MirInstruction, RawMirInstruction};
+use super::{Mir, MirInstruction, RawMirInstruction};
 
 #[derive(Debug)]
 struct MirTag {
@@ -15,7 +15,7 @@ struct MirTag {
     lifetime: Lifetime,
 }
 
-pub fn check(mut instructions: Vec<MirInstruction>, info: FileInfo<'_>) {
+pub fn check(this: &mut Mir, mut instructions: Vec<MirInstruction>, info: FileInfo<'_>) {
     let mut namespace: HashMap<String, (Option<usize>, MirTag)> = HashMap::new();
     let mut leftime_num = 0;
 
@@ -23,7 +23,32 @@ pub fn check(mut instructions: Vec<MirInstruction>, info: FileInfo<'_>) {
         let mut instruction = instructions.get(i).unwrap().clone();
         match instruction.instruction {
             RawMirInstruction::I32(_) => {}
-            RawMirInstruction::Add { left: _, right: _ } => {}
+            RawMirInstruction::Add { left, right } => {
+                let left_tp = instructions.get(left).unwrap().tp.as_ref().unwrap();
+                let right_tp = instructions.get(right).unwrap().tp.as_ref().unwrap();
+                let res = if let Some(Trait::Add { code: _, skeleton }) =
+                    left_tp.traits.get(&TraitType::Add)
+                {
+                    skeleton(
+                        this,
+                        &instructions.get(left).unwrap().pos,
+                        left_tp.clone(),
+                        right_tp.clone(),
+                    )
+                } else {
+                    raise_error(
+                        &format!("Type '{}' does not implement Add.", left_tp.qualname),
+                        ErrorType::TypeMismatch,
+                        &instructions.get(left).unwrap().pos,
+                        &info,
+                    );
+                };
+
+                instructions.remove(i);
+                let mutable_type = instruction.tp.as_mut().unwrap();
+                mutable_type.lifetime = res.lifetime;
+                instructions.insert(i, instruction);
+            }
             RawMirInstruction::Declare {
                 ref name,
                 is_mut: _,

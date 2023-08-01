@@ -70,8 +70,8 @@ pub fn new<'a>(info: FileInfo<'a>, builtins: BuiltinTypes<'a>) -> Mir<'a> {
     }
 }
 
-pub fn check(instructions: Vec<MirInstruction>, info: FileInfo<'_>) {
-    check::check(instructions, info)
+pub fn check(this: &mut Mir, instructions: Vec<MirInstruction>, info: FileInfo<'_>) {
+    check::check(this, instructions, info)
 }
 
 impl<'a> Mir<'a> {

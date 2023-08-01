@@ -47,12 +47,20 @@ impl Display for BasicType {
     }
 }
 
-#[derive(PartialEq, Eq, Clone, Debug)]
+#[derive(Eq, Clone, Debug)]
 pub struct Type<'a> {
     pub basictype: BasicType,
     pub traits: Traits<'a>,
     pub qualname: String,
     pub lifetime: Lifetime,
+}
+
+impl<'a> PartialEq for Type<'a> {
+    fn eq(&self, other: &Self) -> bool {
+        self.basictype == other.basictype
+            && self.traits == other.traits
+            && self.qualname == other.qualname
+    }
 }
 
 #[derive(PartialEq, Eq, Clone, Debug)]
