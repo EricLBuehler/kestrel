@@ -18,7 +18,7 @@ pub struct MirTag {
     is_ref: bool,
     is_mut: bool,
     owner: Option<usize>,
-    referenced: Option<Vec<(usize, ReferenceType)>>,
+    referenced: Option<Vec<(usize, ReferenceType, Lifetime)>>,
     lifetime: Lifetime,
 }
 
@@ -216,6 +216,7 @@ pub fn generate_lifetimes(this: &mut Mir, instructions: &mut Vec<MirInstruction>
                 if let RawMirInstruction::Load(name) =
                     &instructions.get(*right).as_ref().unwrap().instruction
                 {
+                    let res = (i, ReferenceType::Immutable, instructions.get(*right).as_ref().unwrap().tp.as_ref().unwrap().lifetime.clone());
                     if namespace.get_mut(name).unwrap().2.referenced.is_some() {
                         namespace
                             .get_mut(name)
@@ -224,7 +225,7 @@ pub fn generate_lifetimes(this: &mut Mir, instructions: &mut Vec<MirInstruction>
                             .referenced
                             .as_mut()
                             .unwrap()
-                            .push((i, ReferenceType::Immutable));
+                            .push(res);
                         namespace
                             .get_mut(name)
                             .unwrap()
@@ -235,7 +236,7 @@ pub fn generate_lifetimes(this: &mut Mir, instructions: &mut Vec<MirInstruction>
                             .sort();
                     } else {
                         namespace.get_mut(name).unwrap().2.referenced =
-                            Some(vec![(i, ReferenceType::Immutable)]);
+                            Some(vec![res]);
                     }
                 };
             }
@@ -321,24 +322,48 @@ pub fn check(this: &mut Mir, instructions: &mut [MirInstruction], namespace: &mu
         };
 
         if tag.referenced.is_some() && tag.referenced.as_ref().unwrap().len() >= 2 && len == 1 {
-            raise_error_multi(
-                vec![
-                    format!("Binding '{name}' has multiple immutable references."),
-                    "First reference here.".into(),
-                ],
-                ErrorType::MultipleReferences,
-                vec![
-                    &instructions
-                        .get(tag.referenced.as_ref().unwrap().get(1).unwrap().0)
-                        .unwrap()
-                        .pos,
-                    &instructions
-                        .get(tag.referenced.as_ref().unwrap().first().unwrap().0)
-                        .unwrap()
-                        .pos,
-                ],
-                &this.info,
-            );
+            let lifetime1_end = match instructions
+            .get(tag.referenced.as_ref().unwrap().get(1).unwrap().0)
+            .unwrap().tp.as_ref().unwrap().lifetime {
+                Lifetime::ImplicitLifetime { name: _, start_mir: _, end_mir } => {
+                    end_mir
+                }
+                Lifetime::Static => {
+                    0
+                }
+            };
+
+            let lifetime2_start = match instructions
+            .get(tag.referenced.as_ref().unwrap().get(1).unwrap().0)
+            .unwrap().tp.as_ref().unwrap().lifetime {
+                Lifetime::ImplicitLifetime { name: _, start_mir, end_mir: _ } => {
+                    start_mir
+                }
+                Lifetime::Static => {
+                    0
+                }
+            };
+
+            if lifetime1_end >= lifetime2_start {
+                raise_error_multi(
+                    vec![
+                        format!("Binding '{name}' has multiple immutable references."),
+                        "First reference here.".into(),
+                    ],
+                    ErrorType::MultipleReferences,
+                    vec![
+                        &instructions
+                            .get(tag.referenced.as_ref().unwrap().get(1).unwrap().0)
+                            .unwrap()
+                            .pos,
+                        &instructions
+                            .get(tag.referenced.as_ref().unwrap().first().unwrap().0)
+                            .unwrap()
+                            .pos,
+                    ],
+                    &this.info,
+                );
+            }
         }
     }
 }

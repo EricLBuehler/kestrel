@@ -75,7 +75,7 @@ impl<'a> PartialEq for Type<'a> {
     }
 }
 
-#[derive(PartialEq, Eq, Clone, Debug)]
+#[derive(PartialEq, Eq, Clone, Debug, PartialOrd, Ord)]
 pub enum Lifetime {
     Static,
     ImplicitLifetime {
