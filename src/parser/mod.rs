@@ -327,14 +327,15 @@ impl<'a> Parser<'a> {
     }
 
     fn generate_reference(&mut self) -> Node {
+        let pos = self.current.start.clone();
         self.advance();
         let expr = self.expr(Precedence::Lowest);
         self.backadvance();
         Node::new(
             Position {
-                startcol: self.current.start.startcol,
-                endcol: self.current.end.endcol,
-                line: self.current.start.line,
+                startcol: pos.startcol,
+                endcol: expr.pos.endcol,
+                line: pos.line,
             },
             nodes::NodeType::Reference,
             Box::new(ReferenceNode { expr }),

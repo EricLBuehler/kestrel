@@ -21,7 +21,7 @@ pub struct Mir<'a> {
 pub enum RawMirInstruction {
     I32(String),
     Add { left: usize, right: usize },
-    Declare { name: String, is_mut: bool },
+    Declare { name: String, is_mut: bool, is_ref: bool },
     Store { name: String, right: usize },
     Own(usize),
     Load(String),
@@ -43,8 +43,8 @@ impl Display for RawMirInstruction {
             RawMirInstruction::Add { left, right } => {
                 write!(f, "add .{left} .{right}")
             }
-            RawMirInstruction::Declare { name, is_mut } => {
-                write!(f, "declare {} {}", if *is_mut { "mut" } else { "" }, name)
+            RawMirInstruction::Declare { name, is_mut, is_ref } => {
+                write!(f, "declare {}{}{}", if *is_ref { "ref " } else { "" }, if *is_mut { "mut " } else { "" }, name)
             }
             RawMirInstruction::I32(value) => {
                 write!(f, "i32 {value}")
@@ -75,8 +75,8 @@ pub fn new<'a>(info: FileInfo<'a>, builtins: BuiltinTypes<'a>) -> Mir<'a> {
 }
 
 pub fn check(this: &mut Mir, instructions: &mut Vec<MirInstruction>) {
-    check::generate_lifetimes(this, instructions);
-    check::check(this, instructions);
+    let mut namespace = check::generate_lifetimes(this, instructions);
+    check::check(this, instructions, &mut namespace);
 }
 
 impl<'a> Mir<'a> {
@@ -183,6 +183,7 @@ impl<'a> Mir<'a> {
             instruction: RawMirInstruction::Declare {
                 name: name.to_string(),
                 is_mut: *is_mut,
+                is_ref: right.1.is_ref,
             },
             pos: node.pos.clone(),
             tp: None,

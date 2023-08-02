@@ -9,10 +9,15 @@ use super::{Mir, MirInstruction, RawMirInstruction};
 
 #[derive(Debug)]
 pub struct MirTag {
-    isowned: bool,
+    is_owned: bool,
+    is_ref: bool,
+    is_mut: bool,
     owner: Option<usize>,
+    referenced: Option<Vec<usize>>,
     lifetime: Lifetime,
 }
+
+type MirNamespace = HashMap<String, (Option<usize>, Option<usize>, MirTag)>; //(declaration, right, tag)
 
 pub fn calculate_last_use(i: &usize, instructions: &mut Vec<MirInstruction>) -> usize {
     let mut uses = Vec::new();
@@ -23,7 +28,7 @@ pub fn calculate_last_use(i: &usize, instructions: &mut Vec<MirInstruction>) -> 
                     uses.push(j);
                 }
             }
-            RawMirInstruction::Declare { name: _, is_mut: _ } => {}
+            RawMirInstruction::Declare { name: _, is_mut: _, is_ref: _ } => {}
             RawMirInstruction::I32(_) => {}
             RawMirInstruction::Load(_) => {}
             RawMirInstruction::Own(result) => {
@@ -53,8 +58,8 @@ pub fn calculate_last_use(i: &usize, instructions: &mut Vec<MirInstruction>) -> 
 pub fn generate_lifetimes(
     this: &mut Mir,
     instructions: &mut Vec<MirInstruction>,
-) -> HashMap<String, (Option<usize>, MirTag)> {
-    let mut namespace: HashMap<String, (Option<usize>, MirTag)> = HashMap::new();
+) -> MirNamespace {
+    let mut namespace: MirNamespace = HashMap::new();
     let mut leftime_num = 0;
 
     for i in 0..instructions.len() {
@@ -85,7 +90,8 @@ pub fn generate_lifetimes(
             }
             RawMirInstruction::Declare {
                 ref name,
-                is_mut: _,
+                is_mut,
+                is_ref,
             } => {
                 leftime_num += 1;
 
@@ -118,10 +124,14 @@ pub fn generate_lifetimes(
                 namespace.insert(
                     name.clone(),
                     (
+                        Some(i),
                         None,
                         MirTag {
-                            isowned: true,
+                            is_owned: true,
+                            is_ref: *is_ref,
+                            is_mut: *is_mut,
                             owner: None,
+                            referenced: None,
                             lifetime: Lifetime::ImplicitLifetime {
                                 name: leftime_num.to_string(),
                                 start_mir: i,
@@ -143,10 +153,10 @@ pub fn generate_lifetimes(
                 }
 
                 let old_instruction = &instructions
-                    .get(namespace.get(name).unwrap().1.owner.unwrap())
+                    .get(namespace.get(name).unwrap().2.owner.unwrap())
                     .unwrap();
 
-                if !(namespace.get(name).unwrap().1.isowned
+                if !(namespace.get(name).unwrap().2.is_owned
                     || old_instruction.tp.is_some()
                         && old_instruction
                             .tp
@@ -165,14 +175,14 @@ pub fn generate_lifetimes(
                         &this.info,
                     );
                 } else {
-                    namespace.get_mut(name).unwrap().1.owner = Some(i);
+                    namespace.get_mut(name).unwrap().2.owner = Some(i);
                 }
             }
             RawMirInstruction::Own(ref item) => {
                 if let RawMirInstruction::Load(ref name) =
                     instructions.get_mut(*item).unwrap().instruction
                 {
-                    namespace.get_mut(name).unwrap().1.isowned = false;
+                    namespace.get_mut(name).unwrap().2.is_owned = false;
                 }
             }
             RawMirInstruction::Store {
@@ -182,19 +192,36 @@ pub fn generate_lifetimes(
                 namespace.insert(
                     name.clone(),
                     (
+                        namespace.get(name).unwrap().0,
                         Some(*right),
                         MirTag {
-                            isowned: true,
+                            is_owned: true,
+                            is_mut: namespace.get(name).unwrap().2.is_mut,
+                            is_ref: namespace.get(name).unwrap().2.is_ref,
                             owner: Some(*right),
-                            lifetime: namespace.get(name).unwrap().1.lifetime.clone(),
+                            referenced: None,
+                            lifetime: namespace.get(name).unwrap().2.lifetime.clone(),
                         },
                     ),
                 );
             }
-            RawMirInstruction::Reference(_) => {}
+            RawMirInstruction::Reference(right) => {
+                match &instructions.get(*right).as_ref().unwrap().instruction {
+                    RawMirInstruction::Load(name) => {
+                        if namespace.get_mut(name).unwrap().2.referenced.is_some() {
+                            namespace.get_mut(name).unwrap().2.referenced.as_mut().unwrap().push(i);
+                            namespace.get_mut(name).unwrap().2.referenced.as_mut().unwrap().sort();
+                        }
+                        else {
+                            namespace.get_mut(name).unwrap().2.referenced = Some(vec![i]);
+                        }
+                    }
+                    _ => { }
+                };
+            }
         }
 
-        if let RawMirInstruction::Declare { name: _, is_mut: _ } = instruction.instruction {
+        if let RawMirInstruction::Declare { name: _, is_mut: _, is_ref: _ } = instruction.instruction {
         } else if instruction.tp.is_some() {
             leftime_num += 1;
             let end_mir = calculate_last_use(&i, instructions); //Do this before the removal!
@@ -216,8 +243,8 @@ pub fn generate_lifetimes(
     for (i, instruction) in instructions.iter().enumerate() {
         out.push_str(&format!(".{:<5}", format!("{}:", i)));
         out.push_str(&instruction.instruction.to_string());
-        if let RawMirInstruction::Declare { name, is_mut: _ } = &instruction.instruction {
-            out.push_str(&namespace.get(name).unwrap().1.lifetime.to_string());
+        if let RawMirInstruction::Declare { name, is_mut: _, is_ref: _ } = &instruction.instruction {
+            out.push_str(&namespace.get(name).unwrap().2.lifetime.to_string());
         }
         if instruction.tp.is_some() {
             out.push_str(&format!(
@@ -234,4 +261,21 @@ pub fn generate_lifetimes(
     namespace
 }
 
-pub fn check(_this: &mut Mir, _instructions: &mut Vec<MirInstruction>) {}
+pub fn check(this: &mut Mir, instructions: &mut Vec<MirInstruction>, namespace: &mut MirNamespace) {
+    for (name, (_declaration, _right, tag)) in namespace.iter() {
+        //Fake!
+        if tag.referenced.is_some() {
+            if tag.referenced.as_ref().unwrap().len() >= 2 {
+                raise_error_multi(
+                    vec![
+                        format!("Binding '{name}' has multiple references."),
+                        "First reference here.".into(),
+                    ],
+                    ErrorType::MultipleReferences,
+                    vec![&instructions.get(*tag.referenced.as_ref().unwrap().get(1).unwrap()).unwrap().pos, &instructions.get(*tag.referenced.as_ref().unwrap().get(0).unwrap()).unwrap().pos],
+                    &this.info,
+                );
+            }
+        }
+    }
+}
