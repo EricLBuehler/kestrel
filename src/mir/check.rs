@@ -7,13 +7,18 @@ use crate::{
 
 use super::{Mir, MirInstruction, RawMirInstruction};
 
+#[derive(Debug, PartialEq, PartialOrd, Eq, Ord, Clone, Copy)]
+pub enum ReferenceType {
+    Immutable,
+}
+
 #[derive(Debug)]
 pub struct MirTag {
     is_owned: bool,
     is_ref: bool,
     is_mut: bool,
     owner: Option<usize>,
-    referenced: Option<Vec<usize>>,
+    referenced: Option<Vec<(usize, ReferenceType)>>,
     lifetime: Lifetime,
 }
 
@@ -218,7 +223,7 @@ pub fn generate_lifetimes(this: &mut Mir, instructions: &mut Vec<MirInstruction>
                             .referenced
                             .as_mut()
                             .unwrap()
-                            .push(i);
+                            .push((i, ReferenceType::Immutable));
                         namespace
                             .get_mut(name)
                             .unwrap()
@@ -228,7 +233,8 @@ pub fn generate_lifetimes(this: &mut Mir, instructions: &mut Vec<MirInstruction>
                             .unwrap()
                             .sort();
                     } else {
-                        namespace.get_mut(name).unwrap().2.referenced = Some(vec![i]);
+                        namespace.get_mut(name).unwrap().2.referenced =
+                            Some(vec![(i, ReferenceType::Immutable)]);
                     }
                 };
             }
@@ -286,21 +292,29 @@ pub fn generate_lifetimes(this: &mut Mir, instructions: &mut Vec<MirInstruction>
 
 pub fn check(this: &mut Mir, instructions: &mut [MirInstruction], namespace: &mut MirNamespace) {
     for (name, (_declaration, _right, tag)) in namespace.iter() {
-        //Fake!
-        if tag.referenced.is_some() && tag.referenced.as_ref().unwrap().len() >= 2 {
+        //This is contrived.
+        let len = if tag.referenced.is_some() {
+            let mut referenced = tag.referenced.as_ref().unwrap().clone();
+            referenced.dedup_by(|x, y| x.1 == y.1);
+            referenced.len()
+        } else {
+            0
+        };
+
+        if tag.referenced.is_some() && tag.referenced.as_ref().unwrap().len() >= 2 && len == 1 {
             raise_error_multi(
                 vec![
-                    format!("Binding '{name}' has multiple references."),
+                    format!("Binding '{name}' has multiple immutable references."),
                     "First reference here.".into(),
                 ],
                 ErrorType::MultipleReferences,
                 vec![
                     &instructions
-                        .get(*tag.referenced.as_ref().unwrap().get(1).unwrap())
+                        .get(tag.referenced.as_ref().unwrap().get(1).unwrap().0)
                         .unwrap()
                         .pos,
                     &instructions
-                        .get(*tag.referenced.as_ref().unwrap().first().unwrap())
+                        .get(tag.referenced.as_ref().unwrap().first().unwrap().0)
                         .unwrap()
                         .pos,
                 ],
