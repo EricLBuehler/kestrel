@@ -36,6 +36,7 @@ pub enum RawMirInstruction {
     Own(usize),
     Load(String),
     Reference(usize),
+    Copy(usize),
 }
 
 #[derive(Clone)]
@@ -80,6 +81,9 @@ impl Display for RawMirInstruction {
             }
             RawMirInstruction::Reference(right) => {
                 write!(f, "ref .{right}")
+            }
+            RawMirInstruction::Copy(right) => {
+                write!(f, "copy .{right}")
             }
         }
     }
@@ -240,10 +244,18 @@ impl<'a> Mir<'a> {
             raise_error(&fmt, ErrorType::BindingNotFound, &node.pos, &self.info);
         }
 
+        let tp = self.namespace.get(name).unwrap().0.clone();
+
         self.instructions.push(MirInstruction {
             instruction: RawMirInstruction::Load(name.to_string()),
             pos: node.pos.clone(),
-            tp: Some(self.namespace.get(name).unwrap().0.clone()),
+            tp: Some(tp.clone()),
+        });
+
+        self.instructions.push(MirInstruction {
+            instruction: RawMirInstruction::Copy(self.instructions.len() - 1),
+            pos: node.pos.clone(),
+            tp: Some(tp.clone()),
         });
 
         (

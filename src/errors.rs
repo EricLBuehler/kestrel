@@ -13,6 +13,7 @@ pub enum ErrorType {
     MovedBinding,
     BindingNotMutable,
     MultipleReferences,
+    TraitNotImplemented,
 }
 
 impl std::fmt::Display for ErrorType {
@@ -32,6 +33,7 @@ pub fn repr_err(tp: ErrorType) -> &'static str {
         ErrorType::MovedBinding => "binding was moved",
         ErrorType::BindingNotMutable => "binding not mutable",
         ErrorType::MultipleReferences => "multiple references to a binding",
+        ErrorType::TraitNotImplemented => "trait not implemented",
     }
 }
 

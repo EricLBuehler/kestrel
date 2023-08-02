@@ -55,6 +55,7 @@ pub fn calculate_last_use(i: &usize, instructions: &mut Vec<MirInstruction>) -> 
                     uses.push(j);
                 }
             }
+            RawMirInstruction::Copy(_) => {}
         }
     }
 
@@ -237,6 +238,21 @@ pub fn generate_lifetimes(this: &mut Mir, instructions: &mut Vec<MirInstruction>
                             Some(vec![(i, ReferenceType::Immutable)]);
                     }
                 };
+            }
+
+            RawMirInstruction::Copy(right) => {
+                let tp = instructions.get(*right).as_ref().unwrap().tp.clone().unwrap();
+                if !tp
+                            .traits
+                            .contains_key(&TraitType::Copy)
+                {
+                    raise_error(
+                        &format!("Type {} does not implement Copy", tp.qualname()),
+                        ErrorType::TraitNotImplemented,
+                        &instruction.pos,
+                        &this.info,
+                    );
+                }
             }
         }
 

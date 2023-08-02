@@ -140,7 +140,7 @@ impl<'a> CodeGen<'a> {
                 } else {
                     raise_error(
                         &format!("Type '{}' does not implement Add.", left.tp.qualname()),
-                        ErrorType::TypeMismatch,
+                        ErrorType::TraitNotImplemented,
                         &node.pos,
                         self.info,
                     );
