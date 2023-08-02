@@ -216,7 +216,19 @@ pub fn generate_lifetimes(this: &mut Mir, instructions: &mut Vec<MirInstruction>
                 if let RawMirInstruction::Load(name) =
                     &instructions.get(*right).as_ref().unwrap().instruction
                 {
-                    let res = (i, ReferenceType::Immutable, instructions.get(*right).as_ref().unwrap().tp.as_ref().unwrap().lifetime.clone());
+                    let res = (
+                        i,
+                        ReferenceType::Immutable,
+                        instructions
+                            .get(*right)
+                            .as_ref()
+                            .unwrap()
+                            .tp
+                            .as_ref()
+                            .unwrap()
+                            .lifetime
+                            .clone(),
+                    );
                     if namespace.get_mut(name).unwrap().2.referenced.is_some() {
                         namespace
                             .get_mut(name)
@@ -235,8 +247,7 @@ pub fn generate_lifetimes(this: &mut Mir, instructions: &mut Vec<MirInstruction>
                             .unwrap()
                             .sort();
                     } else {
-                        namespace.get_mut(name).unwrap().2.referenced =
-                            Some(vec![res]);
+                        namespace.get_mut(name).unwrap().2.referenced = Some(vec![res]);
                     }
                 };
             }
@@ -323,25 +334,35 @@ pub fn check(this: &mut Mir, instructions: &mut [MirInstruction], namespace: &mu
 
         if tag.referenced.is_some() && tag.referenced.as_ref().unwrap().len() >= 2 && len == 1 {
             let lifetime1_end = match instructions
-            .get(tag.referenced.as_ref().unwrap().get(1).unwrap().0)
-            .unwrap().tp.as_ref().unwrap().lifetime {
-                Lifetime::ImplicitLifetime { name: _, start_mir: _, end_mir } => {
-                    end_mir
-                }
-                Lifetime::Static => {
-                    0
-                }
+                .get(tag.referenced.as_ref().unwrap().get(1).unwrap().0)
+                .unwrap()
+                .tp
+                .as_ref()
+                .unwrap()
+                .lifetime
+            {
+                Lifetime::ImplicitLifetime {
+                    name: _,
+                    start_mir: _,
+                    end_mir,
+                } => end_mir,
+                Lifetime::Static => 0,
             };
 
             let lifetime2_start = match instructions
-            .get(tag.referenced.as_ref().unwrap().get(1).unwrap().0)
-            .unwrap().tp.as_ref().unwrap().lifetime {
-                Lifetime::ImplicitLifetime { name: _, start_mir, end_mir: _ } => {
-                    start_mir
-                }
-                Lifetime::Static => {
-                    0
-                }
+                .get(tag.referenced.as_ref().unwrap().get(1).unwrap().0)
+                .unwrap()
+                .tp
+                .as_ref()
+                .unwrap()
+                .lifetime
+            {
+                Lifetime::ImplicitLifetime {
+                    name: _,
+                    start_mir,
+                    end_mir: _,
+                } => start_mir,
+                Lifetime::Static => 0,
             };
 
             if lifetime1_end >= lifetime2_start {

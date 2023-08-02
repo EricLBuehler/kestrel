@@ -270,13 +270,11 @@ impl<'a> CodeGen<'a> {
             debug_assert!(binding.0.is_some());
             self.builder
                 .build_store(binding.0.unwrap(), right.data.unwrap());
-        }
-        else if right.data.is_some() {
+        } else if right.data.is_some() {
             let alloc = self
                 .builder
                 .build_alloca(right.data.unwrap().get_type(), "");
-            self.builder
-                .build_store(alloc, right.data.unwrap());            
+            self.builder.build_store(alloc, right.data.unwrap());
         }
 
         Data {
