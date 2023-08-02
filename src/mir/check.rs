@@ -241,11 +241,14 @@ pub fn generate_lifetimes(this: &mut Mir, instructions: &mut Vec<MirInstruction>
             }
 
             RawMirInstruction::Copy(right) => {
-                let tp = instructions.get(*right).as_ref().unwrap().tp.clone().unwrap();
-                if !tp
-                            .traits
-                            .contains_key(&TraitType::Copy)
-                {
+                let tp = instructions
+                    .get(*right)
+                    .as_ref()
+                    .unwrap()
+                    .tp
+                    .clone()
+                    .unwrap();
+                if !tp.traits.contains_key(&TraitType::Copy) {
                     raise_error(
                         &format!("Type {} does not implement Copy", tp.qualname()),
                         ErrorType::TraitNotImplemented,
