@@ -20,9 +20,19 @@ pub struct Mir<'a> {
 #[derive(Clone)]
 pub enum RawMirInstruction {
     I32(String),
-    Add { left: usize, right: usize },
-    Declare { name: String, is_mut: bool, is_ref: bool },
-    Store { name: String, right: usize },
+    Add {
+        left: usize,
+        right: usize,
+    },
+    Declare {
+        name: String,
+        is_mut: bool,
+        is_ref: bool,
+    },
+    Store {
+        name: String,
+        right: usize,
+    },
     Own(usize),
     Load(String),
     Reference(usize),
@@ -43,8 +53,18 @@ impl Display for RawMirInstruction {
             RawMirInstruction::Add { left, right } => {
                 write!(f, "add .{left} .{right}")
             }
-            RawMirInstruction::Declare { name, is_mut, is_ref } => {
-                write!(f, "declare {}{}{}", if *is_ref { "ref " } else { "" }, if *is_mut { "mut " } else { "" }, name)
+            RawMirInstruction::Declare {
+                name,
+                is_mut,
+                is_ref,
+            } => {
+                write!(
+                    f,
+                    "declare {}{}{}",
+                    if *is_ref { "ref " } else { "" },
+                    if *is_mut { "mut " } else { "" },
+                    name
+                )
             }
             RawMirInstruction::I32(value) => {
                 write!(f, "i32 {value}")
