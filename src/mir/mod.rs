@@ -37,6 +37,7 @@ pub enum RawMirInstruction {
     Load(String),
     Reference(usize),
     Copy(usize),
+    DropBinding(String),
 }
 
 #[derive(Clone)]
@@ -85,6 +86,9 @@ impl Display for RawMirInstruction {
             RawMirInstruction::Copy(right) => {
                 write!(f, "copy .{right}")
             }
+            RawMirInstruction::DropBinding(name) => {
+                write!(f, "dropbinding {name}")
+            }
         }
     }
 }
@@ -99,8 +103,8 @@ pub fn new<'a>(info: FileInfo<'a>, builtins: BuiltinTypes<'a>) -> Mir<'a> {
 }
 
 pub fn check(this: &mut Mir, instructions: &mut Vec<MirInstruction>) {
-    let mut namespace = check::generate_lifetimes(this, instructions);
-    check::check(this, instructions, &mut namespace);
+    let (mut namespace, references) = check::generate_lifetimes(this, instructions);
+    check::check(this, instructions, &mut namespace, &references);
 }
 
 impl<'a> Mir<'a> {
