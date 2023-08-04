@@ -27,7 +27,6 @@ pub enum RawMirInstruction {
     Declare {
         name: String,
         is_mut: bool,
-        is_ref: bool,
     },
     Store {
         name: String,
@@ -58,12 +57,10 @@ impl Display for RawMirInstruction {
             RawMirInstruction::Declare {
                 name,
                 is_mut,
-                is_ref,
             } => {
                 write!(
                     f,
-                    "declare {}{}{}",
-                    if *is_ref { "ref " } else { "" },
+                    "declare {}{}",
                     if *is_mut { "mut " } else { "" },
                     name
                 )
@@ -211,7 +208,6 @@ impl<'a> Mir<'a> {
             instruction: RawMirInstruction::Declare {
                 name: name.to_string(),
                 is_mut: *is_mut,
-                is_ref: right.1.is_ref,
             },
             pos: node.pos.clone(),
             tp: None,

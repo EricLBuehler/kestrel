@@ -17,7 +17,6 @@ pub enum ReferenceType {
 #[derive(Debug)]
 pub struct MirTag {
     is_owned: bool,
-    is_ref: bool,
     is_mut: bool,
     owner: Option<usize>,
     lifetime: Lifetime,
@@ -47,7 +46,6 @@ pub fn calculate_last_use(i: &usize, instructions: &mut Vec<MirInstruction>) -> 
             RawMirInstruction::Declare {
                 name: _,
                 is_mut: _,
-                is_ref: _,
             } => {}
             RawMirInstruction::I32(_) => {}
             RawMirInstruction::Load(_) => {}
@@ -118,7 +116,6 @@ pub fn generate_lifetimes(
             RawMirInstruction::Declare {
                 ref name,
                 is_mut,
-                is_ref,
             } => {
                 lifetime_num += 1;
 
@@ -164,7 +161,6 @@ pub fn generate_lifetimes(
                         None,
                         MirTag {
                             is_owned: true,
-                            is_ref: *is_ref,
                             is_mut: *is_mut,
                             owner: None,
                             lifetime: Lifetime::ImplicitLifetime {
@@ -232,7 +228,6 @@ pub fn generate_lifetimes(
                         MirTag {
                             is_owned: true,
                             is_mut: namespace.get(name).unwrap().2.is_mut,
-                            is_ref: namespace.get(name).unwrap().2.is_ref,
                             owner: Some(*right),
                             lifetime: namespace.get(name).unwrap().2.lifetime.clone(),
                         },
@@ -358,7 +353,6 @@ pub fn generate_lifetimes(
         if let RawMirInstruction::Declare {
             name: _,
             is_mut: _,
-            is_ref: _,
         } = instruction.instruction
         {
         } else if instruction.tp.is_some() {
@@ -385,7 +379,6 @@ pub fn generate_lifetimes(
         if let RawMirInstruction::Declare {
             name,
             is_mut: _,
-            is_ref: _,
         } = &instruction.instruction
         {
             out.push_str(&namespace.get(name).unwrap().2.lifetime.to_string());
