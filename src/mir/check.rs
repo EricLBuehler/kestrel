@@ -66,7 +66,7 @@ pub fn calculate_last_use(i: &usize, instructions: &mut Vec<MirInstruction>) -> 
                     uses.push(j);
                 }
             }
-            RawMirInstruction::DropBinding(_) => {}
+            RawMirInstruction::DropBinding(_, _) => {}
         }
     }
 
@@ -142,7 +142,7 @@ pub fn generate_lifetimes(
                 instructions.insert(
                     end_mir + 1,
                     MirInstruction {
-                        instruction: RawMirInstruction::DropBinding(name.clone()),
+                        instruction: RawMirInstruction::DropBinding(name.clone(), end_mir+1),
                         pos: instructions.get(end_mir).as_ref().unwrap().pos.clone(),
                         tp: instructions.get(end_mir).as_ref().unwrap().tp.clone(),
                     },
@@ -259,7 +259,7 @@ pub fn generate_lifetimes(
                                     .clone(),
                             };
                             for j in rt..instructions.len() {
-                                if let RawMirInstruction::DropBinding(ref name_drop) =
+                                if let RawMirInstruction::DropBinding(ref name_drop, _) =
                                     instructions.get(j).as_ref().unwrap().instruction
                                 {
                                     if name_drop == name {
@@ -306,6 +306,9 @@ pub fn generate_lifetimes(
                             );
                             break;
                         }
+                        RawMirInstruction::DropBinding(_, new_rt) => {
+                            rt = *new_rt;
+                        }
                         _ => {}
                     }
                 }
@@ -341,7 +344,7 @@ pub fn generate_lifetimes(
                     );
                 }
             }
-            RawMirInstruction::DropBinding(_) => {}
+            RawMirInstruction::DropBinding(_, _) => {}
         }
 
         if let RawMirInstruction::Declare { name: _, is_mut: _ } = instruction.instruction {
@@ -369,7 +372,7 @@ pub fn generate_lifetimes(
         if let RawMirInstruction::Declare { name, is_mut: _ } = &instruction.instruction {
             out.push_str(&namespace.get(name).unwrap().2.lifetime.to_string());
         }
-        if let RawMirInstruction::DropBinding(_) = &instruction.instruction {
+        if let RawMirInstruction::DropBinding(_, _) = &instruction.instruction {
         } else if instruction.tp.is_some() {
             out.push_str(&format!(
                 " -> {}",

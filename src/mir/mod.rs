@@ -27,7 +27,7 @@ pub enum RawMirInstruction {
     Load(String),
     Reference(usize),
     Copy(usize),
-    DropBinding(String),
+    DropBinding(String, usize),
 }
 
 #[derive(Clone)]
@@ -66,7 +66,7 @@ impl Display for RawMirInstruction {
             RawMirInstruction::Copy(right) => {
                 write!(f, "copy .{right}")
             }
-            RawMirInstruction::DropBinding(name) => {
+            RawMirInstruction::DropBinding(name, _) => {
                 write!(f, "dropbinding {name}")
             }
         }
