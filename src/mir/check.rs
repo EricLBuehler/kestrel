@@ -43,10 +43,7 @@ pub fn calculate_last_use(i: &usize, instructions: &mut Vec<MirInstruction>) -> 
                     uses.push(j);
                 }
             }
-            RawMirInstruction::Declare {
-                name: _,
-                is_mut: _,
-            } => {}
+            RawMirInstruction::Declare { name: _, is_mut: _ } => {}
             RawMirInstruction::I32(_) => {}
             RawMirInstruction::Load(_) => {}
             RawMirInstruction::Own(result) => {
@@ -113,10 +110,7 @@ pub fn generate_lifetimes(
                     );
                 };
             }
-            RawMirInstruction::Declare {
-                ref name,
-                is_mut,
-            } => {
+            RawMirInstruction::Declare { ref name, is_mut } => {
                 lifetime_num += 1;
 
                 let mut uses = Vec::new();
@@ -350,11 +344,7 @@ pub fn generate_lifetimes(
             RawMirInstruction::DropBinding(_) => {}
         }
 
-        if let RawMirInstruction::Declare {
-            name: _,
-            is_mut: _,
-        } = instruction.instruction
-        {
+        if let RawMirInstruction::Declare { name: _, is_mut: _ } = instruction.instruction {
         } else if instruction.tp.is_some() {
             lifetime_num += 1;
             let end_mir = calculate_last_use(&i, instructions); //Do this before the removal!
@@ -376,11 +366,7 @@ pub fn generate_lifetimes(
     for (i, instruction) in instructions.iter().enumerate() {
         out.push_str(&format!(".{:<5}", format!("{}:", i)));
         out.push_str(&instruction.instruction.to_string());
-        if let RawMirInstruction::Declare {
-            name,
-            is_mut: _,
-        } = &instruction.instruction
-        {
+        if let RawMirInstruction::Declare { name, is_mut: _ } = &instruction.instruction {
             out.push_str(&namespace.get(name).unwrap().2.lifetime.to_string());
         }
         if let RawMirInstruction::DropBinding(_) = &instruction.instruction {

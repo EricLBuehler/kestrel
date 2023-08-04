@@ -11,7 +11,7 @@ pub fn init_void(codegen: &mut CodeGen) {
         traits: HashMap::from([(TraitType::Copy, Trait::Copy)]),
         qualname: "std::void".into(),
         lifetime: Lifetime::Static,
-        is_ref: false,
+        ref_n: 0,
     };
     codegen.builtins.insert(BasicType::Void, tp);
 }

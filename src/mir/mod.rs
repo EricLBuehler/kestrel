@@ -20,18 +20,9 @@ pub struct Mir<'a> {
 #[derive(Clone)]
 pub enum RawMirInstruction {
     I32(String),
-    Add {
-        left: usize,
-        right: usize,
-    },
-    Declare {
-        name: String,
-        is_mut: bool,
-    },
-    Store {
-        name: String,
-        right: usize,
-    },
+    Add { left: usize, right: usize },
+    Declare { name: String, is_mut: bool },
+    Store { name: String, right: usize },
     Own(usize),
     Load(String),
     Reference(usize),
@@ -54,16 +45,8 @@ impl Display for RawMirInstruction {
             RawMirInstruction::Add { left, right } => {
                 write!(f, "add .{left} .{right}")
             }
-            RawMirInstruction::Declare {
-                name,
-                is_mut,
-            } => {
-                write!(
-                    f,
-                    "declare {}{}",
-                    if *is_mut { "mut " } else { "" },
-                    name
-                )
+            RawMirInstruction::Declare { name, is_mut } => {
+                write!(f, "declare {}{}", if *is_mut { "mut " } else { "" }, name)
             }
             RawMirInstruction::I32(value) => {
                 write!(f, "i32 {value}")
@@ -321,7 +304,7 @@ impl<'a> Mir<'a> {
         let referencenode = node.data.get_data();
         let mut expr = self.generate_expr(referencenode.nodes.get("expr").unwrap());
 
-        expr.1.is_ref = true;
+        expr.1.ref_n += 1;
 
         self.instructions.push(MirInstruction {
             instruction: RawMirInstruction::Reference(expr.0),

@@ -290,7 +290,7 @@ impl<'a> CodeGen<'a> {
             ExprFlags { get_ref: true },
         );
 
-        expr.tp.is_ref = true;
+        expr.tp.ref_n += 1;
 
         expr
     }

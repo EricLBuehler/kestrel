@@ -53,13 +53,13 @@ pub struct Type<'a> {
     pub traits: Traits<'a>,
     qualname: String,
     pub lifetime: Lifetime,
-    pub is_ref: bool,
+    pub ref_n: usize,
 }
 
 impl<'a> Type<'a> {
     pub fn qualname(&self) -> String {
-        if self.is_ref {
-            "&".to_string() + &self.qualname
+        if self.ref_n > 0 {
+            "&".to_string().repeat(self.ref_n) + &self.qualname
         } else {
             self.qualname.clone()
         }
@@ -71,7 +71,7 @@ impl<'a> PartialEq for Type<'a> {
         self.basictype == other.basictype
             && self.traits == other.traits
             && self.qualname == other.qualname
-            && self.is_ref == other.is_ref
+            && self.ref_n == other.ref_n
     }
 }
 
