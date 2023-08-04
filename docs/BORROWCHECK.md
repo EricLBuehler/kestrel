@@ -4,6 +4,22 @@ The Kestrel borrow checker ensures that several invariants are maintained:
 - Each value has one owner
 - There may only be one reference to any binding at one time (this is currently a contrived demonstrative example)
 
+For example, this code is valid:
+```
+let 😀🤠 = 1+2
+let mut 😐 = &😀🤠
+😐 = &100
+let 😐😐 = &😀🤠
+```
+
+While the following is not due to the fact that there are multiple immutable references to `😀🤠` at the same time on line 4.
+```
+let 😀🤠 = 1+2
+let mut 😐 = &😀🤠
+😐 = &100
+let 😐😐 = &&😀🤠
+```
+
 The borrow checker runs before code generation. It works by converting the program into MIR (Mid Intermediate Representation), which is a simplified form of Kestrel that is boiled down to a set of simple instructions akin to assembly. These enable the borrow checker to analyze the program from a simpler view. See the .mir output files.
 
 ## MIR generation process
