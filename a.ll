@@ -2,7 +2,7 @@
 source_filename = "program.ke"
 target triple = "x86_64-unknown-linux-gnu"
 
-@0 = private constant [51 x i8] c"Error: i32 addition overflow!\0A    program.ke:1:12\0A\00"
+@0 = private constant [50 x i8] c"Error: i32 addition overflow!\0A    program.ke:1:9\0A\00"
 
 ; Function Attrs: nofree nounwind
 declare noundef i32 @printf(i8* nocapture noundef readonly) local_unnamed_addr #0
@@ -16,7 +16,7 @@ define i32 @main(i32 %0, i32** %1) local_unnamed_addr #1 {
   br i1 %6, label %7, label %9
 
 7:                                                ; preds = %2
-  %8 = call i32 @printf(i8* getelementptr inbounds ([51 x i8], [51 x i8]* @0, i32 0, i32 0))
+  %8 = call i32 @printf(i8* getelementptr inbounds ([50 x i8], [50 x i8]* @0, i32 0, i32 0))
   br label %10
 
 9:                                                ; preds = %2
