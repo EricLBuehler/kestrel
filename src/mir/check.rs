@@ -144,7 +144,7 @@ pub fn generate_lifetimes(
                 instructions_drop.insert(
                     end_mir + 1,
                     MirInstruction {
-                        instruction: RawMirInstruction::DropBinding(name.clone(), end_mir+1),
+                        instruction: RawMirInstruction::DropBinding(name.clone(), end_mir + 1),
                         pos: instructions.get(end_mir).as_ref().unwrap().pos.clone(),
                         tp: instructions.get(end_mir).as_ref().unwrap().tp.clone(),
                     },
@@ -273,7 +273,7 @@ pub fn generate_lifetimes(
                             };
                             for j in rt..instructions_drop.len() {
                                 if let RawMirInstruction::DropBinding(ref name_drop, _) =
-                                instructions_drop.get(j).as_ref().unwrap().instruction
+                                    instructions_drop.get(j).as_ref().unwrap().instruction
                                 {
                                     if name_drop == name {
                                         referred_type = ReferenceBase::Load {
@@ -378,6 +378,10 @@ pub fn generate_lifetimes(
         }
     }
 
+    (namespace, references)
+}
+
+pub fn write_mir(instructions: &mut [MirInstruction], namespace: &mut MirNamespace) {
     let mut out = String::new();
     for (i, instruction) in instructions.iter().enumerate() {
         out.push_str(&format!(".{:<5}", format!("{}:", i)));
@@ -397,8 +401,6 @@ pub fn generate_lifetimes(
     }
     let mut f = File::create("a.mir").expect("Unable to create MIR output file.");
     f.write_all(out.as_bytes()).expect("Unable to write MIR.");
-
-    (namespace, references)
 }
 
 pub fn check(
@@ -463,7 +465,7 @@ pub fn check(
                     }
                 }
             }
-            
+
             let l1_end = if let Lifetime::ImplicitLifetime {
                 name: _,
                 start_mir: _,
@@ -499,7 +501,7 @@ pub fn check(
                     ],
                     &this.info,
                 );
-            } 
+            }
         }
     }
 }
