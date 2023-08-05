@@ -146,7 +146,13 @@ pub fn generate_lifetimes<'a>(
                     *uses.last().unwrap()
                 };
 
-                let drop_pos = end_mir + instructions_drop.len() - instructions.len();
+                let mut drop_pos = end_mir;
+                
+                for j in 0..end_mir {
+                    if let RawMirInstruction::DropBinding(_, _) = instructions_drop.get(j).as_ref().unwrap().instruction {
+                        drop_pos+=1;
+                    }
+                }
 
                 instructions_drop.insert(
                     drop_pos,
@@ -157,7 +163,7 @@ pub fn generate_lifetimes<'a>(
                     },
                 );
                 binding_drops.insert(
-                    end_mir + 1,
+                    drop_pos+1,
                     MirInstruction {
                         instruction: RawMirInstruction::DropBinding(name.clone(), drop_pos),
                         pos: instructions.get(end_mir).as_ref().unwrap().pos.clone(),
@@ -401,8 +407,8 @@ pub fn write_mir<'a>(
     mut instructions: Vec<MirInstruction<'a>>,
     namespace: &mut MirNamespace,
 ) {
-    for (i, (k, v)) in binding_drops.iter().enumerate() {
-        instructions.insert(k + i, v.clone());
+    for (k, v) in binding_drops {
+        instructions.insert(k , v);
     }
 
     let mut out = String::new();
