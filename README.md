@@ -3,6 +3,7 @@
 [![MIT License](https://img.shields.io/badge/License-MIT-informational)](LICENSE)
 ![Test status](https://github.com/EricLBuehler/kestrel/actions/workflows/tests.yml/badge.svg)
 ![Build status](https://github.com/EricLBuehler/kestrel/actions/workflows/build.yml/badge.svg)
+![Docs status](https://github.com/EricLBuehler/kestrel/actions/workflows/docs.yml/badge.svg)
 
 Simple and safe.
 ## Features
