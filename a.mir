@@ -1,25 +1,25 @@
-.0:   i32 1 -> std::i32['static]
-.1:   i32 2 -> std::i32['static]
-.2:   add .0 .1 -> std::i32['static]
+.0:   i32 1 -> std::i32['1 .0 => .2]
+.1:   i32 2 -> std::i32['2 .1 => .2]
+.2:   add .0 .1 -> std::i32['3 .2 => .5]
 .3:   declare 😀🤠['4 .3 => .15]
 .4:   own .2
-.5:   store 😀🤠 .2 -> std::void['static]
-.6:   load 😀🤠 -> std::i32['static]
-.7:   copy .6 -> std::i32['static]
-.8:   ref .7 -> &std::i32['static]
+.5:   store 😀🤠 .2 -> std::void['5 .5 => .5]
+.6:   load 😀🤠 -> std::i32['6 .6 => .7]
+.7:   copy .6 -> std::i32['7 .7 => .8]
+.8:   ref .7 -> &std::i32['9 .8 => .11]
 .9:   declare mut 😐['10 .9 => .14]
 .10:  own .8
-.11:  store 😐 .8 -> std::void['static]
-.12:  i32 100 -> std::i32['static]
-.13:  ref .12 -> &std::i32['static]
-.14:  store 😐 .13 -> std::void['static]
+.11:  store 😐 .8 -> std::void['11 .11 => .11]
+.12:  i32 100 -> std::i32['12 .12 => .13]
+.13:  ref .12 -> &std::i32['14 .13 => .14]
+.14:  store 😐 .13 -> std::void['15 .14 => .14]
 .15:  dropbinding 😐
-.16:  load 😀🤠 -> std::i32['static]
+.16:  load 😀🤠 -> std::i32['16 .15 => .16]
 .17:  dropbinding 😀🤠
-.18:  copy .15 -> std::i32['static]
-.19:  ref .16 -> &std::i32['static]
-.20:  ref .17 -> &&std::i32['static]
+.18:  copy .15 -> std::i32['17 .16 => .17]
+.19:  ref .16 -> &std::i32['19 .17 => .18]
+.20:  ref .17 -> &&std::i32['21 .18 => .21]
 .21:  declare 😐😐['22 .19 => .21]
-.22:  dropbinding 😐😐
-.23:  own .18
-.24:  store 😐😐 .18 -> std::void['static]
+.22:  own .18
+.23:  dropbinding 😐😐
+.24:  store 😐😐 .18 -> std::void['23 .21 => .21]

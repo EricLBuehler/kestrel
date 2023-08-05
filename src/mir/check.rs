@@ -83,9 +83,10 @@ pub fn generate_lifetimes<'a>(
 ) -> (
     MirNamespace,
     IndexMap<usize, MirReference>,
-    Vec<MirInstruction<'a>>,
+    HashMap<usize, MirInstruction<'a>>,
 ) {
     let mut namespace: MirNamespace = HashMap::new();
+    let mut binding_drops = HashMap::new();
     let mut instructions_drop = instructions.clone();
     let mut lifetime_num = 0;
     let mut references = IndexMap::new();
@@ -153,6 +154,12 @@ pub fn generate_lifetimes<'a>(
                         tp: instructions.get(end_mir).as_ref().unwrap().tp.clone(),
                     },
                 );
+                binding_drops.insert(end_mir + 1,
+                    MirInstruction {
+                        instruction: RawMirInstruction::DropBinding(name.clone(), end_mir + 1),
+                        pos: instructions.get(end_mir).as_ref().unwrap().pos.clone(),
+                        tp: instructions.get(end_mir).as_ref().unwrap().tp.clone(),
+                    });
 
                 namespace.insert(
                     name.clone(),
@@ -382,10 +389,14 @@ pub fn generate_lifetimes<'a>(
         }
     }
 
-    (namespace, references, instructions_drop)
+    (namespace, references, binding_drops)
 }
 
-pub fn write_mir(instructions: Vec<MirInstruction>, namespace: &mut MirNamespace) {
+pub fn write_mir<'a>(binding_drops: HashMap<usize, MirInstruction<'a>>, mut instructions: Vec<MirInstruction<'a>>, namespace: &mut MirNamespace) {
+    for (k, v) in binding_drops {
+        instructions.insert(k, v);
+    }
+
     let mut out = String::new();
     for (i, instruction) in instructions.iter().enumerate() {
         out.push_str(&format!(".{:<5}", format!("{}:", i)));
