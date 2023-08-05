@@ -12,7 +12,7 @@ let mut 😐 = &😀🤠
 let 😐😐 = &😀🤠
 ```
 
-And this also is due to the fact that the references to `😀🤠` on line 4 are essentially the same reference - and not seperate. If they were seperate this would cause a compilation error.
+This also workd becuase of to the fact that the references to `😀🤠` on line 4 are essentially the same reference - and not seperate. If they were seperate this would cause a compilation error.
 ```
 let 😀🤠 = 1+2
 let mut 😐 = &😀🤠
