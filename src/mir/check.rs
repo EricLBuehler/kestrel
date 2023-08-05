@@ -32,6 +32,7 @@ pub enum ReferenceBase {
         borrowed_life: Lifetime,
         value_life: Lifetime,
     },
+    Reference(Lifetime),
 }
 
 pub fn calculate_last_use(i: &usize, instructions: &mut Vec<MirInstruction>) -> usize {
@@ -81,6 +82,7 @@ pub fn generate_lifetimes(
     instructions: &mut Vec<MirInstruction>,
 ) -> (MirNamespace, IndexMap<usize, MirReference>) {
     let mut namespace: MirNamespace = HashMap::new();
+    let mut instructions_drop = instructions.clone();
     let mut lifetime_num = 0;
     let mut references = IndexMap::new();
 
@@ -139,7 +141,7 @@ pub fn generate_lifetimes(
                     *uses.last().unwrap()
                 };
 
-                instructions.insert(
+                instructions_drop.insert(
                     end_mir + 1,
                     MirInstruction {
                         instruction: RawMirInstruction::DropBinding(name.clone(), end_mir+1),
@@ -234,8 +236,19 @@ pub fn generate_lifetimes(
                 let mut referred_type;
                 loop {
                     match &instructions.get(rt).as_ref().unwrap().instruction {
-                        RawMirInstruction::Reference(new_rt) => {
-                            rt = *new_rt;
+                        RawMirInstruction::Reference(_) => {
+                            referred_type = ReferenceBase::Reference(
+                                instructions
+                                    .get(rt)
+                                    .as_ref()
+                                    .unwrap()
+                                    .tp
+                                    .as_ref()
+                                    .unwrap()
+                                    .lifetime
+                                    .clone(),
+                            );
+                            break;
                         }
                         RawMirInstruction::Load(name) => {
                             referred_type = ReferenceBase::Load {
@@ -258,13 +271,13 @@ pub fn generate_lifetimes(
                                     .lifetime
                                     .clone(),
                             };
-                            for j in rt..instructions.len() {
+                            for j in rt..instructions_drop.len() {
                                 if let RawMirInstruction::DropBinding(ref name_drop, _) =
-                                    instructions.get(j).as_ref().unwrap().instruction
+                                instructions_drop.get(j).as_ref().unwrap().instruction
                                 {
                                     if name_drop == name {
                                         referred_type = ReferenceBase::Load {
-                                            borrowed_life: instructions
+                                            borrowed_life: instructions_drop
                                                 .get(j)
                                                 .as_ref()
                                                 .unwrap()
@@ -273,7 +286,7 @@ pub fn generate_lifetimes(
                                                 .unwrap()
                                                 .lifetime
                                                 .clone(),
-                                            value_life: instructions
+                                            value_life: instructions_drop
                                                 .get(rt)
                                                 .as_ref()
                                                 .unwrap()
@@ -400,42 +413,7 @@ pub fn check(
                 continue;
             }
 
-            let l1_end = if let Lifetime::ImplicitLifetime {
-                name: _,
-                start_mir: _,
-                end_mir,
-            } = life
-            {
-                *end_mir
-            } else {
-                usize::MIN
-            };
-
-            let l2_start = if let Lifetime::ImplicitLifetime {
-                name: _,
-                start_mir,
-                end_mir: _,
-            } = other_life
-            {
-                *start_mir
-            } else {
-                usize::MAX
-            };
-
-            if l1_end >= l2_start {
-                raise_error_multi(
-                    vec![
-                        format!("Multiple immutable references."),
-                        "First reference here.".into(),
-                    ],
-                    ErrorType::MultipleReferences,
-                    vec![
-                        &instructions.get(*i).unwrap().pos,
-                        &instructions.get(*j).unwrap().pos,
-                    ],
-                    &this.info,
-                );
-            } else if let ReferenceBase::Load {
+            if let ReferenceBase::Load {
                 borrowed_life,
                 value_life: _,
             } = base
@@ -469,7 +447,7 @@ pub fn check(
 
                     let RawMirInstruction::Load(ref name) = instructions.get(*right).as_ref().unwrap().instruction else {unreachable!()};
 
-                    if l1_end >= l2_start {
+                    if l1_end > l2_start {
                         raise_error_multi(
                             vec![
                                 format!("Binding '{}' has multiple immutable references.", name),
@@ -485,6 +463,43 @@ pub fn check(
                     }
                 }
             }
+            
+            let l1_end = if let Lifetime::ImplicitLifetime {
+                name: _,
+                start_mir: _,
+                end_mir,
+            } = life
+            {
+                *end_mir
+            } else {
+                usize::MIN
+            };
+
+            let l2_start = if let Lifetime::ImplicitLifetime {
+                name: _,
+                start_mir,
+                end_mir: _,
+            } = other_life
+            {
+                *start_mir
+            } else {
+                usize::MAX
+            };
+
+            if l1_end > l2_start {
+                raise_error_multi(
+                    vec![
+                        format!("Multiple immutable references."),
+                        "First reference here.".into(),
+                    ],
+                    ErrorType::MultipleReferences,
+                    vec![
+                        &instructions.get(*i).unwrap().pos,
+                        &instructions.get(*j).unwrap().pos,
+                    ],
+                    &this.info,
+                );
+            } 
         }
     }
 }
