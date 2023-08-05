@@ -77,10 +77,14 @@ pub fn calculate_last_use(i: &usize, instructions: &mut Vec<MirInstruction>) -> 
     }
 }
 
-pub fn generate_lifetimes(
+pub fn generate_lifetimes<'a>(
     this: &mut Mir,
-    instructions: &mut Vec<MirInstruction>,
-) -> (MirNamespace, IndexMap<usize, MirReference>) {
+    instructions: &mut Vec<MirInstruction<'a>>,
+) -> (
+    MirNamespace,
+    IndexMap<usize, MirReference>,
+    Vec<MirInstruction<'a>>,
+) {
     let mut namespace: MirNamespace = HashMap::new();
     let mut instructions_drop = instructions.clone();
     let mut lifetime_num = 0;
@@ -378,10 +382,10 @@ pub fn generate_lifetimes(
         }
     }
 
-    (namespace, references)
+    (namespace, references, instructions_drop)
 }
 
-pub fn write_mir(instructions: &mut [MirInstruction], namespace: &mut MirNamespace) {
+pub fn write_mir(instructions: Vec<MirInstruction>, namespace: &mut MirNamespace) {
     let mut out = String::new();
     for (i, instruction) in instructions.iter().enumerate() {
         out.push_str(&format!(".{:<5}", format!("{}:", i)));

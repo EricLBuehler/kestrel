@@ -83,9 +83,10 @@ pub fn new<'a>(info: FileInfo<'a>, builtins: BuiltinTypes<'a>) -> Mir<'a> {
 }
 
 pub fn check(this: &mut Mir, instructions: &mut Vec<MirInstruction>) {
-    let (mut namespace, references) = check::generate_lifetimes(this, instructions);
+    let (mut namespace, references, instructions_drop) =
+        check::generate_lifetimes(this, instructions);
     check::check(this, instructions, &mut namespace, &references);
-    check::write_mir(instructions, &mut namespace);
+    check::write_mir(instructions_drop, &mut namespace);
 }
 
 impl<'a> Mir<'a> {
