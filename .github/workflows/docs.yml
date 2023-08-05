@@ -1,0 +1,23 @@
+name: Docs
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  typos:
+    if: "!contains(github.event.head_commit.message, '[ci-skip]')"
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Install Typos
+      run: cargo install typos-cli
+    - name: Run Typos
+      run: typos
+    
