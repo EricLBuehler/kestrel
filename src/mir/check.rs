@@ -484,7 +484,7 @@ pub fn check(
                                 format!("Binding '{}' has multiple immutable references.", name),
                                 "First reference here.".into(),
                             ],
-                            ErrorType::MultipleReferences,
+                            ErrorType::MultipleImmutableReferences,
                             vec![
                                 &instructions.get(*j).unwrap().pos,
                                 &instructions.get(*i).unwrap().pos,
@@ -523,7 +523,7 @@ pub fn check(
                         format!("Multiple immutable references."),
                         "First reference here.".into(),
                     ],
-                    ErrorType::MultipleReferences,
+                    ErrorType::MultipleImmutableReferences,
                     vec![
                         &instructions.get(*i).unwrap().pos,
                         &instructions.get(*j).unwrap().pos,
