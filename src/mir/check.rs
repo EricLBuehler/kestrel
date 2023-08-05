@@ -83,10 +83,10 @@ pub fn generate_lifetimes<'a>(
 ) -> (
     MirNamespace,
     IndexMap<usize, MirReference>,
-    HashMap<usize, MirInstruction<'a>>,
+    IndexMap<usize, MirInstruction<'a>>,
 ) {
     let mut namespace: MirNamespace = HashMap::new();
-    let mut binding_drops = HashMap::new();
+    let mut binding_drops = IndexMap::new();
     let mut instructions_drop = instructions.clone();
     let mut lifetime_num = 0;
     let mut references = IndexMap::new();
@@ -146,18 +146,20 @@ pub fn generate_lifetimes<'a>(
                     *uses.last().unwrap()
                 };
 
+                let drop_pos = end_mir + instructions_drop.len() - instructions.len();
+                
                 instructions_drop.insert(
-                    end_mir + 1,
+                    drop_pos,
                     MirInstruction {
-                        instruction: RawMirInstruction::DropBinding(name.clone(), end_mir + 1),
+                        instruction: RawMirInstruction::DropBinding(name.clone(), drop_pos),
                         pos: instructions.get(end_mir).as_ref().unwrap().pos.clone(),
                         tp: instructions.get(end_mir).as_ref().unwrap().tp.clone(),
                     },
                 );
                 binding_drops.insert(
-                    end_mir + 1,
+                    end_mir+1,
                     MirInstruction {
-                        instruction: RawMirInstruction::DropBinding(name.clone(), end_mir + 1),
+                        instruction: RawMirInstruction::DropBinding(name.clone(), drop_pos),
                         pos: instructions.get(end_mir).as_ref().unwrap().pos.clone(),
                         tp: instructions.get(end_mir).as_ref().unwrap().tp.clone(),
                     },
@@ -395,12 +397,12 @@ pub fn generate_lifetimes<'a>(
 }
 
 pub fn write_mir<'a>(
-    binding_drops: HashMap<usize, MirInstruction<'a>>,
+    binding_drops: IndexMap<usize, MirInstruction<'a>>,
     mut instructions: Vec<MirInstruction<'a>>,
     namespace: &mut MirNamespace,
 ) {
-    for (k, v) in binding_drops {
-        instructions.insert(k, v);
+    for (i, (k, v)) in binding_drops.iter().enumerate() {
+        instructions.insert(k+i, v.clone());
     }
 
     let mut out = String::new();
