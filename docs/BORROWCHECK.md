@@ -12,7 +12,7 @@ let mut 😐 = &😀🤠
 let 😐😐 = &😀🤠
 ```
 
-This also workd becuase of to the fact that the references to `😀🤠` on line 4 are essentially the same reference - and not seperate. If they were seperate this would cause a compilation error.
+This also works becuase of to the fact that the references to `😀🤠` on line 4 are essentially the same reference - and not seperate. If they were seperate this would cause a compilation error.
 ```
 let 😀🤠 = 1+2
 let mut 😐 = &😀🤠
@@ -26,4 +26,4 @@ The borrow checker runs before code generation. It works by converting the progr
 The borrow checker first generates MIR without any lifetime metadata. Next, another pass called the lifetime generation pass adds lifetime metadata to the MIR by analying the MIR. In addition, this pass checks for ownership invariants. Finally, the borrow checker itself runs. This ensures the reference invariants.
 
 ## Drop order
-Bindings are dropped not when they go out of scope, but when they are last used.
+Bindings are dropped not when they go out of scope, but when they are last used. This is reflected in the outputted .mir file.
