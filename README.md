@@ -47,15 +47,15 @@ Simple and safe.
 
     Add: `enum` instantiation really instantiates a struct containing the value and the discriminant, update `match keyword`
 
-- **Add `String` type** (by 8/7/23)
+- **Add `String` type** (by 8/26/23)
 
     Add: `String` type.
 
-- **Add `std::io::print` type** (by 8/7/23)
+- **Add `std::io::print` type** (by 8/28/23)
 
     Add: `std::io::print` builtin function.
 
-- **Allow `fn` to take references** (by 8/7/23)
+- **Allow `fn` to take references** (by 9/2/23)
 
     Update: `fn` parameter list.
     
