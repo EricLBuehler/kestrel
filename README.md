@@ -47,6 +47,20 @@ Simple and safe.
 
     Add: `enum` instantiation really instantiates a struct containing the value and the discriminant, update `match keyword`
 
+- **Add `String` type** (by 8/7/23)
+
+    Add: `String` type.
+
+- **Add `std::io::print` type** (by 8/7/23)
+
+    Add: `std::io::print` builtin function.
+
+- **Allow `fn` to take references** (by 8/7/23)
+
+    Update: `fn` parameter list.
+    
+    Mir effect: Will require lifetime checks for functions.
+
 
 ## Features
 - **Ahead of time compilation** - Kestrel is compiled ahead of time (AOT), instead of being interpreted or JIT compiled. AOT compilation allows Kestrel to catch entire classes of runtime errors, vastly improving the developer experience.
