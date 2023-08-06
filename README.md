@@ -17,25 +17,36 @@ Simple and safe.
 
     Special notes for `bool`: none
 
-- **Add comparison traits** (by 8/9/23)
+- **Add functions** (by 8/10/23)
+
+    Add: `fn` keyword, `return` keyword, function calls.
+
+    MIR effect: Will require permutations to prove invariants.
+
+- **Add comparison traits** (by 8/12/23)
 
     Add: `Eq`, `Ne` traits, implement for `std` types.
 
-- **Add control flow** (by 8/13/23)
+- **Add control flow** (by 8/16/23)
 
     Add: `if` keyword, `elif` keyword, `else` keyword, use phi values.
 
     MIR effect: Will require permutations to prove invariants.
     
-- **Add C-style enums** (by 8/15/23)
+- **Add C-style enums** (by 8/18/23)
 
     Add: `enum` keyword, enum variant instantiation with `::` operator.
 
-- **Add `match` keyword** (by 8/17/23)
+- **Add `match` keyword** (by 8/21/23)
 
     Add: `match` keyword, use phi values.
     
     MIR effect: Will require permutations to prove invariants.
+    
+- **Add Rust-style enums** (by 8/24/23)
+
+    Add: `enum` instantiation really instantiates a struct containing the value and the discriminant, update `match keyword`
+
 
 ## Features
 - **Ahead of time compilation** - Kestrel is compiled ahead of time (AOT), instead of being interpreted or JIT compiled. AOT compilation allows Kestrel to catch entire classes of runtime errors, vastly improving the developer experience.
