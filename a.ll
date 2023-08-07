@@ -9,9 +9,9 @@ declare noundef i32 @printf(i8* nocapture noundef readonly) local_unnamed_addr #
 
 ; Function Attrs: noinline norecurse nounwind optnone willreturn
 define i32 @main(i32 %0, i32** %1) local_unnamed_addr #1 {
-  %3 = call { i32, i1 } @llvm.sadd.with.overflow.i32.i32(i32 1, i32 2)
-  %4 = extractvalue { i32, i1 } %3, 0
-  %5 = extractvalue { i32, i1 } %3, 1
+  %3 = call { i64, i1 } @llvm.sadd.with.overflow.i64.i64(i64 1, i64 2)
+  %4 = extractvalue { i64, i1 } %3, 0
+  %5 = extractvalue { i64, i1 } %3, 1
   %6 = call i1 @llvm.expect.i1.i1(i1 %5, i1 false)
   br i1 %6, label %7, label %9
 
@@ -23,20 +23,20 @@ define i32 @main(i32 %0, i32** %1) local_unnamed_addr #1 {
   br label %10
 
 10:                                               ; preds = %9, %7
-  %11 = phi i32 [ %4, %9 ], [ undef, %7 ]
-  %12 = alloca i32, align 4
-  store i32 %11, i32* %12, align 4
-  %13 = alloca i32*, align 8
-  store i32* %12, i32** %13, align 8
+  %11 = phi i64 [ %4, %9 ], [ undef, %7 ]
+  %12 = alloca i64, align 8
+  store i64 %11, i64* %12, align 4
+  %13 = alloca i64*, align 8
+  store i64* %12, i64** %13, align 8
   %14 = alloca i32, align 4
   store i32 100, i32* %14, align 4
-  %15 = alloca i32*, align 8
-  store i32* %12, i32** %15, align 8
+  %15 = alloca i64*, align 8
+  store i64* %12, i64** %15, align 8
   ret i32 0
 }
 
 ; Function Attrs: mustprogress nofree nosync nounwind readnone speculatable willreturn
-declare { i32, i1 } @llvm.sadd.with.overflow.i32.i32(i32, i32) #2
+declare { i64, i1 } @llvm.sadd.with.overflow.i64.i64(i64, i64) #2
 
 ; Function Attrs: mustprogress nofree nosync nounwind readnone willreturn
 declare i1 @llvm.expect.i1.i1(i1, i1) #3

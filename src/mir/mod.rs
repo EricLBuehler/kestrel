@@ -19,7 +19,11 @@ pub struct Mir<'a> {
 
 #[derive(Clone)]
 pub enum RawMirInstruction {
+    I8(String),
+    I16(String),
     I32(String),
+    I64(String),
+    I128(String),
     Add { left: usize, right: usize },
     Declare { name: String, is_mut: bool },
     Store { name: String, right: usize },
@@ -48,8 +52,20 @@ impl Display for RawMirInstruction {
             RawMirInstruction::Declare { name, is_mut } => {
                 write!(f, "declare {}{}", if *is_mut { "mut " } else { "" }, name)
             }
+            RawMirInstruction::I8(value) => {
+                write!(f, "i8 {value}")
+            }
+            RawMirInstruction::I16(value) => {
+                write!(f, "i16 {value}")
+            }
             RawMirInstruction::I32(value) => {
                 write!(f, "i32 {value}")
+            }
+            RawMirInstruction::I64(value) => {
+                write!(f, "i64 {value}")
+            }
+            RawMirInstruction::I128(value) => {
+                write!(f, "i128 {value}")
             }
             RawMirInstruction::Load(name) => {
                 write!(f, "load {name}")
@@ -99,7 +115,11 @@ impl<'a> Mir<'a> {
 
     fn generate_expr(&mut self, node: &Node) -> MirResult<'a> {
         match node.tp {
+            NodeType::I8 => self.generate_i8(node),
+            NodeType::I16 => self.generate_i16(node),
             NodeType::I32 => self.generate_i32(node),
+            NodeType::I64 => self.generate_i64(node),
+            NodeType::I128 => self.generate_i128(node),
             NodeType::Binary => self.generate_binary(node),
             NodeType::Let => self.generate_let(node),
             NodeType::Identifier => self.generate_load(node),
@@ -110,6 +130,80 @@ impl<'a> Mir<'a> {
 }
 
 impl<'a> Mir<'a> {
+    fn generate_i8(&mut self, node: &Node) -> MirResult<'a> {
+        if node
+            .data
+            .get_data()
+            .raw
+            .get("value")
+            .unwrap()
+            .parse::<i8>()
+            .is_err()
+        {
+            let fmt: String = format!(
+                "i8 literal in radix 10 out of bounds ({} to {}).",
+                i8::MAX,
+                i8::MIN
+            );
+            raise_error(
+                &fmt,
+                ErrorType::InvalidLiteralForRadix,
+                &node.pos,
+                &self.info,
+            );
+        }
+
+        self.instructions.push(MirInstruction {
+            instruction: RawMirInstruction::I8(
+                node.data.get_data().raw.get("value").unwrap().to_string(),
+            ),
+            pos: node.pos.clone(),
+            tp: Some(self.builtins.get(&BasicType::I8).unwrap().clone()),
+        });
+
+        (
+            self.instructions.len() - 1,
+            self.builtins.get(&BasicType::I8).unwrap().clone(),
+        )
+    }
+    
+    fn generate_i16(&mut self, node: &Node) -> MirResult<'a> {
+        if node
+            .data
+            .get_data()
+            .raw
+            .get("value")
+            .unwrap()
+            .parse::<i16>()
+            .is_err()
+        {
+            let fmt: String = format!(
+                "i16 literal in radix 10 out of bounds ({} to {}).",
+                i16::MAX,
+                i16::MIN
+            );
+            raise_error(
+                &fmt,
+                ErrorType::InvalidLiteralForRadix,
+                &node.pos,
+                &self.info,
+            );
+        }
+
+        self.instructions.push(MirInstruction {
+            instruction: RawMirInstruction::I16(
+                node.data.get_data().raw.get("value").unwrap().to_string(),
+            ),
+            pos: node.pos.clone(),
+            tp: Some(self.builtins.get(&BasicType::I16).unwrap().clone()),
+        });
+
+        (
+            self.instructions.len() - 1,
+            self.builtins.get(&BasicType::I16).unwrap().clone(),
+        )
+    }
+
     fn generate_i32(&mut self, node: &Node) -> MirResult<'a> {
         if node
             .data
@@ -144,6 +238,80 @@ impl<'a> Mir<'a> {
         (
             self.instructions.len() - 1,
             self.builtins.get(&BasicType::I32).unwrap().clone(),
+        )
+    }
+    
+    fn generate_i64(&mut self, node: &Node) -> MirResult<'a> {
+        if node
+            .data
+            .get_data()
+            .raw
+            .get("value")
+            .unwrap()
+            .parse::<i64>()
+            .is_err()
+        {
+            let fmt: String = format!(
+                "i64 literal in radix 10 out of bounds ({} to {}).",
+                i64::MAX,
+                i64::MIN
+            );
+            raise_error(
+                &fmt,
+                ErrorType::InvalidLiteralForRadix,
+                &node.pos,
+                &self.info,
+            );
+        }
+
+        self.instructions.push(MirInstruction {
+            instruction: RawMirInstruction::I64(
+                node.data.get_data().raw.get("value").unwrap().to_string(),
+            ),
+            pos: node.pos.clone(),
+            tp: Some(self.builtins.get(&BasicType::I64).unwrap().clone()),
+        });
+
+        (
+            self.instructions.len() - 1,
+            self.builtins.get(&BasicType::I64).unwrap().clone(),
+        )
+    }
+    
+    fn generate_i128(&mut self, node: &Node) -> MirResult<'a> {
+        if node
+            .data
+            .get_data()
+            .raw
+            .get("value")
+            .unwrap()
+            .parse::<i128>()
+            .is_err()
+        {
+            let fmt: String = format!(
+                "i128 literal in radix 10 out of bounds ({} to {}).",
+                i128::MAX,
+                i128::MIN
+            );
+            raise_error(
+                &fmt,
+                ErrorType::InvalidLiteralForRadix,
+                &node.pos,
+                &self.info,
+            );
+        }
+
+        self.instructions.push(MirInstruction {
+            instruction: RawMirInstruction::I128(
+                node.data.get_data().raw.get("value").unwrap().to_string(),
+            ),
+            pos: node.pos.clone(),
+            tp: Some(self.builtins.get(&BasicType::I128).unwrap().clone()),
+        });
+
+        (
+            self.instructions.len() - 1,
+            self.builtins.get(&BasicType::I128).unwrap().clone(),
         )
     }
 

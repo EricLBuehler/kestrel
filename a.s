@@ -16,7 +16,7 @@ main:                                   # @main
                                         # kill: killed $rsi
                                         # kill: killed $edi
 	movl	$1, %eax
-	addl	$2, %eax
+	addq	$2, %rax
 	seto	%cl
 	testb	$1, %cl
 	jne	.LBB0_1
@@ -24,7 +24,7 @@ main:                                   # @main
 .LBB0_1:
 	movabsq	$.L__unnamed_1, %rdi
 	callq	printf@PLT
-                                        # implicit-def: $eax
+                                        # implicit-def: $rax
 	jmp	.LBB0_3
 .LBB0_2:
 	jmp	.LBB0_3
@@ -33,7 +33,7 @@ main:                                   # @main
 	movq	%rcx, %rdx
 	addq	$-16, %rdx
 	movq	%rdx, %rsp
-	movl	%eax, -16(%rcx)
+	movq	%rax, -16(%rcx)
 	movq	%rsp, %rax
 	movq	%rax, %rcx
 	addq	$-16, %rcx

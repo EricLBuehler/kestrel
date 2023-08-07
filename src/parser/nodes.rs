@@ -23,6 +23,10 @@ pub enum NodeType {
     Let,
     Store,
     Reference,
+    I8,
+    I16,
+    I64,
+    I128,
 }
 
 #[derive(Debug)]

@@ -78,11 +78,91 @@ impl<'a> CodeGen<'a> {
             NodeType::Let => self.compile_let(node, flags),
             NodeType::Store => self.compile_store(node, flags),
             NodeType::Reference => self.compile_reference(node, flags),
+            NodeType::I8 => self.compile_i8(node, flags),
+            NodeType::I16 => self.compile_i16(node, flags),
+            NodeType::I64 => self.compile_i64(node, flags),
+            NodeType::I128 => self.compile_i128(node, flags),
         }
     }
 }
 
 impl<'a> CodeGen<'a> {
+    fn compile_i8(&mut self, node: &Node, _flags: ExprFlags) -> Data<'a> {
+        if node
+            .data
+            .get_data()
+            .raw
+            .get("value")
+            .unwrap()
+            .parse::<i8>()
+            .is_err()
+        {
+            let fmt: String = format!(
+                "i8 literal in radix 10 out of bounds ({} to {}).",
+                i8::MAX,
+                i8::MIN
+            );
+            raise_error(
+                &fmt,
+                ErrorType::InvalidLiteralForRadix,
+                &node.pos,
+                self.info,
+            );
+        }
+
+        let res = self.context.i8_type().const_int_from_string(
+            node.data.get_data().raw.get("value").unwrap(),
+            inkwell::types::StringRadix::Decimal,
+        );
+
+        if let Some(int) = res {
+            Data {
+                data: Some(int.into()),
+                tp: self.builtins.get(&BasicType::I8).unwrap().clone(),
+            }
+        } else {
+            unimplemented!();
+        }
+    }
+    
+    fn compile_i16(&mut self, node: &Node, _flags: ExprFlags) -> Data<'a> {
+        if node
+            .data
+            .get_data()
+            .raw
+            .get("value")
+            .unwrap()
+            .parse::<i16>()
+            .is_err()
+        {
+            let fmt: String = format!(
+                "i16 literal in radix 10 out of bounds ({} to {}).",
+                i16::MAX,
+                i16::MIN
+            );
+            raise_error(
+                &fmt,
+                ErrorType::InvalidLiteralForRadix,
+                &node.pos,
+                self.info,
+            );
+        }
+
+        let res = self.context.i16_type().const_int_from_string(
+            node.data.get_data().raw.get("value").unwrap(),
+            inkwell::types::StringRadix::Decimal,
+        );
+
+        if let Some(int) = res {
+            Data {
+                data: Some(int.into()),
+                tp: self.builtins.get(&BasicType::I16).unwrap().clone(),
+            }
+        } else {
+            unimplemented!();
+        }
+    }
+    
     fn compile_i32(&mut self, node: &Node, _flags: ExprFlags) -> Data<'a> {
         if node
             .data
@@ -114,7 +194,83 @@ impl<'a> CodeGen<'a> {
         if let Some(int) = res {
             Data {
                 data: Some(int.into()),
-                tp: self.builtins.get(&BasicType::I32).unwrap().clone(),
+                tp: self.builtins.get(&BasicType::I64).unwrap().clone(),
+            }
+        } else {
+            unimplemented!();
+        }
+    }
+
+    fn compile_i64(&mut self, node: &Node, _flags: ExprFlags) -> Data<'a> {
+        if node
+            .data
+            .get_data()
+            .raw
+            .get("value")
+            .unwrap()
+            .parse::<i64>()
+            .is_err()
+        {
+            let fmt: String = format!(
+                "i64 literal in radix 10 out of bounds ({} to {}).",
+                i64::MAX,
+                i64::MIN
+            );
+            raise_error(
+                &fmt,
+                ErrorType::InvalidLiteralForRadix,
+                &node.pos,
+                self.info,
+            );
+        }
+
+        let res = self.context.i64_type().const_int_from_string(
+            node.data.get_data().raw.get("value").unwrap(),
+            inkwell::types::StringRadix::Decimal,
+        );
+
+        if let Some(int) = res {
+            Data {
+                data: Some(int.into()),
+                tp: self.builtins.get(&BasicType::I64).unwrap().clone(),
+            }
+        } else {
+            unimplemented!();
+        }
+    }
+    
+    fn compile_i128(&mut self, node: &Node, _flags: ExprFlags) -> Data<'a> {
+        if node
+            .data
+            .get_data()
+            .raw
+            .get("value")
+            .unwrap()
+            .parse::<i128>()
+            .is_err()
+        {
+            let fmt: String = format!(
+                "i128 literal in radix 10 out of bounds ({} to {}).",
+                i128::MAX,
+                i128::MIN
+            );
+            raise_error(
+                &fmt,
+                ErrorType::InvalidLiteralForRadix,
+                &node.pos,
+                self.info,
+            );
+        }
+
+        let res = self.context.i128_type().const_int_from_string(
+            node.data.get_data().raw.get("value").unwrap(),
+            inkwell::types::StringRadix::Decimal,
+        );
+
+        if let Some(int) = res {
+            Data {
+                data: Some(int.into()),
+                tp: self.builtins.get(&BasicType::I128).unwrap().clone(),
             }
         } else {
             unimplemented!();

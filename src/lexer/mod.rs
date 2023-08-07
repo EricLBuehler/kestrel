@@ -2,7 +2,7 @@
 
 use std::str::Chars;
 
-use crate::utils::{FileInfo, Position};
+use crate::{utils::{FileInfo, Position}, errors::{raise_error, ErrorType}};
 
 #[derive(Clone, PartialEq, Debug)]
 pub enum TokenType {
@@ -14,13 +14,16 @@ pub enum TokenType {
     Identifier,
     Keyword,
     Ampersand,
+    I8,
+    I16,
+    I64,
+    I128,
 }
 
 pub struct Lexer<'a> {
     pub current: char,
     pub line: usize,
     pub col: usize,
-    pub raw_col: usize,
     pub chars: Chars<'a>,
     pub info: FileInfo<'a>,
 }
@@ -50,6 +53,10 @@ impl std::fmt::Display for TokenType {
             TokenType::Identifier => write!(f, "identifier"),
             TokenType::Keyword => write!(f, "keyword"),
             TokenType::Ampersand => write!(f, "ampersand"),
+            TokenType::I8 => write!(f, "i8"),
+            TokenType::I16 => write!(f, "i16"),
+            TokenType::I64 => write!(f, "i64"),
+            TokenType::I128 => write!(f, "i128"),
         }
     }
 }
@@ -61,7 +68,6 @@ pub fn new<'a>(info: &mut crate::utils::FileInfo<'a>) -> Lexer<'a> {
         current,
         line: 0,
         col: 0,
-        raw_col: 0,
         chars,
         info: info.clone(),
     }
@@ -70,7 +76,6 @@ pub fn new<'a>(info: &mut crate::utils::FileInfo<'a>) -> Lexer<'a> {
 fn advance(lexer: &mut Lexer) {
     let next = lexer.chars.next();
 
-    lexer.raw_col += 1;
     if lexer.current != '\n' && lexer.current != '\r' {
         lexer.col += unicode_width::UnicodeWidthChar::width(lexer.current).unwrap();
     }
@@ -85,7 +90,6 @@ fn advance(lexer: &mut Lexer) {
     if lexer.current == '\n' || lexer.current == '\r' {
         lexer.line += 1;
         lexer.col = 0;
-        lexer.raw_col = 0;
     }
 
     lexer.current = next;
@@ -206,9 +210,10 @@ pub fn generate_tokens(lexer: &mut Lexer, kwds: &[String]) -> (usize, Vec<Token>
 }
 
 fn make_number(lexer: &mut Lexer) -> Token {
+    let start_col = lexer.col;
     let mut data: String = String::from("");
 
-    let tp: TokenType = TokenType::I32;
+    let mut tp: TokenType = TokenType::I32;
 
     let start = Position {
         line: lexer.line,
@@ -216,9 +221,41 @@ fn make_number(lexer: &mut Lexer) -> Token {
         endcol: lexer.col + 1,
     };
 
-    while (lexer.current).is_numeric() || lexer.current == '_' {
+    while lexer.current.is_numeric() || lexer.current == '_' {
         data.push(lexer.current);
         advance(lexer);
+        if lexer.current == 'i' {
+            advance(lexer);
+            let mut specified_type = String::new();
+            while lexer.current.is_numeric() {
+                specified_type.push(lexer.current);
+                advance(lexer);
+            }
+            match specified_type.as_str() {
+                "8" => {
+                    tp = TokenType::I8;
+                }
+                "16" => {
+                    tp = TokenType::I16;
+                }
+                "32" => {
+                    tp = TokenType::I32;
+                }
+                "64" => {
+                    tp = TokenType::I64;
+                }
+                "128" => {
+                    tp = TokenType::I128;
+                }
+                _ => {
+                    raise_error(&format!("Invalid specified type i{}.", specified_type), ErrorType::InvalidSpecifiedNumericType, &Position {
+                        line: lexer.line,
+                        startcol: start_col,
+                        endcol: lexer.col,
+                    }, &lexer.info);
+                }
+            }
+        }
     }
 
     Token {

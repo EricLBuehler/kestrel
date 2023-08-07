@@ -30,15 +30,31 @@ pub enum TraitType {
 
 #[derive(Hash, PartialEq, Eq, PartialOrd, Ord, Clone, Debug)]
 pub enum BasicType {
+    I8,
+    I16,
     I32,
+    I64,
+    I128,
     Void,
 }
 
 impl Display for BasicType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match *self {
+            BasicType::I8 => {
+                write!(f, "i8")
+            }
+            BasicType::I16 => {
+                write!(f, "i16")
+            }
             BasicType::I32 => {
                 write!(f, "i32")
+            }
+            BasicType::I64 => {
+                write!(f, "i64")
+            }
+            BasicType::I128 => {
+                write!(f, "i128")
             }
             BasicType::Void => {
                 write!(f, "void")

@@ -14,6 +14,7 @@ pub enum ErrorType {
     BindingNotMutable,
     MultipleImmutableReferences,
     TraitNotImplemented,
+    InvalidSpecifiedNumericType,
 }
 
 impl std::fmt::Display for ErrorType {
@@ -34,6 +35,7 @@ pub fn repr_err(tp: ErrorType) -> &'static str {
         ErrorType::BindingNotMutable => "binding not mutable",
         ErrorType::MultipleImmutableReferences => "multiple immutable references",
         ErrorType::TraitNotImplemented => "trait not implemented",
+        ErrorType::InvalidSpecifiedNumericType => "invalid specified numeric type",
     }
 }
 
