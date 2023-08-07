@@ -6,8 +6,8 @@ use crate::{
 
 pub mod nodes;
 use self::nodes::{
-    BinaryNode, DecimalNode, IdentifierNode, LetNode, Node, NodeType, OpType, ReferenceNode,
-    StoreNode, BoolNode,
+    BinaryNode, BoolNode, DecimalNode, IdentifierNode, LetNode, Node, NodeType, OpType,
+    ReferenceNode, StoreNode,
 };
 
 pub struct Parser<'a> {
@@ -214,8 +214,16 @@ impl<'a> Parser<'a> {
     fn keyword(&mut self) -> Node {
         match self.current.data.as_str() {
             "let" => self.generate_let(),
-            "true" => {let res = self.generate_true(); self.advance(); res},
-            "false" => {let res = self.generate_false(); self.advance(); res},
+            "true" => {
+                let res = self.generate_true();
+                self.advance();
+                res
+            }
+            "false" => {
+                let res = self.generate_false();
+                self.advance();
+                res
+            }
             _ => {
                 unreachable!();
             }
@@ -266,9 +274,7 @@ impl<'a> Parser<'a> {
                 line: self.current.start.line,
             },
             nodes::NodeType::Bool,
-            Box::new(BoolNode {
-                value: true
-            }),
+            Box::new(BoolNode { value: true }),
         )
     }
 
@@ -280,9 +286,7 @@ impl<'a> Parser<'a> {
                 line: self.current.start.line,
             },
             nodes::NodeType::Bool,
-            Box::new(BoolNode {
-                value: false
-            }),
+            Box::new(BoolNode { value: false }),
         )
     }
 
@@ -303,16 +307,10 @@ impl<'a> Parser<'a> {
             TokenType::Identifier => Some(self.generate_identifier()),
             TokenType::Ampersand => Some(self.generate_reference()),
             TokenType::Keyword => match self.current.data.as_str() {
-                "true" => {
-                    Some(self.generate_true())
-                }
-                "false" => {
-                    Some(self.generate_false())
-                }
-                _ => {
-                    None
-                }
-            }
+                "true" => Some(self.generate_true()),
+                "false" => Some(self.generate_false()),
+                _ => None,
+            },
             _ => None,
         }
     }
@@ -361,7 +359,7 @@ impl<'a> Parser<'a> {
             }),
         )
     }
-    
+
     fn generate_i16(&mut self) -> Node {
         Node::new(
             Position {
@@ -431,7 +429,7 @@ impl<'a> Parser<'a> {
             }),
         )
     }
-    
+
     fn generate_u16(&mut self) -> Node {
         Node::new(
             Position {

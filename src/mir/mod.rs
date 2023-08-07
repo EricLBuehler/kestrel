@@ -196,7 +196,7 @@ impl<'a> Mir<'a> {
             self.builtins.get(&BasicType::I8).unwrap().clone(),
         )
     }
-    
+
     fn generate_i16(&mut self, node: &Node) -> MirResult<'a> {
         if node
             .data
@@ -270,7 +270,7 @@ impl<'a> Mir<'a> {
             self.builtins.get(&BasicType::I32).unwrap().clone(),
         )
     }
-    
+
     fn generate_i64(&mut self, node: &Node) -> MirResult<'a> {
         if node
             .data
@@ -307,7 +307,7 @@ impl<'a> Mir<'a> {
             self.builtins.get(&BasicType::I64).unwrap().clone(),
         )
     }
-    
+
     fn generate_i128(&mut self, node: &Node) -> MirResult<'a> {
         if node
             .data
@@ -344,7 +344,7 @@ impl<'a> Mir<'a> {
             self.builtins.get(&BasicType::I128).unwrap().clone(),
         )
     }
-    
+
     fn generate_u8(&mut self, node: &Node) -> MirResult<'a> {
         if node
             .data
@@ -381,7 +381,7 @@ impl<'a> Mir<'a> {
             self.builtins.get(&BasicType::U8).unwrap().clone(),
         )
     }
-    
+
     fn generate_u16(&mut self, node: &Node) -> MirResult<'a> {
         if node
             .data
@@ -455,7 +455,7 @@ impl<'a> Mir<'a> {
             self.builtins.get(&BasicType::U32).unwrap().clone(),
         )
     }
-    
+
     fn generate_u64(&mut self, node: &Node) -> MirResult<'a> {
         if node
             .data
@@ -492,7 +492,7 @@ impl<'a> Mir<'a> {
             self.builtins.get(&BasicType::U64).unwrap().clone(),
         )
     }
-    
+
     fn generate_u128(&mut self, node: &Node) -> MirResult<'a> {
         if node
             .data
@@ -529,7 +529,7 @@ impl<'a> Mir<'a> {
             self.builtins.get(&BasicType::U128).unwrap().clone(),
         )
     }
-    
+
     fn generate_bool(&mut self, node: &Node) -> MirResult<'a> {
         self.instructions.push(MirInstruction {
             instruction: RawMirInstruction::Bool(
@@ -574,10 +574,7 @@ impl<'a> Mir<'a> {
             tp: Some(res.clone()),
         });
 
-        (
-            self.instructions.len() - 1,
-            res,
-        )
+        (self.instructions.len() - 1, res)
     }
 
     fn generate_let(&mut self, node: &Node) -> MirResult<'a> {

@@ -167,10 +167,12 @@ pub fn generate_lifetimes<'a>(
                 };
 
                 let mut drop_pos = end_mir;
-                
+
                 for j in 0..end_mir {
-                    if let RawMirInstruction::DropBinding(_, _) = instructions_drop.get(j).as_ref().unwrap().instruction {
-                        drop_pos+=1;
+                    if let RawMirInstruction::DropBinding(_, _) =
+                        instructions_drop.get(j).as_ref().unwrap().instruction
+                    {
+                        drop_pos += 1;
                     }
                 }
 
@@ -183,7 +185,7 @@ pub fn generate_lifetimes<'a>(
                     },
                 );
                 binding_drops.insert(
-                    drop_pos+1,
+                    drop_pos + 1,
                     MirInstruction {
                         instruction: RawMirInstruction::DropBinding(name.clone(), drop_pos),
                         pos: instructions.get(end_mir).as_ref().unwrap().pos.clone(),
@@ -346,18 +348,18 @@ pub fn generate_lifetimes<'a>(
                         RawMirInstruction::Copy(new_rt) => {
                             rt = *new_rt;
                         }
-                        
-                        RawMirInstruction::I8(_) |
-                        RawMirInstruction::I16(_) |
-                        RawMirInstruction::I32(_) |
-                        RawMirInstruction::I64(_) |
-                        RawMirInstruction::I128(_) |
-                        RawMirInstruction::U8(_) |
-                        RawMirInstruction::U16(_) |
-                        RawMirInstruction::U32(_) |
-                        RawMirInstruction::U64(_) |
-                        RawMirInstruction::U128(_)  => {
-                                referred_type = ReferenceBase::I32(
+
+                        RawMirInstruction::I8(_)
+                        | RawMirInstruction::I16(_)
+                        | RawMirInstruction::I32(_)
+                        | RawMirInstruction::I64(_)
+                        | RawMirInstruction::I128(_)
+                        | RawMirInstruction::U8(_)
+                        | RawMirInstruction::U16(_)
+                        | RawMirInstruction::U32(_)
+                        | RawMirInstruction::U64(_)
+                        | RawMirInstruction::U128(_) => {
+                            referred_type = ReferenceBase::I32(
                                 instructions
                                     .get(rt)
                                     .as_ref()
@@ -438,7 +440,7 @@ pub fn write_mir<'a>(
     namespace: &mut MirNamespace,
 ) {
     for (k, v) in binding_drops {
-        instructions.insert(k , v);
+        instructions.insert(k, v);
     }
 
     let mut out = String::new();

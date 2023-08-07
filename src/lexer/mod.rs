@@ -2,7 +2,10 @@
 
 use std::str::Chars;
 
-use crate::{utils::{FileInfo, Position}, errors::{raise_error, ErrorType}};
+use crate::{
+    errors::{raise_error, ErrorType},
+    utils::{FileInfo, Position},
+};
 
 #[derive(Clone, PartialEq, Debug)]
 pub enum TokenType {
@@ -258,15 +261,19 @@ fn make_number(lexer: &mut Lexer) -> Token {
                     tp = TokenType::I128;
                 }
                 _ => {
-                    raise_error(&format!("Invalid specified type i{}.", specified_type), ErrorType::InvalidSpecifiedNumericType, &Position {
-                        line: lexer.line,
-                        startcol: start_col,
-                        endcol: lexer.col,
-                    }, &lexer.info);
+                    raise_error(
+                        &format!("Invalid specified type i{}.", specified_type),
+                        ErrorType::InvalidSpecifiedNumericType,
+                        &Position {
+                            line: lexer.line,
+                            startcol: start_col,
+                            endcol: lexer.col,
+                        },
+                        &lexer.info,
+                    );
                 }
             }
-        }
-        else if lexer.current == 'u' {
+        } else if lexer.current == 'u' {
             advance(lexer);
             let mut specified_type = String::new();
             while lexer.current.is_numeric() {
@@ -290,11 +297,16 @@ fn make_number(lexer: &mut Lexer) -> Token {
                     tp = TokenType::U128;
                 }
                 _ => {
-                    raise_error(&format!("Invalid specified type u{}.", specified_type), ErrorType::InvalidSpecifiedNumericType, &Position {
-                        line: lexer.line,
-                        startcol: start_col,
-                        endcol: lexer.col,
-                    }, &lexer.info);
+                    raise_error(
+                        &format!("Invalid specified type u{}.", specified_type),
+                        ErrorType::InvalidSpecifiedNumericType,
+                        &Position {
+                            line: lexer.line,
+                            startcol: start_col,
+                            endcol: lexer.col,
+                        },
+                        &lexer.info,
+                    );
                 }
             }
         }

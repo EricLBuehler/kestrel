@@ -130,7 +130,7 @@ impl<'a> CodeGen<'a> {
             unimplemented!();
         }
     }
-    
+
     fn compile_i16(&mut self, node: &Node, _flags: ExprFlags) -> Data<'a> {
         if node
             .data
@@ -168,7 +168,7 @@ impl<'a> CodeGen<'a> {
             unimplemented!();
         }
     }
-    
+
     fn compile_i32(&mut self, node: &Node, _flags: ExprFlags) -> Data<'a> {
         if node
             .data
@@ -244,7 +244,7 @@ impl<'a> CodeGen<'a> {
             unimplemented!();
         }
     }
-    
+
     fn compile_i128(&mut self, node: &Node, _flags: ExprFlags) -> Data<'a> {
         if node
             .data
@@ -320,7 +320,7 @@ impl<'a> CodeGen<'a> {
             unimplemented!();
         }
     }
-    
+
     fn compile_u16(&mut self, node: &Node, _flags: ExprFlags) -> Data<'a> {
         if node
             .data
@@ -358,7 +358,7 @@ impl<'a> CodeGen<'a> {
             unimplemented!();
         }
     }
-    
+
     fn compile_u32(&mut self, node: &Node, _flags: ExprFlags) -> Data<'a> {
         if node
             .data
@@ -434,7 +434,7 @@ impl<'a> CodeGen<'a> {
             unimplemented!();
         }
     }
-    
+
     fn compile_u128(&mut self, node: &Node, _flags: ExprFlags) -> Data<'a> {
         if node
             .data
@@ -474,11 +474,7 @@ impl<'a> CodeGen<'a> {
     }
 
     fn compile_bool(&mut self, node: &Node, _flags: ExprFlags) -> Data<'a> {
-        match node
-            .data
-            .get_data()
-            .booleans
-            .get("value").unwrap() {
+        match node.data.get_data().booleans.get("value").unwrap() {
             true => {
                 let res = self.context.bool_type().const_int(1, false);
                 Data {

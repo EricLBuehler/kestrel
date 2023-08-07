@@ -20,17 +20,12 @@ fn integral_add<'a>(
     let tp = this.data.as_ref().unwrap().get_type();
     let tpname = this.tp.basictype.to_string();
     if !codegen.flags.contains(&Flags::NoOUChecks) {
-        let sadd_intrinsic = Intrinsic::find(&format!("llvm.sadd.with.overflow.{}", tpname)).unwrap();
+        let sadd_intrinsic =
+            Intrinsic::find(&format!("llvm.sadd.with.overflow.{}", tpname)).unwrap();
         let expect_i1 = Intrinsic::find("llvm.expect.i1").unwrap();
 
         let sadd_function = sadd_intrinsic
-            .get_declaration(
-                &codegen.module,
-                &[
-                    tp.into(),
-                    tp.into(),
-                ],
-            )
+            .get_declaration(&codegen.module, &[tp, tp])
             .unwrap();
 
         let expect_i1_function = expect_i1
@@ -163,7 +158,19 @@ fn integral_add_skeleton<'a>(
 }
 
 pub fn init_integral(codegen: &mut CodeGen) {
-    for basictype in vec![BasicType::I8,BasicType::I16,BasicType::I32,BasicType::I64,BasicType::I128,BasicType::Bool,BasicType::U8,BasicType::U16,BasicType::U32,BasicType::U64,BasicType::U128] {
+    for basictype in vec![
+        BasicType::I8,
+        BasicType::I16,
+        BasicType::I32,
+        BasicType::I64,
+        BasicType::I128,
+        BasicType::Bool,
+        BasicType::U8,
+        BasicType::U16,
+        BasicType::U32,
+        BasicType::U64,
+        BasicType::U128,
+    ] {
         let tp = Type {
             basictype: basictype.clone(),
             traits: HashMap::from([
