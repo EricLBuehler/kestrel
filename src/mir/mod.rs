@@ -24,6 +24,11 @@ pub enum RawMirInstruction {
     I32(String),
     I64(String),
     I128(String),
+    U8(String),
+    U16(String),
+    U32(String),
+    U64(String),
+    U128(String),
     Add { left: usize, right: usize },
     Declare { name: String, is_mut: bool },
     Store { name: String, right: usize },
@@ -89,6 +94,21 @@ impl Display for RawMirInstruction {
             RawMirInstruction::Bool(value) => {
                 write!(f, "bool {value}")
             }
+            RawMirInstruction::U8(value) => {
+                write!(f, "u8 {value}")
+            }
+            RawMirInstruction::U16(value) => {
+                write!(f, "u16 {value}")
+            }
+            RawMirInstruction::U32(value) => {
+                write!(f, "u32 {value}")
+            }
+            RawMirInstruction::U64(value) => {
+                write!(f, "u64 {value}")
+            }
+            RawMirInstruction::U128(value) => {
+                write!(f, "u128 {value}")
+            }
         }
     }
 }
@@ -130,6 +150,11 @@ impl<'a> Mir<'a> {
             NodeType::Store => self.generate_store(node),
             NodeType::Reference => self.generate_reference(node),
             NodeType::Bool => self.generate_bool(node),
+            NodeType::U8 => self.generate_u8(node),
+            NodeType::U16 => self.generate_u16(node),
+            NodeType::U32 => self.generate_u32(node),
+            NodeType::U64 => self.generate_u64(node),
+            NodeType::U128 => self.generate_u128(node),
         }
     }
 }
@@ -320,6 +345,191 @@ impl<'a> Mir<'a> {
         )
     }
     
+    fn generate_u8(&mut self, node: &Node) -> MirResult<'a> {
+        if node
+            .data
+            .get_data()
+            .raw
+            .get("value")
+            .unwrap()
+            .parse::<u8>()
+            .is_err()
+        {
+            let fmt: String = format!(
+                "u8 literal in radix 10 out of bounds ({} to {}).",
+                u8::MAX,
+                u8::MIN
+            );
+            raise_error(
+                &fmt,
+                ErrorType::InvalidLiteralForRadix,
+                &node.pos,
+                &self.info,
+            );
+        }
+
+        self.instructions.push(MirInstruction {
+            instruction: RawMirInstruction::U8(
+                node.data.get_data().raw.get("value").unwrap().to_string(),
+            ),
+            pos: node.pos.clone(),
+            tp: Some(self.builtins.get(&BasicType::U8).unwrap().clone()),
+        });
+
+        (
+            self.instructions.len() - 1,
+            self.builtins.get(&BasicType::U8).unwrap().clone(),
+        )
+    }
+    
+    fn generate_u16(&mut self, node: &Node) -> MirResult<'a> {
+        if node
+            .data
+            .get_data()
+            .raw
+            .get("value")
+            .unwrap()
+            .parse::<u16>()
+            .is_err()
+        {
+            let fmt: String = format!(
+                "u16 literal in radix 10 out of bounds ({} to {}).",
+                u16::MAX,
+                u16::MIN
+            );
+            raise_error(
+                &fmt,
+                ErrorType::InvalidLiteralForRadix,
+                &node.pos,
+                &self.info,
+            );
+        }
+
+        self.instructions.push(MirInstruction {
+            instruction: RawMirInstruction::U16(
+                node.data.get_data().raw.get("value").unwrap().to_string(),
+            ),
+            pos: node.pos.clone(),
+            tp: Some(self.builtins.get(&BasicType::U16).unwrap().clone()),
+        });
+
+        (
+            self.instructions.len() - 1,
+            self.builtins.get(&BasicType::U16).unwrap().clone(),
+        )
+    }
+
+    fn generate_u32(&mut self, node: &Node) -> MirResult<'a> {
+        if node
+            .data
+            .get_data()
+            .raw
+            .get("value")
+            .unwrap()
+            .parse::<u32>()
+            .is_err()
+        {
+            let fmt: String = format!(
+                "u32 literal in radix 10 out of bounds ({} to {}).",
+                u32::MAX,
+                u32::MIN
+            );
+            raise_error(
+                &fmt,
+                ErrorType::InvalidLiteralForRadix,
+                &node.pos,
+                &self.info,
+            );
+        }
+
+        self.instructions.push(MirInstruction {
+            instruction: RawMirInstruction::U32(
+                node.data.get_data().raw.get("value").unwrap().to_string(),
+            ),
+            pos: node.pos.clone(),
+            tp: Some(self.builtins.get(&BasicType::U32).unwrap().clone()),
+        });
+
+        (
+            self.instructions.len() - 1,
+            self.builtins.get(&BasicType::U32).unwrap().clone(),
+        )
+    }
+    
+    fn generate_u64(&mut self, node: &Node) -> MirResult<'a> {
+        if node
+            .data
+            .get_data()
+            .raw
+            .get("value")
+            .unwrap()
+            .parse::<u64>()
+            .is_err()
+        {
+            let fmt: String = format!(
+                "u64 literal in radix 10 out of bounds ({} to {}).",
+                u64::MAX,
+                u64::MIN
+            );
+            raise_error(
+                &fmt,
+                ErrorType::InvalidLiteralForRadix,
+                &node.pos,
+                &self.info,
+            );
+        }
+
+        self.instructions.push(MirInstruction {
+            instruction: RawMirInstruction::U64(
+                node.data.get_data().raw.get("value").unwrap().to_string(),
+            ),
+            pos: node.pos.clone(),
+            tp: Some(self.builtins.get(&BasicType::U64).unwrap().clone()),
+        });
+
+        (
+            self.instructions.len() - 1,
+            self.builtins.get(&BasicType::U64).unwrap().clone(),
+        )
+    }
+    
+    fn generate_u128(&mut self, node: &Node) -> MirResult<'a> {
+        if node
+            .data
+            .get_data()
+            .raw
+            .get("value")
+            .unwrap()
+            .parse::<u128>()
+            .is_err()
+        {
+            let fmt: String = format!(
+                "u128 literal in radix 10 out of bounds ({} to {}).",
+                u128::MAX,
+                u128::MIN
+            );
+            raise_error(
+                &fmt,
+                ErrorType::InvalidLiteralForRadix,
+                &node.pos,
+                &self.info,
+            );
+        }
+
+        self.instructions.push(MirInstruction {
+            instruction: RawMirInstruction::U128(
+                node.data.get_data().raw.get("value").unwrap().to_string(),
+            ),
+            pos: node.pos.clone(),
+            tp: Some(self.builtins.get(&BasicType::U128).unwrap().clone()),
+        });
+
+        (
+            self.instructions.len() - 1,
+            self.builtins.get(&BasicType::U128).unwrap().clone(),
+        )
+    }
+    
     fn generate_bool(&mut self, node: &Node) -> MirResult<'a> {
         self.instructions.push(MirInstruction {
             instruction: RawMirInstruction::Bool(
@@ -361,12 +571,12 @@ impl<'a> Mir<'a> {
                 right: right.0,
             },
             pos: node.pos.clone(),
-            tp: Some(res),
+            tp: Some(res.clone()),
         });
 
         (
             self.instructions.len() - 1,
-            self.builtins.get(&BasicType::I32).unwrap().clone(),
+            res,
         )
     }
 

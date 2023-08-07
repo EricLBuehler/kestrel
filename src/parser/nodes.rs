@@ -28,6 +28,11 @@ pub enum NodeType {
     I64,
     I128,
     Bool,
+    U8,
+    U16,
+    U32,
+    U64,
+    U128,
 }
 
 #[derive(Debug)]

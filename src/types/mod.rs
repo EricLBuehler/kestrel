@@ -37,6 +37,11 @@ pub enum BasicType {
     I128,
     Void,
     Bool,
+    U8,
+    U16,
+    U32,
+    U64,
+    U128,
 }
 
 impl Display for BasicType {
@@ -62,6 +67,21 @@ impl Display for BasicType {
             }
             BasicType::Bool => {
                 write!(f, "bool")
+            }
+            BasicType::U8 => {
+                write!(f, "u8")
+            }
+            BasicType::U16 => {
+                write!(f, "u16")
+            }
+            BasicType::U32 => {
+                write!(f, "u32")
+            }
+            BasicType::U64 => {
+                write!(f, "u64")
+            }
+            BasicType::U128 => {
+                write!(f, "u128")
             }
         }
     }

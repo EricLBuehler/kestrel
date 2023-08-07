@@ -43,29 +43,11 @@ main:                                   # @main
 	movq	%rax, %rcx
 	addq	$-16, %rcx
 	movq	%rcx, %rsp
-	movl	$100, -16(%rax)
+	movq	$100, -16(%rax)
 	movq	%rsp, %rax
 	addq	$-16, %rax
 	movq	%rax, %rsp
 	movq	%rdx, (%rax)
-	movb	$1, %cl
-	movb	$-2, %al
-	testb	$1, %cl
-	jne	.LBB0_4
-	jmp	.LBB0_5
-.LBB0_4:
-	movabsq	$.L__unnamed_2, %rdi
-	callq	printf@PLT
-                                        # implicit-def: $al
-	jmp	.LBB0_6
-.LBB0_5:
-	jmp	.LBB0_6
-.LBB0_6:
-	movq	%rsp, %rcx
-	addq	$-16, %rcx
-	movq	%rcx, %rsp
-	andb	$1, %al
-	movb	%al, (%rcx)
 	xorl	%eax, %eax
 	movq	%rbp, %rsp
 	popq	%rbp
@@ -79,13 +61,7 @@ main:                                   # @main
 	.section	.rodata,"a",@progbits
 	.p2align	4
 .L__unnamed_1:
-	.asciz	"Error: std::i64 addition overflow!\n    program.ke:1:9\n"
+	.asciz	"Error: std::u64 addition overflow!\n    program.ke:1:9\n"
 	.size	.L__unnamed_1, 55
-
-	.type	.L__unnamed_2,@object           # @1
-	.p2align	4
-.L__unnamed_2:
-	.asciz	"Error: std::bool addition overflow!\n    program.ke:5:9\n"
-	.size	.L__unnamed_2, 56
 
 	.section	".note.GNU-stack","",@progbits

@@ -50,6 +50,11 @@ pub fn calculate_last_use(i: &usize, instructions: &mut Vec<MirInstruction>) -> 
             RawMirInstruction::I32(_) => {}
             RawMirInstruction::I64(_) => {}
             RawMirInstruction::I128(_) => {}
+            RawMirInstruction::U8(_) => {}
+            RawMirInstruction::U16(_) => {}
+            RawMirInstruction::U32(_) => {}
+            RawMirInstruction::U64(_) => {}
+            RawMirInstruction::U128(_) => {}
             RawMirInstruction::Bool(_) => {}
             RawMirInstruction::Load(_) => {}
             RawMirInstruction::Own(result) => {
@@ -104,6 +109,11 @@ pub fn generate_lifetimes<'a>(
             RawMirInstruction::I32(_) => {}
             RawMirInstruction::I64(_) => {}
             RawMirInstruction::I128(_) => {}
+            RawMirInstruction::U8(_) => {}
+            RawMirInstruction::U16(_) => {}
+            RawMirInstruction::U32(_) => {}
+            RawMirInstruction::U64(_) => {}
+            RawMirInstruction::U128(_) => {}
             RawMirInstruction::Bool(_) => {}
             RawMirInstruction::Add { left, right } => {
                 let left_tp = instructions.get(*left).unwrap().tp.as_ref().unwrap();
@@ -336,8 +346,18 @@ pub fn generate_lifetimes<'a>(
                         RawMirInstruction::Copy(new_rt) => {
                             rt = *new_rt;
                         }
-                        RawMirInstruction::I32(_) => {
-                            referred_type = ReferenceBase::I32(
+                        
+                        RawMirInstruction::I8(_) |
+                        RawMirInstruction::I16(_) |
+                        RawMirInstruction::I32(_) |
+                        RawMirInstruction::I64(_) |
+                        RawMirInstruction::I128(_) |
+                        RawMirInstruction::U8(_) |
+                        RawMirInstruction::U16(_) |
+                        RawMirInstruction::U32(_) |
+                        RawMirInstruction::U64(_) |
+                        RawMirInstruction::U128(_)  => {
+                                referred_type = ReferenceBase::I32(
                                 instructions
                                     .get(rt)
                                     .as_ref()

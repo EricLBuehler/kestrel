@@ -295,6 +295,11 @@ impl<'a> Parser<'a> {
             TokenType::I32 => Some(self.generate_i32()),
             TokenType::I64 => Some(self.generate_i64()),
             TokenType::I128 => Some(self.generate_i128()),
+            TokenType::U8 => Some(self.generate_u8()),
+            TokenType::U16 => Some(self.generate_u16()),
+            TokenType::U32 => Some(self.generate_u32()),
+            TokenType::U64 => Some(self.generate_u64()),
+            TokenType::U128 => Some(self.generate_u128()),
             TokenType::Identifier => Some(self.generate_identifier()),
             TokenType::Ampersand => Some(self.generate_reference()),
             TokenType::Keyword => match self.current.data.as_str() {
@@ -407,6 +412,76 @@ impl<'a> Parser<'a> {
                 line: self.current.start.line,
             },
             nodes::NodeType::I128,
+            Box::new(DecimalNode {
+                value: self.current.data.clone(),
+            }),
+        )
+    }
+
+    fn generate_u8(&mut self) -> Node {
+        Node::new(
+            Position {
+                startcol: self.current.start.startcol,
+                endcol: self.current.end.endcol,
+                line: self.current.start.line,
+            },
+            nodes::NodeType::U8,
+            Box::new(DecimalNode {
+                value: self.current.data.clone(),
+            }),
+        )
+    }
+    
+    fn generate_u16(&mut self) -> Node {
+        Node::new(
+            Position {
+                startcol: self.current.start.startcol,
+                endcol: self.current.end.endcol,
+                line: self.current.start.line,
+            },
+            nodes::NodeType::U16,
+            Box::new(DecimalNode {
+                value: self.current.data.clone(),
+            }),
+        )
+    }
+
+    fn generate_u32(&mut self) -> Node {
+        Node::new(
+            Position {
+                startcol: self.current.start.startcol,
+                endcol: self.current.end.endcol,
+                line: self.current.start.line,
+            },
+            nodes::NodeType::U32,
+            Box::new(DecimalNode {
+                value: self.current.data.clone(),
+            }),
+        )
+    }
+
+    fn generate_u64(&mut self) -> Node {
+        Node::new(
+            Position {
+                startcol: self.current.start.startcol,
+                endcol: self.current.end.endcol,
+                line: self.current.start.line,
+            },
+            nodes::NodeType::U64,
+            Box::new(DecimalNode {
+                value: self.current.data.clone(),
+            }),
+        )
+    }
+
+    fn generate_u128(&mut self) -> Node {
+        Node::new(
+            Position {
+                startcol: self.current.start.startcol,
+                endcol: self.current.end.endcol,
+                line: self.current.start.line,
+            },
+            nodes::NodeType::U128,
             Box::new(DecimalNode {
                 value: self.current.data.clone(),
             }),

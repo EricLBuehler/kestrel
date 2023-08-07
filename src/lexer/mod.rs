@@ -18,6 +18,11 @@ pub enum TokenType {
     I16,
     I64,
     I128,
+    U8,
+    U16,
+    U32,
+    U64,
+    U128,
 }
 
 pub struct Lexer<'a> {
@@ -57,6 +62,11 @@ impl std::fmt::Display for TokenType {
             TokenType::I16 => write!(f, "i16"),
             TokenType::I64 => write!(f, "i64"),
             TokenType::I128 => write!(f, "i128"),
+            TokenType::U8 => write!(f, "u8"),
+            TokenType::U16 => write!(f, "u16"),
+            TokenType::U32 => write!(f, "u32"),
+            TokenType::U64 => write!(f, "u64"),
+            TokenType::U128 => write!(f, "u128"),
         }
     }
 }
@@ -249,6 +259,38 @@ fn make_number(lexer: &mut Lexer) -> Token {
                 }
                 _ => {
                     raise_error(&format!("Invalid specified type i{}.", specified_type), ErrorType::InvalidSpecifiedNumericType, &Position {
+                        line: lexer.line,
+                        startcol: start_col,
+                        endcol: lexer.col,
+                    }, &lexer.info);
+                }
+            }
+        }
+        else if lexer.current == 'u' {
+            advance(lexer);
+            let mut specified_type = String::new();
+            while lexer.current.is_numeric() {
+                specified_type.push(lexer.current);
+                advance(lexer);
+            }
+            match specified_type.as_str() {
+                "8" => {
+                    tp = TokenType::U8;
+                }
+                "16" => {
+                    tp = TokenType::U16;
+                }
+                "32" => {
+                    tp = TokenType::U32;
+                }
+                "64" => {
+                    tp = TokenType::U64;
+                }
+                "128" => {
+                    tp = TokenType::U128;
+                }
+                _ => {
+                    raise_error(&format!("Invalid specified type u{}.", specified_type), ErrorType::InvalidSpecifiedNumericType, &Position {
                         line: lexer.line,
                         startcol: start_col,
                         endcol: lexer.col,
