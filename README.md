@@ -12,7 +12,7 @@ Simple and safe.
 - **Add functions** (by 8/10/23)
 
     Add: 
-    - [ ] `fn` keyword
+    - [x] `fn` keyword
     - [x] Use `main` for entry point
     - [ ] `return` keyword
     - [ ] function calls
