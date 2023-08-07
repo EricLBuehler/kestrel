@@ -7,7 +7,7 @@ use crate::{
 pub mod nodes;
 use self::nodes::{
     BinaryNode, DecimalNode, IdentifierNode, LetNode, Node, NodeType, OpType, ReferenceNode,
-    StoreNode,
+    StoreNode, BoolNode,
 };
 
 pub struct Parser<'a> {
@@ -214,6 +214,8 @@ impl<'a> Parser<'a> {
     fn keyword(&mut self) -> Node {
         match self.current.data.as_str() {
             "let" => self.generate_let(),
+            "true" => self.generate_true(),
+            "false" => self.generate_false(),
             _ => {
                 unreachable!();
             }
@@ -256,6 +258,42 @@ impl<'a> Parser<'a> {
         )
     }
 
+    fn generate_true(&mut self) -> Node {
+        let pos = Position {
+            startcol: self.current.start.startcol,
+            endcol: self.current.start.endcol,
+            line: self.current.start.line,
+        };
+
+        self.advance();
+
+        Node::new(
+            pos,
+            nodes::NodeType::Bool,
+            Box::new(BoolNode {
+                value: true
+            }),
+        )
+    }
+
+    fn generate_false(&mut self) -> Node {
+        let pos = Position {
+            startcol: self.current.start.startcol,
+            endcol: self.current.start.endcol,
+            line: self.current.start.line,
+        };
+
+        self.advance();
+
+        Node::new(
+            pos,
+            nodes::NodeType::Bool,
+            Box::new(BoolNode {
+                value: false
+            }),
+        )
+    }
+
     // =======================
 
     fn atom(&mut self) -> Option<Node> {
@@ -267,6 +305,17 @@ impl<'a> Parser<'a> {
             TokenType::I128 => Some(self.generate_i128()),
             TokenType::Identifier => Some(self.generate_identifier()),
             TokenType::Ampersand => Some(self.generate_reference()),
+            TokenType::Keyword => match self.current.data.as_str() {
+                "true" => {
+                    Some(self.generate_true())
+                }
+                "false" => {
+                    Some(self.generate_false())
+                }
+                _ => {
+                    None
+                }
+            }
             _ => None,
         }
     }

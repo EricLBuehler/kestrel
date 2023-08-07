@@ -45,9 +45,14 @@ main:                                   # @main
 	movq	%rcx, %rsp
 	movl	$100, -16(%rax)
 	movq	%rsp, %rax
+	movq	%rax, %rcx
+	addq	$-16, %rcx
+	movq	%rcx, %rsp
+	movq	%rdx, -16(%rax)
+	movq	%rsp, %rax
 	addq	$-16, %rax
 	movq	%rax, %rsp
-	movq	%rdx, (%rax)
+	movb	$1, (%rax)
 	xorl	%eax, %eax
 	movq	%rbp, %rsp
 	popq	%rbp

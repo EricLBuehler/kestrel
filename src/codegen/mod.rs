@@ -82,6 +82,7 @@ impl<'a> CodeGen<'a> {
             NodeType::I16 => self.compile_i16(node, flags),
             NodeType::I64 => self.compile_i64(node, flags),
             NodeType::I128 => self.compile_i128(node, flags),
+            NodeType::Bool => self.compile_bool(node, flags),
         }
     }
 }
@@ -274,6 +275,29 @@ impl<'a> CodeGen<'a> {
             }
         } else {
             unimplemented!();
+        }
+    }
+
+    fn compile_bool(&mut self, node: &Node, _flags: ExprFlags) -> Data<'a> {
+        match node
+            .data
+            .get_data()
+            .booleans
+            .get("value").unwrap() {
+            true => {
+                let res = self.context.bool_type().const_int(1, false);
+                Data {
+                    data: Some(res.into()),
+                    tp: self.builtins.get(&BasicType::Bool).unwrap().clone(),
+                }
+            }
+            false => {
+                let res = self.context.bool_type().const_int(0, false);
+                Data {
+                    data: Some(res.into()),
+                    tp: self.builtins.get(&BasicType::Bool).unwrap().clone(),
+                }
+            }
         }
     }
 

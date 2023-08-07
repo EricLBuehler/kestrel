@@ -32,6 +32,8 @@ define i32 @main(i32 %0, i32** %1) local_unnamed_addr #1 {
   store i32 100, i32* %14, align 4
   %15 = alloca i64*, align 8
   store i64* %12, i64** %15, align 8
+  %16 = alloca i1, align 1
+  store i1 true, i1* %16, align 1
   ret i32 0
 }
 

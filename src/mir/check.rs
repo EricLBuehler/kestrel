@@ -50,6 +50,7 @@ pub fn calculate_last_use(i: &usize, instructions: &mut Vec<MirInstruction>) -> 
             RawMirInstruction::I32(_) => {}
             RawMirInstruction::I64(_) => {}
             RawMirInstruction::I128(_) => {}
+            RawMirInstruction::Bool(_) => {}
             RawMirInstruction::Load(_) => {}
             RawMirInstruction::Own(result) => {
                 if i == result {
@@ -103,6 +104,7 @@ pub fn generate_lifetimes<'a>(
             RawMirInstruction::I32(_) => {}
             RawMirInstruction::I64(_) => {}
             RawMirInstruction::I128(_) => {}
+            RawMirInstruction::Bool(_) => {}
             RawMirInstruction::Add { left, right } => {
                 let left_tp = instructions.get(*left).unwrap().tp.as_ref().unwrap();
                 let right_tp = instructions.get(*right).unwrap().tp.as_ref().unwrap();

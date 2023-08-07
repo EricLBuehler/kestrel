@@ -2,3 +2,4 @@ let α = 1i64+2i64
 let mut β = &α
 β = &100
 let γ = &&α
+let a = true

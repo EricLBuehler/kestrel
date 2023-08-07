@@ -36,6 +36,7 @@ pub enum BasicType {
     I64,
     I128,
     Void,
+    Bool,
 }
 
 impl Display for BasicType {
@@ -58,6 +59,9 @@ impl Display for BasicType {
             }
             BasicType::Void => {
                 write!(f, "void")
+            }
+            BasicType::Bool => {
+                write!(f, "bool")
             }
         }
     }

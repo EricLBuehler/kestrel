@@ -23,3 +23,8 @@
 .22:  own .18
 .23:  store γ .18 -> std::void['23 .21 => .21]
 .24:  dropbinding γ
+.25:  bool true -> std::bool['24 .22 => .25]
+.26:  declare a['25 .23 => .25]
+.27:  own .22
+.28:  store a .22 -> std::void['26 .25 => .25]
+.29:  dropbinding a

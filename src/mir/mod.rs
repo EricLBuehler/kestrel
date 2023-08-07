@@ -32,6 +32,7 @@ pub enum RawMirInstruction {
     Reference(usize),
     Copy(usize),
     DropBinding(String, usize),
+    Bool(bool),
 }
 
 #[derive(Clone)]
@@ -85,6 +86,9 @@ impl Display for RawMirInstruction {
             RawMirInstruction::DropBinding(name, _) => {
                 write!(f, "dropbinding {name}")
             }
+            RawMirInstruction::Bool(value) => {
+                write!(f, "bool {value}")
+            }
         }
     }
 }
@@ -125,6 +129,7 @@ impl<'a> Mir<'a> {
             NodeType::Identifier => self.generate_load(node),
             NodeType::Store => self.generate_store(node),
             NodeType::Reference => self.generate_reference(node),
+            NodeType::Bool => self.generate_bool(node),
         }
     }
 }
@@ -312,6 +317,21 @@ impl<'a> Mir<'a> {
         (
             self.instructions.len() - 1,
             self.builtins.get(&BasicType::I128).unwrap().clone(),
+        )
+    }
+    
+    fn generate_bool(&mut self, node: &Node) -> MirResult<'a> {
+        self.instructions.push(MirInstruction {
+            instruction: RawMirInstruction::Bool(
+                *node.data.get_data().booleans.get("value").unwrap(),
+            ),
+            pos: node.pos.clone(),
+            tp: Some(self.builtins.get(&BasicType::Bool).unwrap().clone()),
+        });
+
+        (
+            self.instructions.len() - 1,
+            self.builtins.get(&BasicType::Bool).unwrap().clone(),
         )
     }
 

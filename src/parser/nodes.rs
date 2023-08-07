@@ -27,6 +27,7 @@ pub enum NodeType {
     I16,
     I64,
     I128,
+    Bool,
 }
 
 #[derive(Debug)]
@@ -169,6 +170,21 @@ impl NodeData for ReferenceNode {
     fn get_data(&self) -> NodeValue {
         let mut value = NodeValue::new();
         value.nodes.insert(String::from("expr"), &self.expr);
+
+        value
+    }
+}
+
+// ========================
+
+pub struct BoolNode {
+    pub value: bool,
+}
+
+impl NodeData for BoolNode {
+    fn get_data(&self) -> NodeValue {
+        let mut value = NodeValue::new();
+        value.booleans.insert(String::from("value"), self.value);
 
         value
     }
