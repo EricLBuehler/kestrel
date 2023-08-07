@@ -446,7 +446,7 @@ pub fn write_mir<'a>(
 
     let mut out = String::new();
     
-    out.push_str(&format!("=-=-=-=-=  fn {}  =-=-=-=-=\n", this.fn_name));
+    out.push_str(&format!("fn {} {{\n", this.fn_name));
     for (i, instruction) in instructions.iter().enumerate() {
         out.push_str(&format!(".{:<5}", format!("{}:", i)));
         out.push_str(&instruction.instruction.to_string());
@@ -463,7 +463,7 @@ pub fn write_mir<'a>(
         }
         out.push('\n');
     }
-    out.push_str("=-=-=-=-=-=-=-=-=-=");
+    out.push_str("}");
     
     let mut f = OpenOptions::new().write(true).append(true).open("a.mir").expect("Unable to open MIR output file.");
 
