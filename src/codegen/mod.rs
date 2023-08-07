@@ -11,7 +11,7 @@ use inkwell::{
 use std::{collections::HashMap, error::Error, fs::OpenOptions};
 
 use crate::{
-    errors::{raise_error, ErrorType},
+    errors::{raise_error, ErrorType, raise_error_multi},
     mir,
     parser::nodes::{Node, NodeType, OpType},
     types::{
@@ -690,6 +690,21 @@ impl<'a> CodeGen<'a> {
         let fnnode = node.data.get_data();
         let name = fnnode.raw.get("name").unwrap();
 
+        if self.functions.get(name).is_some() {
+            raise_error_multi(
+                vec![format!(
+                    "Function {} is defined multiple times.",
+                    name
+                ),"First definition here:".into()],
+                ErrorType::MultipleFunctionDefinitions,
+                vec![
+                    &node.pos,
+                    &self.functions.get(name).as_ref().unwrap().pos,
+                ],
+                self.info,
+            );
+        }
+
         if name == "main" {
             let main_tp: inkwell::types::FunctionType = self.context.i32_type().fn_type(
                 &[
@@ -784,9 +799,8 @@ impl<'a> CodeGen<'a> {
         
             //
         }
-        else {
-            self.functions.insert(name.clone(), node);
-        }
+        
+        self.functions.insert(name.clone(), node);
     }
 }
 

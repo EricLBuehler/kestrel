@@ -16,6 +16,7 @@ pub enum ErrorType {
     TraitNotImplemented,
     InvalidSpecifiedNumericType,
     NestedFnDef,
+    MultipleFunctionDefinitions,
 }
 
 impl std::fmt::Display for ErrorType {
@@ -38,6 +39,7 @@ pub fn repr_err(tp: ErrorType) -> &'static str {
         ErrorType::TraitNotImplemented => "trait not implemented",
         ErrorType::InvalidSpecifiedNumericType => "invalid specified numeric type",
         ErrorType::NestedFnDef => "nested function definitions are disallowed",
+        ErrorType::MultipleFunctionDefinitions => "multiple function definitions are disallowed",
     }
 }
 

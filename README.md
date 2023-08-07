@@ -11,7 +11,11 @@ Simple and safe.
 
 - **Add functions** (by 8/10/23)
 
-    Add: `fn` keyword, `return` keyword, function calls.
+    Add: 
+    - [ ] `fn` keyword
+    - [x] Use `main` for entry point
+    - [ ] `return` keyword
+    - [ ] function calls
 
     MIR effect: Will require permutations to prove invariants.
 
