@@ -16,6 +16,7 @@ pub struct Position {
     pub line: usize,
     pub startcol: usize, //Inclusive
     pub endcol: usize,   //Exclusive
+    pub opcol: Option<usize>,
 }
 
 pub fn print_string(codegen: &mut CodeGen, message: &str) {

@@ -141,11 +141,13 @@ pub fn generate_tokens(lexer: &mut Lexer, kwds: &[String]) -> (usize, Vec<Token>
                     line: lexer.line,
                     startcol: lexer.col,
                     endcol: lexer.col + 1,
+                    opcol: None,
                 },
                 end: Position {
                     line: lexer.line,
                     startcol: lexer.col,
                     endcol: lexer.col + 1,
+                    opcol: None,
                 },
             });
             advance(lexer);
@@ -157,11 +159,13 @@ pub fn generate_tokens(lexer: &mut Lexer, kwds: &[String]) -> (usize, Vec<Token>
                     line: lexer.line,
                     startcol: lexer.col,
                     endcol: lexer.col + 1,
+                    opcol: None,
                 },
                 end: Position {
                     line: lexer.line,
                     startcol: lexer.col,
                     endcol: lexer.col + 1,
+                    opcol: None,
                 },
             });
             advance(lexer);
@@ -173,11 +177,13 @@ pub fn generate_tokens(lexer: &mut Lexer, kwds: &[String]) -> (usize, Vec<Token>
                     line: lexer.line,
                     startcol: lexer.col,
                     endcol: lexer.col + 1,
+                    opcol: None,
                 },
                 end: Position {
                     line: lexer.line,
                     startcol: lexer.col,
                     endcol: lexer.col + 1,
+                    opcol: None,
                 },
             });
             advance(lexer);
@@ -189,11 +195,13 @@ pub fn generate_tokens(lexer: &mut Lexer, kwds: &[String]) -> (usize, Vec<Token>
                     line: lexer.line,
                     startcol: lexer.col,
                     endcol: lexer.col + 1,
+                    opcol: None,
                 },
                 end: Position {
                     line: lexer.line,
                     startcol: lexer.col,
                     endcol: lexer.col + 1,
+                    opcol: None,
                 },
             });
             advance(lexer);
@@ -211,11 +219,13 @@ pub fn generate_tokens(lexer: &mut Lexer, kwds: &[String]) -> (usize, Vec<Token>
             line: lexer.line,
             startcol: lexer.col,
             endcol: lexer.col + 1,
+            opcol: None,
         },
         end: Position {
             line: lexer.line,
             startcol: lexer.col,
             endcol: lexer.col + 1,
+            opcol: None,
         },
     });
 
@@ -232,6 +242,7 @@ fn make_number(lexer: &mut Lexer) -> Token {
         line: lexer.line,
         startcol: lexer.col,
         endcol: lexer.col + 1,
+        opcol: None,
     };
 
     while lexer.current.is_numeric() || lexer.current == '_' {
@@ -268,6 +279,7 @@ fn make_number(lexer: &mut Lexer) -> Token {
                             line: lexer.line,
                             startcol: start_col,
                             endcol: lexer.col,
+                            opcol: None,
                         },
                         &lexer.info,
                     );
@@ -304,6 +316,7 @@ fn make_number(lexer: &mut Lexer) -> Token {
                             line: lexer.line,
                             startcol: start_col,
                             endcol: lexer.col,
+                            opcol: None,
                         },
                         &lexer.info,
                     );
@@ -320,6 +333,7 @@ fn make_number(lexer: &mut Lexer) -> Token {
             line: lexer.line,
             startcol: lexer.col,
             endcol: lexer.col,
+            opcol: None,
         },
     }
 }
@@ -331,6 +345,7 @@ fn make_identifier(lexer: &mut Lexer, kwds: &[String]) -> Token {
         line: lexer.line,
         startcol: lexer.col,
         endcol: lexer.col + 1,
+        opcol: None,
     };
 
     while is_identi(lexer.current) && lexer.current != '\0' {
@@ -352,6 +367,7 @@ fn make_identifier(lexer: &mut Lexer, kwds: &[String]) -> Token {
             line: lexer.line,
             startcol: lexer.col,
             endcol: lexer.col,
+            opcol: None,
         },
     }
 }

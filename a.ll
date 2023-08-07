@@ -2,8 +2,8 @@
 source_filename = "program.ke"
 target triple = "x86_64-unknown-linux-gnu"
 
-@0 = private constant [55 x i8] c"Error: std::u64 addition overflow!\0A    program.ke:1:9\0A\00"
-@1 = private constant [56 x i8] c"Error: std::bool addition overflow!\0A    program.ke:5:9\0A\00"
+@0 = private constant [56 x i8] c"Error: std::u64 addition overflow!\0A    program.ke:1:13\0A\00"
+@1 = private constant [57 x i8] c"Error: std::bool addition overflow!\0A    program.ke:5:13\0A\00"
 
 ; Function Attrs: nofree nounwind
 declare noundef i32 @printf(i8* nocapture noundef readonly) local_unnamed_addr #0
@@ -17,7 +17,7 @@ define i32 @main(i32 %0, i32** %1) local_unnamed_addr #1 {
   br i1 %6, label %7, label %9
 
 7:                                                ; preds = %2
-  %8 = call i32 @printf(i8* getelementptr inbounds ([55 x i8], [55 x i8]* @0, i32 0, i32 0))
+  %8 = call i32 @printf(i8* getelementptr inbounds ([56 x i8], [56 x i8]* @0, i32 0, i32 0))
   br label %10
 
 9:                                                ; preds = %2
@@ -40,7 +40,7 @@ define i32 @main(i32 %0, i32** %1) local_unnamed_addr #1 {
   br i1 %19, label %20, label %22
 
 20:                                               ; preds = %10
-  %21 = call i32 @printf(i8* getelementptr inbounds ([56 x i8], [56 x i8]* @1, i32 0, i32 0))
+  %21 = call i32 @printf(i8* getelementptr inbounds ([57 x i8], [57 x i8]* @1, i32 0, i32 0))
   br label %23
 
 22:                                               ; preds = %10

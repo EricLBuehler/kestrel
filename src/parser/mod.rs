@@ -140,6 +140,7 @@ impl<'a> Parser<'a> {
             &Position {
                 startcol: self.current.start.startcol,
                 endcol: self.current.end.endcol,
+                opcol: None,
                 line: self.current.start.line,
             },
             &self.info,
@@ -161,11 +162,13 @@ impl<'a> Parser<'a> {
                     start: Position {
                         line: 0,
                         startcol: 0,
+                        opcol: None,
                         endcol: 0,
                     },
                     end: Position {
                         line: 0,
                         startcol: 0,
+                        opcol: None,
                         endcol: 0,
                     },
                 };
@@ -188,11 +191,13 @@ impl<'a> Parser<'a> {
                     start: Position {
                         line: 0,
                         startcol: 0,
+                        opcol: None,
                         endcol: 0,
                     },
                     end: Position {
                         line: 0,
                         startcol: 0,
+                        opcol: None,
                         endcol: 0,
                     },
                 };
@@ -255,6 +260,7 @@ impl<'a> Parser<'a> {
             Position {
                 startcol: name.pos.startcol,
                 endcol: expr.pos.endcol,
+                opcol: None,
                 line: name.pos.line,
             },
             nodes::NodeType::Let,
@@ -271,6 +277,7 @@ impl<'a> Parser<'a> {
             Position {
                 startcol: self.current.start.startcol,
                 endcol: self.current.start.endcol,
+                opcol: None,
                 line: self.current.start.line,
             },
             nodes::NodeType::Bool,
@@ -283,6 +290,7 @@ impl<'a> Parser<'a> {
             Position {
                 startcol: self.current.start.startcol,
                 endcol: self.current.start.endcol,
+                opcol: None,
                 line: self.current.start.line,
             },
             nodes::NodeType::Bool,
@@ -351,6 +359,7 @@ impl<'a> Parser<'a> {
             Position {
                 startcol: self.current.start.startcol,
                 endcol: self.current.end.endcol,
+                opcol: None,
                 line: self.current.start.line,
             },
             nodes::NodeType::I8,
@@ -365,6 +374,7 @@ impl<'a> Parser<'a> {
             Position {
                 startcol: self.current.start.startcol,
                 endcol: self.current.end.endcol,
+                opcol: None,
                 line: self.current.start.line,
             },
             nodes::NodeType::I16,
@@ -379,6 +389,7 @@ impl<'a> Parser<'a> {
             Position {
                 startcol: self.current.start.startcol,
                 endcol: self.current.end.endcol,
+                opcol: None,
                 line: self.current.start.line,
             },
             nodes::NodeType::I32,
@@ -393,6 +404,7 @@ impl<'a> Parser<'a> {
             Position {
                 startcol: self.current.start.startcol,
                 endcol: self.current.end.endcol,
+                opcol: None,
                 line: self.current.start.line,
             },
             nodes::NodeType::I64,
@@ -407,6 +419,7 @@ impl<'a> Parser<'a> {
             Position {
                 startcol: self.current.start.startcol,
                 endcol: self.current.end.endcol,
+                opcol: None,
                 line: self.current.start.line,
             },
             nodes::NodeType::I128,
@@ -421,6 +434,7 @@ impl<'a> Parser<'a> {
             Position {
                 startcol: self.current.start.startcol,
                 endcol: self.current.end.endcol,
+                opcol: None,
                 line: self.current.start.line,
             },
             nodes::NodeType::U8,
@@ -435,6 +449,7 @@ impl<'a> Parser<'a> {
             Position {
                 startcol: self.current.start.startcol,
                 endcol: self.current.end.endcol,
+                opcol: None,
                 line: self.current.start.line,
             },
             nodes::NodeType::U16,
@@ -449,6 +464,7 @@ impl<'a> Parser<'a> {
             Position {
                 startcol: self.current.start.startcol,
                 endcol: self.current.end.endcol,
+                opcol: None,
                 line: self.current.start.line,
             },
             nodes::NodeType::U32,
@@ -463,6 +479,7 @@ impl<'a> Parser<'a> {
             Position {
                 startcol: self.current.start.startcol,
                 endcol: self.current.end.endcol,
+                opcol: None,
                 line: self.current.start.line,
             },
             nodes::NodeType::U64,
@@ -477,6 +494,7 @@ impl<'a> Parser<'a> {
             Position {
                 startcol: self.current.start.startcol,
                 endcol: self.current.end.endcol,
+                opcol: None,
                 line: self.current.start.line,
             },
             nodes::NodeType::U128,
@@ -491,6 +509,7 @@ impl<'a> Parser<'a> {
             Position {
                 startcol: self.current.start.startcol,
                 endcol: self.current.end.endcol,
+                opcol: None,
                 line: self.current.start.line,
             },
             nodes::NodeType::Identifier,
@@ -509,6 +528,7 @@ impl<'a> Parser<'a> {
             Position {
                 startcol: pos.startcol,
                 endcol: expr.pos.endcol,
+                opcol: None,
                 line: pos.line,
             },
             nodes::NodeType::Reference,
@@ -525,6 +545,8 @@ impl<'a> Parser<'a> {
             }
         };
 
+        let opcol = self.current.start.startcol;
+
         self.advance();
 
         let right = self.expr(prec);
@@ -533,6 +555,7 @@ impl<'a> Parser<'a> {
             Position {
                 startcol: left.pos.startcol,
                 endcol: right.pos.endcol,
+                opcol: Some(opcol),
                 line: left.pos.line,
             },
             nodes::NodeType::Binary,
@@ -558,6 +581,7 @@ impl<'a> Parser<'a> {
             Position {
                 startcol: left.pos.startcol,
                 endcol: expr.pos.endcol,
+                opcol: None,
                 line: left.pos.line,
             },
             nodes::NodeType::Store,

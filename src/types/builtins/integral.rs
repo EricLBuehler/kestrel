@@ -94,7 +94,7 @@ fn integral_add<'a>(
                 this.tp.qualname,
                 codegen.info.name,
                 pos.line + 1,
-                pos.startcol + 1
+                pos.opcol.unwrap() + 1
             ),
         );
 

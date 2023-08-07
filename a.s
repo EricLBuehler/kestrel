@@ -79,13 +79,13 @@ main:                                   # @main
 	.section	.rodata,"a",@progbits
 	.p2align	4
 .L__unnamed_1:
-	.asciz	"Error: std::u64 addition overflow!\n    program.ke:1:9\n"
-	.size	.L__unnamed_1, 55
+	.asciz	"Error: std::u64 addition overflow!\n    program.ke:1:13\n"
+	.size	.L__unnamed_1, 56
 
 	.type	.L__unnamed_2,@object           # @1
 	.p2align	4
 .L__unnamed_2:
-	.asciz	"Error: std::bool addition overflow!\n    program.ke:5:9\n"
-	.size	.L__unnamed_2, 56
+	.asciz	"Error: std::bool addition overflow!\n    program.ke:5:13\n"
+	.size	.L__unnamed_2, 57
 
 	.section	".note.GNU-stack","",@progbits
