@@ -71,5 +71,5 @@ attributes #3 = { mustprogress nofree nosync nounwind readnone willreturn }
 !llvm.dbg.cu = !{!1}
 
 !0 = !{i32 1, !"Debug Info Version", i32 3}
-!1 = distinct !DICompileUnit(language: DW_LANG_C, file: !2, producer: "xpl", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, splitDebugInlining: false, sdk: "xpl")
+!1 = distinct !DICompileUnit(language: DW_LANG_C, file: !2, producer: "kestrel", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, splitDebugInlining: false, sdk: "kestrel")
 !2 = !DIFile(filename: "program.ke", directory: ".")

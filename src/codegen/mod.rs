@@ -820,7 +820,7 @@ pub fn generate_code(
         DWARFSourceLanguage::C,
         &info.name,
         &info.dir,
-        "xpl",
+        "kestrel",
         optimize,
         "",
         0,
@@ -830,7 +830,7 @@ pub fn generate_code(
         false,
         false,
         "",
-        "xpl",
+        "kestrel",
     );
 
     let mut codegen = CodeGen {
