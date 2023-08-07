@@ -12,6 +12,7 @@ mod check;
 
 pub struct Mir<'a> {
     pub info: FileInfo<'a>,
+    fn_name: String,
     instructions: Vec<MirInstruction<'a>>,
     builtins: BuiltinTypes<'a>,
     namespace: HashMap<String, (Type<'a>, BindingTags)>,
@@ -113,9 +114,10 @@ impl Display for RawMirInstruction {
     }
 }
 
-pub fn new<'a>(info: FileInfo<'a>, builtins: BuiltinTypes<'a>) -> Mir<'a> {
+pub fn new<'a>(info: FileInfo<'a>, builtins: BuiltinTypes<'a>, fn_name: String,) -> Mir<'a> {
     Mir {
         info,
+        fn_name,
         instructions: Vec::new(),
         builtins,
         namespace: HashMap::new(),
@@ -125,7 +127,7 @@ pub fn new<'a>(info: FileInfo<'a>, builtins: BuiltinTypes<'a>) -> Mir<'a> {
 pub fn check(this: &mut Mir, instructions: &mut Vec<MirInstruction>) {
     let (mut namespace, references, bindings_drop) = check::generate_lifetimes(this, instructions);
     check::check(this, instructions, &mut namespace, &references);
-    check::write_mir(bindings_drop, instructions.clone(), &mut namespace);
+    check::write_mir(this, bindings_drop, instructions.clone(), &mut namespace);
 }
 
 impl<'a> Mir<'a> {
@@ -155,6 +157,7 @@ impl<'a> Mir<'a> {
             NodeType::U32 => self.generate_u32(node),
             NodeType::U64 => self.generate_u64(node),
             NodeType::U128 => self.generate_u128(node),
+            NodeType::Fn => unreachable!(),
         }
     }
 }

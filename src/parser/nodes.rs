@@ -33,6 +33,7 @@ pub enum NodeType {
     U32,
     U64,
     U128,
+    Fn,
 }
 
 #[derive(Debug)]
@@ -190,6 +191,24 @@ impl NodeData for BoolNode {
     fn get_data(&self) -> NodeValue {
         let mut value = NodeValue::new();
         value.booleans.insert(String::from("value"), self.value);
+
+        value
+    }
+}
+
+// ========================
+
+pub struct FnNode {
+    pub name: String,
+    pub args: Vec<Node>,
+    pub code: Vec<Node>,
+}
+
+impl NodeData for FnNode {
+    fn get_data(&self) -> NodeValue {
+        let mut value = NodeValue::new();
+        value.nodearr = Some(&self.code);
+        value.raw.insert(String::from("name"), self.name.clone());
 
         value
     }

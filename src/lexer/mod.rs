@@ -26,6 +26,10 @@ pub enum TokenType {
     U32,
     U64,
     U128,
+    RParen,
+    LParen,
+    RCurly,
+    LCurly,
 }
 
 pub struct Lexer<'a> {
@@ -70,6 +74,10 @@ impl std::fmt::Display for TokenType {
             TokenType::U32 => write!(f, "u32"),
             TokenType::U64 => write!(f, "u64"),
             TokenType::U128 => write!(f, "u128"),
+            TokenType::LParen => write!(f, "lparen"),
+            TokenType::RParen => write!(f, "rparen"),
+            TokenType::LCurly => write!(f, "lcurly"),
+            TokenType::RCurly => write!(f, "rcurly"),
         }
     }
 }
@@ -191,6 +199,78 @@ pub fn generate_tokens(lexer: &mut Lexer, kwds: &[String]) -> (usize, Vec<Token>
             tokens.push(Token {
                 data: String::from("&"),
                 tp: TokenType::Ampersand,
+                start: Position {
+                    line: lexer.line,
+                    startcol: lexer.col,
+                    endcol: lexer.col + 1,
+                    opcol: None,
+                },
+                end: Position {
+                    line: lexer.line,
+                    startcol: lexer.col,
+                    endcol: lexer.col + 1,
+                    opcol: None,
+                },
+            });
+            advance(lexer);
+        } else if cur == '(' {
+            tokens.push(Token {
+                data: String::from("("),
+                tp: TokenType::LParen,
+                start: Position {
+                    line: lexer.line,
+                    startcol: lexer.col,
+                    endcol: lexer.col + 1,
+                    opcol: None,
+                },
+                end: Position {
+                    line: lexer.line,
+                    startcol: lexer.col,
+                    endcol: lexer.col + 1,
+                    opcol: None,
+                },
+            });
+            advance(lexer);
+        } else if cur == ')' {
+            tokens.push(Token {
+                data: String::from(")"),
+                tp: TokenType::RParen,
+                start: Position {
+                    line: lexer.line,
+                    startcol: lexer.col,
+                    endcol: lexer.col + 1,
+                    opcol: None,
+                },
+                end: Position {
+                    line: lexer.line,
+                    startcol: lexer.col,
+                    endcol: lexer.col + 1,
+                    opcol: None,
+                },
+            });
+            advance(lexer);
+        } else if cur == '{' {
+            tokens.push(Token {
+                data: String::from("{"),
+                tp: TokenType::LCurly,
+                start: Position {
+                    line: lexer.line,
+                    startcol: lexer.col,
+                    endcol: lexer.col + 1,
+                    opcol: None,
+                },
+                end: Position {
+                    line: lexer.line,
+                    startcol: lexer.col,
+                    endcol: lexer.col + 1,
+                    opcol: None,
+                },
+            });
+            advance(lexer);
+        } else if cur == '}' {
+            tokens.push(Token {
+                data: String::from("}"),
+                tp: TokenType::RCurly,
                 start: Position {
                     line: lexer.line,
                     startcol: lexer.col,
@@ -348,7 +428,7 @@ fn make_identifier(lexer: &mut Lexer, kwds: &[String]) -> Token {
         opcol: None,
     };
 
-    while is_identi(lexer.current) && lexer.current != '\0' {
+    while is_identi(lexer.current) && lexer.current != '\0' && lexer.current != '(' && lexer.current != ')' {
         data.push(lexer.current);
         advance(lexer);
     }

@@ -7,7 +7,7 @@ use crate::{
 pub mod nodes;
 use self::nodes::{
     BinaryNode, BoolNode, DecimalNode, IdentifierNode, LetNode, Node, NodeType, OpType,
-    ReferenceNode, StoreNode,
+    ReferenceNode, StoreNode, FnNode,
 };
 
 pub struct Parser<'a> {
@@ -65,7 +65,7 @@ impl<'a> Parser<'a> {
     fn block(&mut self) -> Vec<Node> {
         let mut nodes = Vec::new();
 
-        while !self.current_is_type(TokenType::Eof) {
+        while !self.current_is_type(TokenType::Eof) && !self.current_is_type(TokenType::RCurly) {
             nodes.push(self.parse_statement());
             self.skip_newlines();
         }
@@ -229,6 +229,7 @@ impl<'a> Parser<'a> {
                 self.advance();
                 res
             }
+            "fn" => self.generate_fn(),
             _ => {
                 unreachable!();
             }
@@ -295,6 +296,59 @@ impl<'a> Parser<'a> {
             },
             nodes::NodeType::Bool,
             Box::new(BoolNode { value: false }),
+        )
+    }
+
+    fn generate_fn(&mut self) -> Node {
+        let startcol = self.current.start.startcol;
+
+        self.advance();
+
+        self.expect(TokenType::Identifier);
+        let name = self.current.data.clone();
+
+        self.advance();
+
+        let args = Vec::new();
+
+        let endcol = self.current.end.endcol;
+        let endline = self.current.end.line;
+
+        self.expect(TokenType::LParen);
+        
+        self.advance();
+        self.skip_newlines();
+
+        self.expect(TokenType::RParen);
+
+        self.advance();
+        self.skip_newlines();
+        
+        self.expect(TokenType::LCurly);
+
+        self.advance();
+        self.skip_newlines();
+        
+        let code = self.block();
+
+        self.expect(TokenType::RCurly);
+
+        self.advance();
+        self.skip_newlines();
+
+        Node::new(
+            Position {
+                startcol: startcol,
+                endcol: endcol,
+                opcol: None,
+                line: endline,
+            },
+            nodes::NodeType::Fn,
+            Box::new(FnNode {
+                name,
+                args,
+                code,
+            }),
         )
     }
 

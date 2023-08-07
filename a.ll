@@ -2,8 +2,8 @@
 source_filename = "program.ke"
 target triple = "x86_64-unknown-linux-gnu"
 
-@0 = private constant [56 x i8] c"Error: std::u64 addition overflow!\0A    program.ke:1:13\0A\00"
-@1 = private constant [57 x i8] c"Error: std::bool addition overflow!\0A    program.ke:5:13\0A\00"
+@0 = private constant [56 x i8] c"Error: std::u64 addition overflow!\0A    program.ke:2:17\0A\00"
+@1 = private constant [57 x i8] c"Error: std::bool addition overflow!\0A    program.ke:6:17\0A\00"
 
 ; Function Attrs: nofree nounwind
 declare noundef i32 @printf(i8* nocapture noundef readonly) local_unnamed_addr #0

@@ -15,6 +15,7 @@ pub enum ErrorType {
     MultipleImmutableReferences,
     TraitNotImplemented,
     InvalidSpecifiedNumericType,
+    NestedFnDef,
 }
 
 impl std::fmt::Display for ErrorType {
@@ -36,6 +37,7 @@ pub fn repr_err(tp: ErrorType) -> &'static str {
         ErrorType::MultipleImmutableReferences => "multiple immutable references",
         ErrorType::TraitNotImplemented => "trait not implemented",
         ErrorType::InvalidSpecifiedNumericType => "invalid specified numeric type",
+        ErrorType::NestedFnDef => "nested function definitions are disallowed",
     }
 }
 

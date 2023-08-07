@@ -8,7 +8,7 @@ use inkwell::{
     passes::PassManagerSubType,
     values::{BasicValueEnum, FunctionValue, PointerValue},
 };
-use std::{collections::HashMap, error::Error};
+use std::{collections::HashMap, error::Error, fs::OpenOptions};
 
 use crate::{
     errors::{raise_error, ErrorType},
@@ -41,9 +41,11 @@ pub struct CodeGen<'a> {
 
     pub builtins: BuiltinTypes<'a>,
     pub extern_fns: HashMap<String, FunctionValue<'a>>,
+    pub functions: HashMap<String, Node>, //(args, code)
     namespaces: HashMap<FunctionValue<'a>, Namespace<'a>>,
 
     pub flags: Vec<Flags>,
+    pub optimized: bool,
 }
 
 #[derive(Debug)]
@@ -57,14 +59,27 @@ struct ExprFlags {
 }
 
 impl<'a> CodeGen<'a> {
-    fn compile(&mut self, ast: Vec<Node>) -> Data<'a> {
+    fn compile(&mut self, ast: Vec<Node>) {
+        for node in ast {
+            match node.tp {
+                NodeType::Fn => {
+                    self.create_fn(node);
+                }
+                _ => {
+
+                }
+            }
+        }
+    }
+
+    fn compile_statements(&mut self, ast: &Vec<Node>) -> Data<'a> {
         let mut res = Data {
             data: None,
             tp: self.builtins.get(&BasicType::Void).unwrap().clone(),
         };
 
         for node in ast {
-            res = self.compile_expr(&node, ExprFlags { get_ref: false });
+            res = self.compile_expr(node, ExprFlags { get_ref: false });
         }
 
         res
@@ -88,6 +103,9 @@ impl<'a> CodeGen<'a> {
             NodeType::U32 => self.compile_u32(node, flags),
             NodeType::U64 => self.compile_u64(node, flags),
             NodeType::U128 => self.compile_u128(node, flags),
+            NodeType::Fn => {
+                raise_error("Nested function definitions are disallowed.", ErrorType::NestedFnDef, &node.pos, &self.info);
+            }
         }
     }
 }
@@ -667,6 +685,111 @@ impl<'a> CodeGen<'a> {
     }
 }
 
+impl<'a> CodeGen<'a> {
+    fn create_fn(&mut self, node: Node) {
+        let fnnode = node.data.get_data();
+        let name = fnnode.raw.get("name").unwrap();
+
+        if name == "main" {
+            let main_tp: inkwell::types::FunctionType = self.context.i32_type().fn_type(
+                &[
+                    inkwell::types::BasicMetadataTypeEnum::IntType(self.context.i32_type()),
+                    inkwell::types::BasicMetadataTypeEnum::PointerType(
+                        self
+                            .context
+                            .i32_type()
+                            .ptr_type(inkwell::AddressSpace::from(0u16))
+                            .ptr_type(inkwell::AddressSpace::from(0u16)),
+                    ),
+                ],
+                false,
+            );
+            let realmain = self.module.add_function("main", main_tp, None);
+            let basic_block = self.context.append_basic_block(realmain, "");
+        
+            // Mir check
+            let mut mir = mir::new(self.info.clone(), self.builtins.clone(), name.into());
+            let mut instructions = mir.generate(&fnnode.nodearr.unwrap());
+            mir::check(&mut mir, &mut instructions);
+            //
+        
+            self.namespaces.insert(
+                realmain,
+                Namespace {
+                    bindings: HashMap::new(),
+                },
+            );
+        
+            let mut attr: inkwell::attributes::Attribute = self.context.create_enum_attribute(
+                inkwell::attributes::Attribute::get_named_enum_kind_id("noinline"),
+                0,
+            );
+            realmain.add_attribute(inkwell::attributes::AttributeLoc::Function, attr);
+        
+            attr = self.context.create_enum_attribute(
+                inkwell::attributes::Attribute::get_named_enum_kind_id("norecurse"),
+                0,
+            );
+            realmain.add_attribute(inkwell::attributes::AttributeLoc::Function, attr);
+        
+            if !self.optimized {
+                attr = self.context.create_enum_attribute(
+                    inkwell::attributes::Attribute::get_named_enum_kind_id("optnone"),
+                    0,
+                );
+                realmain.add_attribute(inkwell::attributes::AttributeLoc::Function, attr);
+            }
+        
+            //TODO: Ensure this is true
+            attr = self.context.create_enum_attribute(
+                inkwell::attributes::Attribute::get_named_enum_kind_id("willreturn"),
+                0,
+            );
+            realmain.add_attribute(inkwell::attributes::AttributeLoc::Function, attr);
+        
+            for flag in &self.flags {
+                if flag == &Flags::Sanitize {
+                    let mut attr = self.context.create_enum_attribute(
+                        inkwell::attributes::Attribute::get_named_enum_kind_id("sanitize_address"),
+                        0,
+                    );
+                    realmain.add_attribute(inkwell::attributes::AttributeLoc::Function, attr);
+        
+                    attr = self.context.create_enum_attribute(
+                        inkwell::attributes::Attribute::get_named_enum_kind_id("sanitize_memory"),
+                        0,
+                    );
+                    realmain.add_attribute(inkwell::attributes::AttributeLoc::Function, attr);
+        
+                    attr = self.context.create_enum_attribute(
+                        inkwell::attributes::Attribute::get_named_enum_kind_id("sanitize_thread"),
+                        0,
+                    );
+                    realmain.add_attribute(inkwell::attributes::AttributeLoc::Function, attr);
+                }
+            }
+        
+            self.builder.position_at_end(basic_block);
+            self.cur_block = Some(basic_block);
+            self.cur_fn = Some(realmain);
+        
+            //
+        
+            //Compile code
+            self.compile_statements(fnnode.nodearr.unwrap());
+        
+            self
+                .builder
+                .build_return(Some(&self.context.i32_type().const_int(0, false)));
+        
+            //
+        }
+        else {
+            self.functions.insert(name.clone(), node);
+        }
+    }
+}
+
 pub fn generate_code(
     module_name: &str,
     source_name: &str,
@@ -720,9 +843,14 @@ pub fn generate_code(
         cur_fn: None,
         builtins: HashMap::new(),
         extern_fns: HashMap::new(),
+        functions: HashMap::new(),
         namespaces: HashMap::new(),
         flags: flags.clone(),
+        optimized: optimize,
     };
+
+    let f = OpenOptions::new().write(true).append(true).open("a.mir").expect("Unable to create MIR output file.");
+    f.set_len(0).expect("Unable to truncate MIR output file.");
 
     init_builtins(&mut codegen);
     init_extern_fns(&mut codegen);
@@ -736,98 +864,8 @@ pub fn generate_code(
 
     //
 
-    let main_tp: inkwell::types::FunctionType = codegen.context.i32_type().fn_type(
-        &[
-            inkwell::types::BasicMetadataTypeEnum::IntType(codegen.context.i32_type()),
-            inkwell::types::BasicMetadataTypeEnum::PointerType(
-                codegen
-                    .context
-                    .i32_type()
-                    .ptr_type(inkwell::AddressSpace::from(0u16))
-                    .ptr_type(inkwell::AddressSpace::from(0u16)),
-            ),
-        ],
-        false,
-    );
-    let realmain = codegen.module.add_function("main", main_tp, None);
-    let basic_block = codegen.context.append_basic_block(realmain, "");
-
-    // Mir check
-    let mut mir = mir::new(info.clone(), codegen.builtins.clone());
-    let mut instructions = mir.generate(&ast);
-    mir::check(&mut mir, &mut instructions);
-    //
-
-    codegen.namespaces.insert(
-        realmain,
-        Namespace {
-            bindings: HashMap::new(),
-        },
-    );
-
-    let mut attr: inkwell::attributes::Attribute = codegen.context.create_enum_attribute(
-        inkwell::attributes::Attribute::get_named_enum_kind_id("noinline"),
-        0,
-    );
-    realmain.add_attribute(inkwell::attributes::AttributeLoc::Function, attr);
-
-    attr = codegen.context.create_enum_attribute(
-        inkwell::attributes::Attribute::get_named_enum_kind_id("norecurse"),
-        0,
-    );
-    realmain.add_attribute(inkwell::attributes::AttributeLoc::Function, attr);
-
-    if !optimize {
-        attr = codegen.context.create_enum_attribute(
-            inkwell::attributes::Attribute::get_named_enum_kind_id("optnone"),
-            0,
-        );
-        realmain.add_attribute(inkwell::attributes::AttributeLoc::Function, attr);
-    }
-
-    //TODO: Ensure this is true
-    attr = codegen.context.create_enum_attribute(
-        inkwell::attributes::Attribute::get_named_enum_kind_id("willreturn"),
-        0,
-    );
-    realmain.add_attribute(inkwell::attributes::AttributeLoc::Function, attr);
-
-    for flag in flags {
-        if flag == Flags::Sanitize {
-            let mut attr = codegen.context.create_enum_attribute(
-                inkwell::attributes::Attribute::get_named_enum_kind_id("sanitize_address"),
-                0,
-            );
-            realmain.add_attribute(inkwell::attributes::AttributeLoc::Function, attr);
-
-            attr = codegen.context.create_enum_attribute(
-                inkwell::attributes::Attribute::get_named_enum_kind_id("sanitize_memory"),
-                0,
-            );
-            realmain.add_attribute(inkwell::attributes::AttributeLoc::Function, attr);
-
-            attr = codegen.context.create_enum_attribute(
-                inkwell::attributes::Attribute::get_named_enum_kind_id("sanitize_thread"),
-                0,
-            );
-            realmain.add_attribute(inkwell::attributes::AttributeLoc::Function, attr);
-        }
-    }
-
-    codegen.builder.position_at_end(basic_block);
-    codegen.cur_block = Some(basic_block);
-    codegen.cur_fn = Some(realmain);
-
-    //
-
-    //Compile code
     codegen.compile(ast);
-
-    codegen
-        .builder
-        .build_return(Some(&codegen.context.i32_type().const_int(0, false)));
-
-    //
+    
 
     //Generate debug info
     codegen.dibuilder.finalize();

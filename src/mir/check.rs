@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fs::File, io::Write};
+use std::{collections::HashMap, fs::OpenOptions, io::Write};
 
 use indexmap::IndexMap;
 
@@ -435,6 +435,7 @@ pub fn generate_lifetimes<'a>(
 }
 
 pub fn write_mir<'a>(
+    this: &mut Mir,
     binding_drops: IndexMap<usize, MirInstruction<'a>>,
     mut instructions: Vec<MirInstruction<'a>>,
     namespace: &mut MirNamespace,
@@ -444,6 +445,8 @@ pub fn write_mir<'a>(
     }
 
     let mut out = String::new();
+    
+    out.push_str(&format!("=-=-=-=-=  fn {}  =-=-=-=-=\n", this.fn_name));
     for (i, instruction) in instructions.iter().enumerate() {
         out.push_str(&format!(".{:<5}", format!("{}:", i)));
         out.push_str(&instruction.instruction.to_string());
@@ -460,7 +463,10 @@ pub fn write_mir<'a>(
         }
         out.push('\n');
     }
-    let mut f = File::create("a.mir").expect("Unable to create MIR output file.");
+    out.push_str("=-=-=-=-=-=-=-=-=-=");
+    
+    let mut f = OpenOptions::new().write(true).append(true).open("a.mir").expect("Unable to open MIR output file.");
+
     f.write_all(out.as_bytes()).expect("Unable to write MIR.");
 }
 
