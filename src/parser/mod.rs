@@ -214,8 +214,8 @@ impl<'a> Parser<'a> {
     fn keyword(&mut self) -> Node {
         match self.current.data.as_str() {
             "let" => self.generate_let(),
-            "true" => self.generate_true(),
-            "false" => self.generate_false(),
+            "true" => {let res = self.generate_true(); self.advance(); res},
+            "false" => {let res = self.generate_false(); self.advance(); res},
             _ => {
                 unreachable!();
             }
@@ -259,16 +259,12 @@ impl<'a> Parser<'a> {
     }
 
     fn generate_true(&mut self) -> Node {
-        let pos = Position {
-            startcol: self.current.start.startcol,
-            endcol: self.current.start.endcol,
-            line: self.current.start.line,
-        };
-
-        self.advance();
-
         Node::new(
-            pos,
+            Position {
+                startcol: self.current.start.startcol,
+                endcol: self.current.start.endcol,
+                line: self.current.start.line,
+            },
             nodes::NodeType::Bool,
             Box::new(BoolNode {
                 value: true
@@ -277,16 +273,12 @@ impl<'a> Parser<'a> {
     }
 
     fn generate_false(&mut self) -> Node {
-        let pos = Position {
-            startcol: self.current.start.startcol,
-            endcol: self.current.start.endcol,
-            line: self.current.start.line,
-        };
-
-        self.advance();
-
         Node::new(
-            pos,
+            Position {
+                startcol: self.current.start.startcol,
+                endcol: self.current.start.endcol,
+                line: self.current.start.line,
+            },
             nodes::NodeType::Bool,
             Box::new(BoolNode {
                 value: false

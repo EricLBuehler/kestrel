@@ -95,7 +95,8 @@ fn integral_add<'a>(
         print_string(
             codegen,
             &format!(
-                "Error: i32 addition overflow!\n    {}:{}:{}\n",
+                "Error: {} addition overflow!\n    {}:{}:{}\n",
+                this.tp.qualname,
                 codegen.info.name,
                 pos.line + 1,
                 pos.startcol + 1
