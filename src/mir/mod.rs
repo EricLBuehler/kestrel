@@ -1,10 +1,12 @@
-use std::{collections::HashMap, fmt::Display};
+use std::{collections::HashMap, fmt::Display, fs::OpenOptions, io::Write};
+
+use indexmap::IndexMap;
 
 use crate::{
     codegen::BindingTags,
     errors::{raise_error, ErrorType},
     parser::nodes::{Node, NodeType, OpType},
-    types::{BasicType, BuiltinTypes, Trait, TraitType, Type},
+    types::{BasicType, BuiltinTypes, Trait, TraitType, Type, Lifetime},
     utils::{FileInfo, Position},
 };
 
@@ -49,6 +51,33 @@ pub struct MirInstruction<'a> {
 }
 
 type MirResult<'a> = (usize, Type<'a>);
+
+#[derive(Debug, PartialEq, PartialOrd, Eq, Ord, Clone, Copy)]
+pub enum ReferenceType {
+    Immutable,
+}
+
+#[derive(Debug)]
+pub struct MirTag {
+    is_owned: bool,
+    is_mut: bool,
+    owner: Option<usize>,
+    lifetime: Lifetime,
+}
+
+type MirNamespace = HashMap<String, (Option<usize>, Option<usize>, MirTag)>; //(declaration, right, tag)
+type MirReference = (usize, ReferenceType, Lifetime, ReferenceBase); //(right, type, lifetime, referred)
+
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub enum ReferenceBase {
+    I32(Lifetime),
+    Load {
+        borrowed_life: Lifetime,
+        value_life: Lifetime,
+    },
+    Reference(Lifetime),
+}
+
 
 impl Display for RawMirInstruction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -127,7 +156,44 @@ pub fn new<'a>(info: FileInfo<'a>, builtins: BuiltinTypes<'a>, fn_name: String,)
 pub fn check(this: &mut Mir, instructions: &mut Vec<MirInstruction>) {
     let (mut namespace, references, bindings_drop) = check::generate_lifetimes(this, instructions);
     check::check(this, instructions, &mut namespace, &references);
-    check::write_mir(this, bindings_drop, instructions.clone(), &mut namespace);
+    write_mir(this, bindings_drop, instructions.clone(), &mut namespace);
+}
+
+pub fn write_mir<'a>(
+    this: &mut Mir,
+    binding_drops: IndexMap<usize, MirInstruction<'a>>,
+    mut instructions: Vec<MirInstruction<'a>>,
+    namespace: &mut MirNamespace,
+) {
+    for (k, v) in binding_drops {
+        instructions.insert(k, v);
+    }
+
+    let mut out = String::new();
+    
+    out.push_str(&format!("fn {} {{\n", this.fn_name));
+    for (i, instruction) in instructions.iter().enumerate() {
+        out.push_str("    ");
+        out.push_str(&format!(".{:<5}", format!("{}:", i)));
+        out.push_str(&instruction.instruction.to_string());
+        if let RawMirInstruction::Declare { name, is_mut: _ } = &instruction.instruction {
+            out.push_str(&namespace.get(name).unwrap().2.lifetime.to_string());
+        }
+        if let RawMirInstruction::DropBinding(_, _) = &instruction.instruction {
+        } else if instruction.tp.is_some() {
+            out.push_str(&format!(
+                " -> {}",
+                instruction.tp.as_ref().unwrap().qualname()
+            ));
+            out.push_str(&format!("{}", instruction.tp.as_ref().unwrap().lifetime));
+        }
+        out.push('\n');
+    }
+    out.push_str("}");
+    
+    let mut f = OpenOptions::new().write(true).append(true).open("a.mir").expect("Unable to open MIR output file.");
+
+    f.write_all(out.as_bytes()).expect("Unable to write MIR.");
 }
 
 impl<'a> Mir<'a> {
