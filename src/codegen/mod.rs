@@ -77,6 +77,10 @@ impl<'a> CodeGen<'a> {
             }
         }
 
+        if !self.functions.contains_key("main") {
+            self.add_main_skeleton();
+        }
+
         for node in &ast {
             match node.tp {
                 NodeType::Fn => {
@@ -823,6 +827,97 @@ impl<'a> CodeGen<'a> {
         
             //
         }
+    }
+
+    fn add_main_skeleton(&mut self) {
+        
+        let main_tp: inkwell::types::FunctionType = self.context.i32_type().fn_type(
+            &[
+                inkwell::types::BasicMetadataTypeEnum::IntType(self.context.i32_type()),
+                inkwell::types::BasicMetadataTypeEnum::PointerType(
+                    self
+                        .context
+                        .i32_type()
+                        .ptr_type(inkwell::AddressSpace::from(0u16))
+                        .ptr_type(inkwell::AddressSpace::from(0u16)),
+                ),
+            ],
+            false,
+        );
+        let realmain = self.module.add_function("main", main_tp, None);
+        let basic_block = self.context.append_basic_block(realmain, "");
+    
+        // Mir check
+        let mut mir = mir::new(self.info.clone(), self.builtins.clone(), "main".into());
+        let mut instructions = mir.generate(&vec![]);
+        mir::check(&mut mir, &mut instructions);
+        //
+    
+        self.namespaces.insert(
+            realmain,
+            Namespace {
+                bindings: HashMap::new(),
+            },
+        );
+    
+        let mut attr: inkwell::attributes::Attribute = self.context.create_enum_attribute(
+            inkwell::attributes::Attribute::get_named_enum_kind_id("noinline"),
+            0,
+        );
+        realmain.add_attribute(inkwell::attributes::AttributeLoc::Function, attr);
+    
+        attr = self.context.create_enum_attribute(
+            inkwell::attributes::Attribute::get_named_enum_kind_id("norecurse"),
+            0,
+        );
+        realmain.add_attribute(inkwell::attributes::AttributeLoc::Function, attr);
+    
+        if !self.optimized {
+            attr = self.context.create_enum_attribute(
+                inkwell::attributes::Attribute::get_named_enum_kind_id("optnone"),
+                0,
+            );
+            realmain.add_attribute(inkwell::attributes::AttributeLoc::Function, attr);
+        }
+    
+        //TODO: Ensure this is true
+        attr = self.context.create_enum_attribute(
+            inkwell::attributes::Attribute::get_named_enum_kind_id("willreturn"),
+            0,
+        );
+        realmain.add_attribute(inkwell::attributes::AttributeLoc::Function, attr);
+    
+        for flag in &self.flags {
+            if flag == &Flags::Sanitize {
+                let mut attr = self.context.create_enum_attribute(
+                    inkwell::attributes::Attribute::get_named_enum_kind_id("sanitize_address"),
+                    0,
+                );
+                realmain.add_attribute(inkwell::attributes::AttributeLoc::Function, attr);
+    
+                attr = self.context.create_enum_attribute(
+                    inkwell::attributes::Attribute::get_named_enum_kind_id("sanitize_memory"),
+                    0,
+                );
+                realmain.add_attribute(inkwell::attributes::AttributeLoc::Function, attr);
+    
+                attr = self.context.create_enum_attribute(
+                    inkwell::attributes::Attribute::get_named_enum_kind_id("sanitize_thread"),
+                    0,
+                );
+                realmain.add_attribute(inkwell::attributes::AttributeLoc::Function, attr);
+            }
+        }
+    
+        self.builder.position_at_end(basic_block);
+        self.cur_block = Some(basic_block);
+        self.cur_fn = Some(realmain);
+    
+        //
+    
+        self
+            .builder
+            .build_return(Some(&self.context.i32_type().const_int(0, false)));
     }
 }
 

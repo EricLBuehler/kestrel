@@ -86,7 +86,7 @@ impl std::fmt::Display for TokenType {
 
 pub fn new<'a>(info: &mut crate::utils::FileInfo<'a>) -> Lexer<'a> {
     let mut chars = info.data.clone();
-    let current = chars.next().unwrap();
+    let current = chars.next().unwrap_or('\0');
     Lexer {
         current,
         line: 0,
