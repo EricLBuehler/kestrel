@@ -448,7 +448,11 @@ fn make_identifier(lexer: &mut Lexer, kwds: &[String]) -> Token {
         opcol: None,
     };
 
-    while is_identi(lexer.current) && lexer.current != '\0' && lexer.current != '(' && lexer.current != ')' {
+    while is_identi(lexer.current)
+        && lexer.current != '\0'
+        && lexer.current != '('
+        && lexer.current != ')'
+    {
         data.push(lexer.current);
         advance(lexer);
     }

@@ -7,7 +7,10 @@ use crate::{
     types::{Lifetime, Trait, TraitType},
 };
 
-use super::{Mir, MirInstruction, RawMirInstruction, MirNamespace, MirReference, MirTag, ReferenceBase, ReferenceType};
+use super::{
+    Mir, MirInstruction, MirNamespace, MirReference, MirTag, RawMirInstruction, ReferenceBase,
+    ReferenceType,
+};
 
 pub fn calculate_last_use(i: &usize, instructions: &mut Vec<MirInstruction>) -> usize {
     let mut uses = Vec::new();

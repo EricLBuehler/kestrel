@@ -6,8 +6,8 @@ use crate::{
 
 pub mod nodes;
 use self::nodes::{
-    BinaryNode, BoolNode, DecimalNode, IdentifierNode, LetNode, Node, NodeType, OpType,
-    ReferenceNode, StoreNode, FnNode,
+    BinaryNode, BoolNode, DecimalNode, FnNode, IdentifierNode, LetNode, Node, NodeType, OpType,
+    ReferenceNode, StoreNode,
 };
 
 pub struct Parser<'a> {
@@ -315,9 +315,9 @@ impl<'a> Parser<'a> {
         let endline = self.current.end.line;
 
         self.expect(TokenType::LParen);
-        
+
         self.advance();
-    
+
         while self.current_is_type(TokenType::Identifier) {
             args.push(self.current.data.clone());
             if !self.current_is_type(TokenType::Comma) && self.current_is_type(TokenType::RParen) {
@@ -331,12 +331,12 @@ impl<'a> Parser<'a> {
 
         self.advance();
         self.skip_newlines();
-        
+
         self.expect(TokenType::LCurly);
 
         self.advance();
         self.skip_newlines();
-        
+
         let code = self.block();
 
         self.expect(TokenType::RCurly);
@@ -346,17 +346,13 @@ impl<'a> Parser<'a> {
 
         Node::new(
             Position {
-                startcol: startcol,
-                endcol: endcol,
+                startcol,
+                endcol,
                 opcol: None,
                 line: endline,
             },
             nodes::NodeType::Fn,
-            Box::new(FnNode {
-                name,
-                args,
-                code,
-            }),
+            Box::new(FnNode { name, args, code }),
         )
     }
 

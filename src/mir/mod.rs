@@ -6,7 +6,7 @@ use crate::{
     codegen::BindingTags,
     errors::{raise_error, ErrorType},
     parser::nodes::{Node, NodeType, OpType},
-    types::{BasicType, BuiltinTypes, Trait, TraitType, Type, Lifetime},
+    types::{BasicType, BuiltinTypes, Lifetime, Trait, TraitType, Type},
     utils::{FileInfo, Position},
 };
 
@@ -78,7 +78,6 @@ pub enum ReferenceBase {
     Reference(Lifetime),
 }
 
-
 impl Display for RawMirInstruction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -143,7 +142,7 @@ impl Display for RawMirInstruction {
     }
 }
 
-pub fn new<'a>(info: FileInfo<'a>, builtins: BuiltinTypes<'a>, fn_name: String,) -> Mir<'a> {
+pub fn new<'a>(info: FileInfo<'a>, builtins: BuiltinTypes<'a>, fn_name: String) -> Mir<'a> {
     Mir {
         info,
         fn_name,
@@ -170,7 +169,7 @@ pub fn write_mir<'a>(
     }
 
     let mut out = String::new();
-    
+
     out.push_str(&format!("fn {} {{\n", this.fn_name));
     for (i, instruction) in instructions.iter().enumerate() {
         out.push_str("    ");
@@ -189,9 +188,13 @@ pub fn write_mir<'a>(
         }
         out.push('\n');
     }
-    out.push_str("}");
-    
-    let mut f = OpenOptions::new().write(true).append(true).open("a.mir").expect("Unable to open MIR output file.");
+    out.push('}');
+
+    let mut f = OpenOptions::new()
+        .write(true)
+        .append(true)
+        .open("a.mir")
+        .expect("Unable to open MIR output file.");
 
     f.write_all(out.as_bytes()).expect("Unable to write MIR.");
 }

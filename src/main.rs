@@ -86,7 +86,13 @@ fn main() {
         dir: String::from("."),
     };
 
-    let keywords = vec!["let".into(), "mut".into(), "true".into(), "false".into(), "fn".into()];
+    let keywords = vec![
+        "let".into(),
+        "mut".into(),
+        "true".into(),
+        "false".into(),
+        "fn".into(),
+    ];
     let mut lexer = lexer::new(&mut file_info);
     let (_, tokens) = lexer::generate_tokens(&mut lexer, &keywords);
 

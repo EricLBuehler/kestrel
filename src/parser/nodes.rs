@@ -23,7 +23,11 @@ impl Clone for Node {
 
 impl Node {
     pub fn new(pos: Position, tp: NodeType, data: Box<dyn NodeData>) -> Node {
-        Node { pos, tp, data: data.into() }
+        Node {
+            pos,
+            tp,
+            data: data.into(),
+        }
     }
 }
 

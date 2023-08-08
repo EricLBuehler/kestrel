@@ -11,7 +11,7 @@ use inkwell::{
 use std::{collections::HashMap, error::Error, fs::OpenOptions};
 
 use crate::{
-    errors::{raise_error, ErrorType, raise_error_multi},
+    errors::{raise_error, raise_error_multi, ErrorType},
     mir,
     parser::nodes::{Node, NodeType, OpType},
     types::{
@@ -125,7 +125,12 @@ impl<'a> CodeGen<'a> {
             NodeType::U64 => self.compile_u64(node, flags),
             NodeType::U128 => self.compile_u128(node, flags),
             NodeType::Fn => {
-                raise_error("Nested function definitions are disallowed.", ErrorType::NestedFnDef, &node.pos, &self.info);
+                raise_error(
+                    "Nested function definitions are disallowed.",
+                    ErrorType::NestedFnDef,
+                    &node.pos,
+                    self.info,
+                );
             }
         }
     }
@@ -713,15 +718,12 @@ impl<'a> CodeGen<'a> {
 
         if self.functions.get(name).is_some() {
             raise_error_multi(
-                vec![format!(
-                    "Function {} is defined multiple times.",
-                    name
-                ),"First definition here:".into()],
-                ErrorType::MultipleFunctionDefinitions,
                 vec![
-                    &node.pos,
-                    &self.functions.get(name).as_ref().unwrap().pos,
+                    format!("Function {} is defined multiple times.", name),
+                    "First definition here:".into(),
                 ],
+                ErrorType::MultipleFunctionDefinitions,
+                vec![&node.pos, &self.functions.get(name).as_ref().unwrap().pos],
                 self.info,
             );
         }
@@ -738,8 +740,7 @@ impl<'a> CodeGen<'a> {
                 &[
                     inkwell::types::BasicMetadataTypeEnum::IntType(self.context.i32_type()),
                     inkwell::types::BasicMetadataTypeEnum::PointerType(
-                        self
-                            .context
+                        self.context
                             .i32_type()
                             .ptr_type(inkwell::AddressSpace::from(0u16))
                             .ptr_type(inkwell::AddressSpace::from(0u16)),
@@ -749,32 +750,32 @@ impl<'a> CodeGen<'a> {
             );
             let realmain = self.module.add_function("main", main_tp, None);
             let basic_block = self.context.append_basic_block(realmain, "");
-        
+
             // Mir check
             let mut mir = mir::new(self.info.clone(), self.builtins.clone(), name.into());
-            let mut instructions = mir.generate(&fnnode.nodearr.unwrap());
+            let mut instructions = mir.generate(fnnode.nodearr.unwrap());
             mir::check(&mut mir, &mut instructions);
             //
-        
+
             self.namespaces.insert(
                 realmain,
                 Namespace {
                     bindings: HashMap::new(),
                 },
             );
-        
+
             let mut attr: inkwell::attributes::Attribute = self.context.create_enum_attribute(
                 inkwell::attributes::Attribute::get_named_enum_kind_id("noinline"),
                 0,
             );
             realmain.add_attribute(inkwell::attributes::AttributeLoc::Function, attr);
-        
+
             attr = self.context.create_enum_attribute(
                 inkwell::attributes::Attribute::get_named_enum_kind_id("norecurse"),
                 0,
             );
             realmain.add_attribute(inkwell::attributes::AttributeLoc::Function, attr);
-        
+
             if !self.optimized {
                 attr = self.context.create_enum_attribute(
                     inkwell::attributes::Attribute::get_named_enum_kind_id("optnone"),
@@ -782,14 +783,14 @@ impl<'a> CodeGen<'a> {
                 );
                 realmain.add_attribute(inkwell::attributes::AttributeLoc::Function, attr);
             }
-        
+
             //TODO: Ensure this is true
             attr = self.context.create_enum_attribute(
                 inkwell::attributes::Attribute::get_named_enum_kind_id("willreturn"),
                 0,
             );
             realmain.add_attribute(inkwell::attributes::AttributeLoc::Function, attr);
-        
+
             for flag in &self.flags {
                 if flag == &Flags::Sanitize {
                     let mut attr = self.context.create_enum_attribute(
@@ -797,13 +798,13 @@ impl<'a> CodeGen<'a> {
                         0,
                     );
                     realmain.add_attribute(inkwell::attributes::AttributeLoc::Function, attr);
-        
+
                     attr = self.context.create_enum_attribute(
                         inkwell::attributes::Attribute::get_named_enum_kind_id("sanitize_memory"),
                         0,
                     );
                     realmain.add_attribute(inkwell::attributes::AttributeLoc::Function, attr);
-        
+
                     attr = self.context.create_enum_attribute(
                         inkwell::attributes::Attribute::get_named_enum_kind_id("sanitize_thread"),
                         0,
@@ -811,32 +812,29 @@ impl<'a> CodeGen<'a> {
                     realmain.add_attribute(inkwell::attributes::AttributeLoc::Function, attr);
                 }
             }
-        
+
             self.builder.position_at_end(basic_block);
             self.cur_block = Some(basic_block);
             self.cur_fn = Some(realmain);
-        
+
             //
-        
+
             //Compile code
             self.compile_statements(fnnode.nodearr.unwrap());
-        
-            self
-                .builder
+
+            self.builder
                 .build_return(Some(&self.context.i32_type().const_int(0, false)));
-        
+
             //
         }
     }
 
     fn add_main_skeleton(&mut self) {
-        
         let main_tp: inkwell::types::FunctionType = self.context.i32_type().fn_type(
             &[
                 inkwell::types::BasicMetadataTypeEnum::IntType(self.context.i32_type()),
                 inkwell::types::BasicMetadataTypeEnum::PointerType(
-                    self
-                        .context
+                    self.context
                         .i32_type()
                         .ptr_type(inkwell::AddressSpace::from(0u16))
                         .ptr_type(inkwell::AddressSpace::from(0u16)),
@@ -846,32 +844,32 @@ impl<'a> CodeGen<'a> {
         );
         let realmain = self.module.add_function("main", main_tp, None);
         let basic_block = self.context.append_basic_block(realmain, "");
-    
+
         // Mir check
         let mut mir = mir::new(self.info.clone(), self.builtins.clone(), "main".into());
         let mut instructions = mir.generate(&vec![]);
         mir::check(&mut mir, &mut instructions);
         //
-    
+
         self.namespaces.insert(
             realmain,
             Namespace {
                 bindings: HashMap::new(),
             },
         );
-    
+
         let mut attr: inkwell::attributes::Attribute = self.context.create_enum_attribute(
             inkwell::attributes::Attribute::get_named_enum_kind_id("noinline"),
             0,
         );
         realmain.add_attribute(inkwell::attributes::AttributeLoc::Function, attr);
-    
+
         attr = self.context.create_enum_attribute(
             inkwell::attributes::Attribute::get_named_enum_kind_id("norecurse"),
             0,
         );
         realmain.add_attribute(inkwell::attributes::AttributeLoc::Function, attr);
-    
+
         if !self.optimized {
             attr = self.context.create_enum_attribute(
                 inkwell::attributes::Attribute::get_named_enum_kind_id("optnone"),
@@ -879,14 +877,14 @@ impl<'a> CodeGen<'a> {
             );
             realmain.add_attribute(inkwell::attributes::AttributeLoc::Function, attr);
         }
-    
+
         //TODO: Ensure this is true
         attr = self.context.create_enum_attribute(
             inkwell::attributes::Attribute::get_named_enum_kind_id("willreturn"),
             0,
         );
         realmain.add_attribute(inkwell::attributes::AttributeLoc::Function, attr);
-    
+
         for flag in &self.flags {
             if flag == &Flags::Sanitize {
                 let mut attr = self.context.create_enum_attribute(
@@ -894,13 +892,13 @@ impl<'a> CodeGen<'a> {
                     0,
                 );
                 realmain.add_attribute(inkwell::attributes::AttributeLoc::Function, attr);
-    
+
                 attr = self.context.create_enum_attribute(
                     inkwell::attributes::Attribute::get_named_enum_kind_id("sanitize_memory"),
                     0,
                 );
                 realmain.add_attribute(inkwell::attributes::AttributeLoc::Function, attr);
-    
+
                 attr = self.context.create_enum_attribute(
                     inkwell::attributes::Attribute::get_named_enum_kind_id("sanitize_thread"),
                     0,
@@ -908,15 +906,14 @@ impl<'a> CodeGen<'a> {
                 realmain.add_attribute(inkwell::attributes::AttributeLoc::Function, attr);
             }
         }
-    
+
         self.builder.position_at_end(basic_block);
         self.cur_block = Some(basic_block);
         self.cur_fn = Some(realmain);
-    
+
         //
-    
-        self
-            .builder
+
+        self.builder
             .build_return(Some(&self.context.i32_type().const_int(0, false)));
     }
 }
@@ -980,7 +977,11 @@ pub fn generate_code(
         optimized: optimize,
     };
 
-    let f = OpenOptions::new().write(true).append(true).open("a.mir").expect("Unable to create MIR output file.");
+    let f = OpenOptions::new()
+        .write(true)
+        .append(true)
+        .open("a.mir")
+        .expect("Unable to create MIR output file.");
     f.set_len(0).expect("Unable to truncate MIR output file.");
 
     init_builtins(&mut codegen);
@@ -996,7 +997,6 @@ pub fn generate_code(
     //
 
     codegen.compile(ast);
-    
 
     //Generate debug info
     codegen.dibuilder.finalize();
