@@ -50,6 +50,7 @@ pub enum NodeType {
     U64,
     U128,
     Fn,
+    Return,
 }
 
 #[derive(Debug)]
@@ -226,6 +227,21 @@ impl NodeData for FnNode {
         value.nodearr = Some(&self.code);
         value.raw.insert(String::from("name"), self.name.clone());
         value.args = Some(self.args.clone());
+
+        value
+    }
+}
+
+// ========================
+
+pub struct ReturnNode {
+    pub expr: Node,
+}
+
+impl NodeData for ReturnNode {
+    fn get_data(&self) -> NodeValue {
+        let mut value = NodeValue::new();
+        value.nodes.insert(String::from("expr"), &self.expr);
 
         value
     }

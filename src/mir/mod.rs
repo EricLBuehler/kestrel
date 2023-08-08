@@ -41,6 +41,7 @@ pub enum RawMirInstruction {
     Copy(usize),
     DropBinding(String, usize),
     Bool(bool),
+    Return(usize),
 }
 
 #[derive(Clone)]
@@ -138,6 +139,9 @@ impl Display for RawMirInstruction {
             RawMirInstruction::U128(value) => {
                 write!(f, "u128 {value}")
             }
+            RawMirInstruction::Return(right) => {
+                write!(f, "return .{right}")
+            }
         }
     }
 }
@@ -226,6 +230,7 @@ impl<'a> Mir<'a> {
             NodeType::U32 => self.generate_u32(node),
             NodeType::U64 => self.generate_u64(node),
             NodeType::U128 => self.generate_u128(node),
+            NodeType::Return => self.generate_return(node),
             NodeType::Fn => unreachable!(),
         }
     }
@@ -754,6 +759,11 @@ impl<'a> Mir<'a> {
         }
 
         self.instructions.push(MirInstruction {
+            instruction: RawMirInstruction::Own(right.0),
+            pos: node.pos.clone(),
+            tp: None,
+        });
+        self.instructions.push(MirInstruction {
             instruction: RawMirInstruction::Store {
                 name: name.to_string(),
                 right: right.0,
@@ -776,6 +786,26 @@ impl<'a> Mir<'a> {
 
         self.instructions.push(MirInstruction {
             instruction: RawMirInstruction::Reference(expr.0),
+            pos: node.pos.clone(),
+            tp: Some(expr.1.clone()),
+        });
+
+        (self.instructions.len() - 1, expr.1.clone())
+    }
+
+    fn generate_return(&mut self, node: &Node) -> MirResult<'a> {
+        let returnnode = node.data.get_data();
+        let mut expr = self.generate_expr(returnnode.nodes.get("expr").unwrap());
+
+        expr.1.ref_n += 1;
+
+        self.instructions.push(MirInstruction {
+            instruction: RawMirInstruction::Own(expr.0),
+            pos: node.pos.clone(),
+            tp: None,
+        });
+        self.instructions.push(MirInstruction {
+            instruction: RawMirInstruction::Return(expr.0),
             pos: node.pos.clone(),
             tp: Some(expr.1.clone()),
         });

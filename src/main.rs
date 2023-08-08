@@ -92,6 +92,7 @@ fn main() {
         "true".into(),
         "false".into(),
         "fn".into(),
+        "return".into(),
     ];
     let mut lexer = lexer::new(&mut file_info);
     let (_, tokens) = lexer::generate_tokens(&mut lexer, &keywords);

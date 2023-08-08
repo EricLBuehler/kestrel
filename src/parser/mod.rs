@@ -7,7 +7,7 @@ use crate::{
 pub mod nodes;
 use self::nodes::{
     BinaryNode, BoolNode, DecimalNode, FnNode, IdentifierNode, LetNode, Node, NodeType, OpType,
-    ReferenceNode, StoreNode,
+    ReferenceNode, StoreNode, ReturnNode,
 };
 
 pub struct Parser<'a> {
@@ -230,6 +230,7 @@ impl<'a> Parser<'a> {
                 res
             }
             "fn" => self.generate_fn(),
+            "return" => self.generate_return(),
             _ => {
                 unreachable!();
             }
@@ -353,6 +354,23 @@ impl<'a> Parser<'a> {
             },
             nodes::NodeType::Fn,
             Box::new(FnNode { name, args, code }),
+        )
+    }
+
+    fn generate_return(&mut self) -> Node {
+        let startcol = self.current.start.startcol;
+        self.advance();
+        let expr = self.expr(Precedence::Lowest);
+
+        Node::new(
+            Position {
+                startcol,
+                endcol: expr.pos.endcol,
+                opcol: None,
+                line: expr.pos.line,
+            },
+            nodes::NodeType::Return,
+            Box::new(ReturnNode { expr }),
         )
     }
 

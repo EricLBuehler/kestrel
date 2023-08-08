@@ -5,3 +5,7 @@ fn main() {
     let γ = &&α
     let δ = true+false
 }
+
+fn x() {
+    return 1
+}

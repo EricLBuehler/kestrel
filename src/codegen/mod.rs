@@ -132,6 +132,7 @@ impl<'a> CodeGen<'a> {
                     self.info,
                 );
             }
+            NodeType::Return => todo!(),
         }
     }
 }

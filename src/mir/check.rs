@@ -55,6 +55,11 @@ pub fn calculate_last_use(i: &usize, instructions: &mut Vec<MirInstruction>) -> 
                 }
             }
             RawMirInstruction::DropBinding(_, _) => {}
+            RawMirInstruction::Return(right) => {
+                if i == right {
+                    uses.push(j);
+                }
+            }
         }
     }
 
@@ -388,6 +393,9 @@ pub fn generate_lifetimes<'a>(
                 }
             }
             RawMirInstruction::DropBinding(_, _) => {}
+            RawMirInstruction::Return(right) => {
+                assert_eq!(instructions.get(*right).unwrap().tp.as_ref().unwrap().ref_n, 0)
+            }
         }
 
         if let RawMirInstruction::Declare { name: _, is_mut: _ } = instruction.instruction {
