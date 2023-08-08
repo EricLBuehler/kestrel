@@ -30,6 +30,7 @@ pub enum TokenType {
     LParen,
     RCurly,
     LCurly,
+    Comma,
 }
 
 pub struct Lexer<'a> {
@@ -78,6 +79,7 @@ impl std::fmt::Display for TokenType {
             TokenType::RParen => write!(f, "rparen"),
             TokenType::LCurly => write!(f, "lcurly"),
             TokenType::RCurly => write!(f, "rcurly"),
+            TokenType::Comma => write!(f, "comma"),
         }
     }
 }
@@ -271,6 +273,24 @@ pub fn generate_tokens(lexer: &mut Lexer, kwds: &[String]) -> (usize, Vec<Token>
             tokens.push(Token {
                 data: String::from("}"),
                 tp: TokenType::RCurly,
+                start: Position {
+                    line: lexer.line,
+                    startcol: lexer.col,
+                    endcol: lexer.col + 1,
+                    opcol: None,
+                },
+                end: Position {
+                    line: lexer.line,
+                    startcol: lexer.col,
+                    endcol: lexer.col + 1,
+                    opcol: None,
+                },
+            });
+            advance(lexer);
+        } else if cur == ',' {
+            tokens.push(Token {
+                data: String::from(","),
+                tp: TokenType::Comma,
                 start: Position {
                     line: lexer.line,
                     startcol: lexer.col,

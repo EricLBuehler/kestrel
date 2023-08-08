@@ -17,6 +17,7 @@ pub enum ErrorType {
     InvalidSpecifiedNumericType,
     NestedFnDef,
     MultipleFunctionDefinitions,
+    NonModuleLevelStatement,
 }
 
 impl std::fmt::Display for ErrorType {
@@ -40,6 +41,7 @@ pub fn repr_err(tp: ErrorType) -> &'static str {
         ErrorType::InvalidSpecifiedNumericType => "invalid specified numeric type",
         ErrorType::NestedFnDef => "nested function definitions are disallowed",
         ErrorType::MultipleFunctionDefinitions => "multiple function definitions are disallowed",
+        ErrorType::NonModuleLevelStatement => "unexpected module level statement",
     }
 }
 

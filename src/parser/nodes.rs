@@ -1,17 +1,29 @@
 use std::{collections::HashMap, fmt::Debug};
 
+use trc::Trc;
+
 use crate::utils::Position;
 
 #[derive(Debug)]
 pub struct Node {
     pub pos: Position,
     pub tp: NodeType,
-    pub data: Box<dyn NodeData>,
+    pub data: Trc<Box<dyn NodeData>>,
+}
+
+impl Clone for Node {
+    fn clone(&self) -> Self {
+        Node {
+            pos: self.pos.clone(),
+            tp: self.tp.clone(),
+            data: self.data.clone(),
+        }
+    }
 }
 
 impl Node {
     pub fn new(pos: Position, tp: NodeType, data: Box<dyn NodeData>) -> Node {
-        Node { pos, tp, data }
+        Node { pos, tp, data: data.into() }
     }
 }
 
@@ -200,7 +212,7 @@ impl NodeData for BoolNode {
 
 pub struct FnNode {
     pub name: String,
-    pub args: Vec<Node>,
+    pub args: Vec<String>,
     pub code: Vec<Node>,
 }
 
@@ -209,6 +221,7 @@ impl NodeData for FnNode {
         let mut value = NodeValue::new();
         value.nodearr = Some(&self.code);
         value.raw.insert(String::from("name"), self.name.clone());
+        value.args = Some(self.args.clone());
 
         value
     }

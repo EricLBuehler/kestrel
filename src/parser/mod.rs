@@ -309,7 +309,7 @@ impl<'a> Parser<'a> {
 
         self.advance();
 
-        let args = Vec::new();
+        let mut args = Vec::new();
 
         let endcol = self.current.end.endcol;
         let endline = self.current.end.line;
@@ -317,7 +317,15 @@ impl<'a> Parser<'a> {
         self.expect(TokenType::LParen);
         
         self.advance();
-        self.skip_newlines();
+    
+        while self.current_is_type(TokenType::Identifier) {
+            args.push(self.current.data.clone());
+            if !self.current_is_type(TokenType::Comma) && self.current_is_type(TokenType::RParen) {
+                break;
+            }
+            self.advance();
+            self.skip_newlines();
+        }
 
         self.expect(TokenType::RParen);
 

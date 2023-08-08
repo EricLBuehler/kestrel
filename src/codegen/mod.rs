@@ -60,13 +60,30 @@ struct ExprFlags {
 
 impl<'a> CodeGen<'a> {
     fn compile(&mut self, ast: Vec<Node>) {
-        for node in ast {
+        //Hoist definitions
+        for node in ast.clone() {
+            match node.tp {
+                NodeType::Fn => {
+                    self.hoist_fn_def(node);
+                }
+                _ => {
+                    raise_error(
+                        "Only function definitions are allowed at the module level.",
+                        ErrorType::NonModuleLevelStatement,
+                        &node.pos,
+                        self.info,
+                    );
+                }
+            }
+        }
+
+        for node in &ast {
             match node.tp {
                 NodeType::Fn => {
                     self.create_fn(node);
                 }
                 _ => {
-
+                    unreachable!()
                 }
             }
         }
@@ -686,7 +703,7 @@ impl<'a> CodeGen<'a> {
 }
 
 impl<'a> CodeGen<'a> {
-    fn create_fn(&mut self, node: Node) {
+    fn hoist_fn_def(&mut self, node: Node) {
         let fnnode = node.data.get_data();
         let name = fnnode.raw.get("name").unwrap();
 
@@ -704,6 +721,13 @@ impl<'a> CodeGen<'a> {
                 self.info,
             );
         }
+
+        self.functions.insert(name.clone(), node);
+    }
+
+    fn create_fn(&mut self, node: &Node) {
+        let fnnode = node.data.get_data();
+        let name = fnnode.raw.get("name").unwrap();
 
         if name == "main" {
             let main_tp: inkwell::types::FunctionType = self.context.i32_type().fn_type(
@@ -799,8 +823,6 @@ impl<'a> CodeGen<'a> {
         
             //
         }
-        
-        self.functions.insert(name.clone(), node);
     }
 }
 
