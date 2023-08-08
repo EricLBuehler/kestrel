@@ -48,8 +48,8 @@ main:                                   # @main
 	addq	$-16, %rax
 	movq	%rax, %rsp
 	movq	%rdx, (%rax)
-	movb	$1, %cl
-	movb	$-2, %al
+	movb	$1, %al
+	xorl	%ecx, %ecx
 	testb	$1, %cl
 	jne	.LBB0_4
 	jmp	.LBB0_5

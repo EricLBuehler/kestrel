@@ -3,5 +3,5 @@ fn main() {
     let mut β = &α
     β = &100u64
     let γ = &&α
-    let a = true+true
+    let δ = true+false
 }

@@ -33,7 +33,7 @@ define i32 @main(i32 %0, i32** %1) local_unnamed_addr #1 {
   store i64 100, i64* %14, align 4
   %15 = alloca i64*, align 8
   store i64* %12, i64** %15, align 8
-  %16 = call { i1, i1 } @llvm.sadd.with.overflow.i1.i1(i1 true, i1 true)
+  %16 = call { i1, i1 } @llvm.sadd.with.overflow.i1.i1(i1 true, i1 false)
   %17 = extractvalue { i1, i1 } %16, 0
   %18 = extractvalue { i1, i1 } %16, 1
   %19 = call i1 @llvm.expect.i1.i1(i1 %18, i1 false)
