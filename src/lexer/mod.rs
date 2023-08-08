@@ -453,6 +453,10 @@ fn make_identifier(lexer: &mut Lexer, kwds: &[String]) -> Token {
         advance(lexer);
     }
 
+    if lexer.current == '(' || lexer.current == ')' {
+        lexer.col -= unicode_width::UnicodeWidthChar::width(lexer.current).unwrap();
+    }
+
     let tp = if kwds.contains(&data) {
         TokenType::Keyword
     } else {
