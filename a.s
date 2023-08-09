@@ -39,11 +39,10 @@ main:                                   # @main
 	addq	$-16, %rcx
 	movq	%rcx, %rsp
 	movq	%rdx, -16(%rax)
-	movq	%rsp, %rax
-	movq	%rax, %rcx
+	movq	%rsp, %rcx
 	addq	$-16, %rcx
 	movq	%rcx, %rsp
-	movq	$100, -16(%rax)
+	movq	%rcx, -16(%rax)
 	movq	%rsp, %rax
 	addq	$-16, %rax
 	movq	%rax, %rsp

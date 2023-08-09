@@ -232,6 +232,7 @@ impl<'a> Mir<'a> {
             NodeType::U128 => self.generate_u128(node),
             NodeType::Return => self.generate_return(node),
             NodeType::Fn => unreachable!(),
+            NodeType::Call => self.generate_call(node),
         }
     }
 }
@@ -808,6 +809,21 @@ impl<'a> Mir<'a> {
             instruction: RawMirInstruction::Return(expr.0),
             pos: node.pos.clone(),
             tp: Some(expr.1.clone()),
+        });
+
+        (self.instructions.len() - 1, expr.1.clone())
+    }
+
+    fn generate_call(&mut self, node: &Node) -> MirResult<'a> {
+        let callnode = node.data.get_data();
+        let mut expr = self.generate_expr(callnode.nodes.get("expr").unwrap());
+
+        expr.1.ref_n += 1;
+
+        self.instructions.push(MirInstruction {
+            instruction: RawMirInstruction::Own(expr.0),
+            pos: node.pos.clone(),
+            tp: None,
         });
 
         (self.instructions.len() - 1, expr.1.clone())

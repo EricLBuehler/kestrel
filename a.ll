@@ -30,7 +30,7 @@ define i32 @main(i32 %0, i32** %1) local_unnamed_addr #1 {
   %13 = alloca i64*, align 8
   store i64* %12, i64** %13, align 8
   %14 = alloca i64, align 8
-  store i64 100, i64* %14, align 4
+  store i64* %14, i64** %13, align 8
   %15 = alloca i64*, align 8
   store i64* %12, i64** %15, align 8
   %16 = call { i1, i1 } @llvm.sadd.with.overflow.i1.i1(i1 true, i1 false)

@@ -132,13 +132,14 @@ impl<'a> CodeGen<'a> {
                     self.info,
                 );
             }
-            NodeType::Return => todo!(),
+            NodeType::Return => self.compile_return(node, flags),
+            NodeType::Call => todo!(),
         }
     }
 }
 
 impl<'a> CodeGen<'a> {
-    fn compile_i8(&mut self, node: &Node, _flags: ExprFlags) -> Data<'a> {
+    fn compile_i8(&mut self, node: &Node, flags: ExprFlags) -> Data<'a> {
         if node
             .data
             .get_data()
@@ -165,18 +166,29 @@ impl<'a> CodeGen<'a> {
             node.data.get_data().raw.get("value").unwrap(),
             inkwell::types::StringRadix::Decimal,
         );
-
+        
         if let Some(int) = res {
-            Data {
-                data: Some(int.into()),
-                tp: self.builtins.get(&BasicType::I8).unwrap().clone(),
+            if flags.get_ref {
+                let ptr = self.builder.build_alloca(int.get_type(), "");
+                let mut tp = self.builtins.get(&BasicType::I8).unwrap().clone();
+                tp.ref_n += 1;
+                Data {
+                    data: Some(ptr.into()),
+                    tp,
+                }
+            }
+            else {
+                Data {
+                    data: Some(int.into()),
+                    tp: self.builtins.get(&BasicType::I8).unwrap().clone(),
+                }
             }
         } else {
             unimplemented!();
         }
     }
 
-    fn compile_i16(&mut self, node: &Node, _flags: ExprFlags) -> Data<'a> {
+    fn compile_i16(&mut self, node: &Node, flags: ExprFlags) -> Data<'a> {
         if node
             .data
             .get_data()
@@ -205,16 +217,27 @@ impl<'a> CodeGen<'a> {
         );
 
         if let Some(int) = res {
-            Data {
-                data: Some(int.into()),
-                tp: self.builtins.get(&BasicType::I16).unwrap().clone(),
+            if flags.get_ref {
+                let ptr = self.builder.build_alloca(int.get_type(), "");
+                let mut tp = self.builtins.get(&BasicType::I16).unwrap().clone();
+                tp.ref_n += 1;
+                Data {
+                    data: Some(ptr.into()),
+                    tp,
+                }
+            }
+            else {
+                Data {
+                    data: Some(int.into()),
+                    tp: self.builtins.get(&BasicType::I16).unwrap().clone(),
+                }
             }
         } else {
             unimplemented!();
         }
     }
 
-    fn compile_i32(&mut self, node: &Node, _flags: ExprFlags) -> Data<'a> {
+    fn compile_i32(&mut self, node: &Node, flags: ExprFlags) -> Data<'a> {
         if node
             .data
             .get_data()
@@ -243,16 +266,27 @@ impl<'a> CodeGen<'a> {
         );
 
         if let Some(int) = res {
-            Data {
-                data: Some(int.into()),
-                tp: self.builtins.get(&BasicType::I32).unwrap().clone(),
+            if flags.get_ref {
+                let ptr = self.builder.build_alloca(int.get_type(), "");
+                let mut tp = self.builtins.get(&BasicType::I32).unwrap().clone();
+                tp.ref_n += 1;
+                Data {
+                    data: Some(ptr.into()),
+                    tp,
+                }
+            }
+            else {
+                Data {
+                    data: Some(int.into()),
+                    tp: self.builtins.get(&BasicType::I32).unwrap().clone(),
+                }
             }
         } else {
             unimplemented!();
         }
     }
 
-    fn compile_i64(&mut self, node: &Node, _flags: ExprFlags) -> Data<'a> {
+    fn compile_i64(&mut self, node: &Node, flags: ExprFlags) -> Data<'a> {
         if node
             .data
             .get_data()
@@ -281,16 +315,27 @@ impl<'a> CodeGen<'a> {
         );
 
         if let Some(int) = res {
-            Data {
-                data: Some(int.into()),
-                tp: self.builtins.get(&BasicType::I64).unwrap().clone(),
+            if flags.get_ref {
+                let ptr = self.builder.build_alloca(int.get_type(), "");
+                let mut tp = self.builtins.get(&BasicType::I64).unwrap().clone();
+                tp.ref_n += 1;
+                Data {
+                    data: Some(ptr.into()),
+                    tp,
+                }
+            }
+            else {
+                Data {
+                    data: Some(int.into()),
+                    tp: self.builtins.get(&BasicType::I64).unwrap().clone(),
+                }
             }
         } else {
             unimplemented!();
         }
     }
 
-    fn compile_i128(&mut self, node: &Node, _flags: ExprFlags) -> Data<'a> {
+    fn compile_i128(&mut self, node: &Node, flags: ExprFlags) -> Data<'a> {
         if node
             .data
             .get_data()
@@ -319,16 +364,27 @@ impl<'a> CodeGen<'a> {
         );
 
         if let Some(int) = res {
-            Data {
-                data: Some(int.into()),
-                tp: self.builtins.get(&BasicType::I128).unwrap().clone(),
+            if flags.get_ref {
+                let ptr = self.builder.build_alloca(int.get_type(), "");
+                let mut tp = self.builtins.get(&BasicType::I128).unwrap().clone();
+                tp.ref_n += 1;
+                Data {
+                    data: Some(ptr.into()),
+                    tp,
+                }
+            }
+            else {
+                Data {
+                    data: Some(int.into()),
+                    tp: self.builtins.get(&BasicType::I128).unwrap().clone(),
+                }
             }
         } else {
             unimplemented!();
         }
     }
 
-    fn compile_u8(&mut self, node: &Node, _flags: ExprFlags) -> Data<'a> {
+    fn compile_u8(&mut self, node: &Node, flags: ExprFlags) -> Data<'a> {
         if node
             .data
             .get_data()
@@ -357,16 +413,27 @@ impl<'a> CodeGen<'a> {
         );
 
         if let Some(int) = res {
-            Data {
-                data: Some(int.into()),
-                tp: self.builtins.get(&BasicType::U8).unwrap().clone(),
+            if flags.get_ref {
+                let ptr = self.builder.build_alloca(int.get_type(), "");
+                let mut tp = self.builtins.get(&BasicType::U8).unwrap().clone();
+                tp.ref_n += 1;
+                Data {
+                    data: Some(ptr.into()),
+                    tp,
+                }
+            }
+            else {
+                Data {
+                    data: Some(int.into()),
+                    tp: self.builtins.get(&BasicType::U8).unwrap().clone(),
+                }
             }
         } else {
             unimplemented!();
         }
     }
 
-    fn compile_u16(&mut self, node: &Node, _flags: ExprFlags) -> Data<'a> {
+    fn compile_u16(&mut self, node: &Node, flags: ExprFlags) -> Data<'a> {
         if node
             .data
             .get_data()
@@ -395,16 +462,27 @@ impl<'a> CodeGen<'a> {
         );
 
         if let Some(int) = res {
-            Data {
-                data: Some(int.into()),
-                tp: self.builtins.get(&BasicType::U16).unwrap().clone(),
+            if flags.get_ref {
+                let ptr = self.builder.build_alloca(int.get_type(), "");
+                let mut tp = self.builtins.get(&BasicType::U16).unwrap().clone();
+                tp.ref_n += 1;
+                Data {
+                    data: Some(ptr.into()),
+                    tp,
+                }
+            }
+            else {
+                Data {
+                    data: Some(int.into()),
+                    tp: self.builtins.get(&BasicType::U16).unwrap().clone(),
+                }
             }
         } else {
             unimplemented!();
         }
     }
 
-    fn compile_u32(&mut self, node: &Node, _flags: ExprFlags) -> Data<'a> {
+    fn compile_u32(&mut self, node: &Node, flags: ExprFlags) -> Data<'a> {
         if node
             .data
             .get_data()
@@ -433,16 +511,27 @@ impl<'a> CodeGen<'a> {
         );
 
         if let Some(int) = res {
-            Data {
-                data: Some(int.into()),
-                tp: self.builtins.get(&BasicType::U32).unwrap().clone(),
+            if flags.get_ref {
+                let ptr = self.builder.build_alloca(int.get_type(), "");
+                let mut tp = self.builtins.get(&BasicType::U32).unwrap().clone();
+                tp.ref_n += 1;
+                Data {
+                    data: Some(ptr.into()),
+                    tp,
+                }
+            }
+            else {
+                Data {
+                    data: Some(int.into()),
+                    tp: self.builtins.get(&BasicType::U32).unwrap().clone(),
+                }
             }
         } else {
             unimplemented!();
         }
     }
 
-    fn compile_u64(&mut self, node: &Node, _flags: ExprFlags) -> Data<'a> {
+    fn compile_u64(&mut self, node: &Node, flags: ExprFlags) -> Data<'a> {
         if node
             .data
             .get_data()
@@ -471,16 +560,27 @@ impl<'a> CodeGen<'a> {
         );
 
         if let Some(int) = res {
-            Data {
-                data: Some(int.into()),
-                tp: self.builtins.get(&BasicType::U64).unwrap().clone(),
+            if flags.get_ref {
+                let ptr = self.builder.build_alloca(int.get_type(), "");
+                let mut tp = self.builtins.get(&BasicType::U64).unwrap().clone();
+                tp.ref_n += 1;
+                Data {
+                    data: Some(ptr.into()),
+                    tp,
+                }
+            }
+            else {
+                Data {
+                    data: Some(int.into()),
+                    tp: self.builtins.get(&BasicType::U64).unwrap().clone(),
+                }
             }
         } else {
             unimplemented!();
         }
     }
 
-    fn compile_u128(&mut self, node: &Node, _flags: ExprFlags) -> Data<'a> {
+    fn compile_u128(&mut self, node: &Node, flags: ExprFlags) -> Data<'a> {
         if node
             .data
             .get_data()
@@ -509,9 +609,20 @@ impl<'a> CodeGen<'a> {
         );
 
         if let Some(int) = res {
-            Data {
-                data: Some(int.into()),
-                tp: self.builtins.get(&BasicType::U128).unwrap().clone(),
+            if flags.get_ref {
+                let ptr = self.builder.build_alloca(int.get_type(), "");
+                let mut tp = self.builtins.get(&BasicType::U128).unwrap().clone();
+                tp.ref_n += 1;
+                Data {
+                    data: Some(ptr.into()),
+                    tp,
+                }
+            }
+            else {
+                Data {
+                    data: Some(int.into()),
+                    tp: self.builtins.get(&BasicType::U128).unwrap().clone(),
+                }
             }
         } else {
             unimplemented!();
@@ -623,17 +734,27 @@ impl<'a> CodeGen<'a> {
 
         let binding = binding.unwrap();
 
-        Data {
-            data: if binding.0.is_some() {
-                Some(if flags.get_ref {
-                    binding.0.unwrap().into()
+        if flags.get_ref {
+            let mut tp = binding.1.clone();
+            tp.ref_n += 1;
+            Data {
+                data: if binding.0.is_some() {
+                    Some(binding.0.unwrap().into())
                 } else {
-                    self.builder.build_load(binding.0.unwrap(), "")
-                })
-            } else {
-                None
-            },
-            tp: binding.1.clone(),
+                    None
+                },
+                tp,
+            }
+        }
+        else {
+            Data {
+                data: if binding.0.is_some() {
+                    Some(self.builder.build_load(binding.0.unwrap(), ""))
+                } else {
+                    None
+                },
+                tp: binding.1.clone(),
+            }
         }
     }
 
@@ -682,17 +803,12 @@ impl<'a> CodeGen<'a> {
             );
         }
 
-        if right.data.is_some() && right.data.unwrap().is_pointer_value() {
+        if right.data.is_some() {
             debug_assert!(binding.0.is_some());
             self.builder
                 .build_store(binding.0.unwrap(), right.data.unwrap());
-        } else if right.data.is_some() {
-            let alloc = self
-                .builder
-                .build_alloca(right.data.unwrap().get_type(), "");
-            self.builder.build_store(alloc, right.data.unwrap());
         }
-
+        
         Data {
             data: None,
             tp: self.builtins.get(&BasicType::Void).unwrap().clone(),
@@ -701,14 +817,32 @@ impl<'a> CodeGen<'a> {
 
     fn compile_reference(&mut self, node: &Node, _flags: ExprFlags) -> Data<'a> {
         let referencenode = node.data.get_data();
-        let mut expr = self.compile_expr(
+        let expr = self.compile_expr(
             referencenode.nodes.get("expr").unwrap(),
             ExprFlags { get_ref: true },
         );
 
-        expr.tp.ref_n += 1;
-
         expr
+    }
+
+    fn compile_return(&mut self, node: &Node, _flags: ExprFlags) -> Data<'a> {
+        let returnnode = node.data.get_data();
+        let expr = self.compile_expr(
+            returnnode.nodes.get("expr").unwrap(),
+            ExprFlags { get_ref: false },
+        );
+
+        if expr.data.is_some() {
+            self.builder.build_return(Some(expr.data.as_ref().unwrap()));
+        }
+        else {
+            self.builder.build_return(None);
+        }
+
+        Data {
+            data: None,
+            tp: self.builtins.get(&BasicType::Void).unwrap().clone(),
+        }
     }
 }
 

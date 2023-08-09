@@ -51,6 +51,7 @@ pub enum NodeType {
     U128,
     Fn,
     Return,
+    Call,
 }
 
 #[derive(Debug)]
@@ -242,6 +243,23 @@ impl NodeData for ReturnNode {
     fn get_data(&self) -> NodeValue {
         let mut value = NodeValue::new();
         value.nodes.insert(String::from("expr"), &self.expr);
+
+        value
+    }
+}
+
+// ========================
+
+pub struct CallNode {
+    pub expr: Node,
+    pub args: Vec<Node>,
+}
+
+impl NodeData for CallNode {
+    fn get_data(&self) -> NodeValue {
+        let mut value = NodeValue::new();
+        value.nodes.insert(String::from("expr"), &self.expr);
+        value.nodearr = Some(&self.args);
 
         value
     }

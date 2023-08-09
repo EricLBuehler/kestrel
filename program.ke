@@ -4,6 +4,7 @@ fn main() {
     β = &100u64
     let γ = &&α
     let δ = true+false
+    
 }
 
 fn x() {
