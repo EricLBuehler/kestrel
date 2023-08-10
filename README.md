@@ -14,10 +14,11 @@ Simple and safe.
     Add: 
     - [x] `fn` keyword
     - [x] Use `main` for entry point
-    - [ ] `return` keyword
-    - [ ] function calls
+    - [x] `return` keyword
+    - [x] function calls
 
-    MIR effect: Will require permutations to prove invariants.
+    MIR effect:
+    - [ ] Will require permutations to prove invariants (guaranteed return for now).
 
 - **Add comparison traits** (by 8/12/23)
 
