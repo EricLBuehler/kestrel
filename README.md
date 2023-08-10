@@ -8,18 +8,6 @@
 Simple and safe.
 
 ## Todo Roadmap
-
-- **Add functions** (by 8/10/23)
-
-    Add: 
-    - [x] `fn` keyword
-    - [x] Use `main` for entry point
-    - [x] `return` keyword
-    - [x] function calls
-
-    MIR effect:
-    - [x] Will require permutations to prove invariants (guaranteed return for now).
-
 - **Add comparison traits** (by 8/12/23)
 
     Add: `Eq`, `Ne` traits, implement for `std` types.

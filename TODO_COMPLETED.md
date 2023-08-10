@@ -7,3 +7,14 @@
     Special notes for `{i|u}{8-128}`: Add match clause for the new types in existing `i32` implementation.
 
     Special notes for `bool`: none
+
+- **Add functions** (by 8/10/23)
+
+    Add: 
+    - [x] `fn` keyword
+    - [x] Use `main` for entry point
+    - [x] `return` keyword
+    - [x] function calls
+
+    MIR effect:
+    - [x] Will require permutations to prove invariants (guaranteed return for now).
