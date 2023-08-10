@@ -424,7 +424,7 @@ pub fn generate_lifetimes<'a>(
     (namespace, references, binding_drops)
 }
 
-pub fn check(
+pub fn check_references(
     this: &mut Mir,
     instructions: &mut [MirInstruction],
     _namespace: &mut MirNamespace,
@@ -525,4 +525,23 @@ pub fn check(
             }
         }
     }
+}
+
+pub fn check_return(
+    _this: &mut Mir,
+    _instructions: &mut [MirInstruction],
+) { 
+    /*
+    for instruction in instructions {
+        if let RawMirInstruction::Return(_) = instruction.instruction {
+            return;
+        }
+    }
+    raise_error(
+        &format!("Function '{}' does not return.", this.fn_name),
+        ErrorType::TraitNotImplemented,
+        &this.fn_pos,
+        &this.info,
+    );
+    */
 }

@@ -19,7 +19,7 @@ use crate::{
     types::{
         builtins::init_builtins, init_extern_fns, BasicType, BuiltinTypes, Trait, TraitType, Type,
     },
-    utils::FileInfo,
+    utils::{FileInfo, Position},
     Flags,
 };
 
@@ -1041,7 +1041,10 @@ impl<'a> CodeGen<'a> {
             let fn_tp = create_fn_tp!(self, func.1 .1, func.1 .0);
 
             let fn_real = self.module.add_function(&name, fn_tp, None);
+
             func.2 = Some(fn_real);
+            self.functions.insert(name.clone(), func.clone());
+
             let basic_block = self.context.append_basic_block(fn_real, "");
 
             // Mir check
@@ -1050,6 +1053,7 @@ impl<'a> CodeGen<'a> {
                 self.builtins.clone(),
                 self.functions.clone(),
                 name,
+                node.pos.clone(),
             );
             let mut instructions = mir.generate(fnnode.nodearr.unwrap());
             mir::check(&mut mir, &mut instructions);
@@ -1157,6 +1161,7 @@ impl<'a> CodeGen<'a> {
                 self.builtins.clone(),
                 self.functions.clone(),
                 name.into(),
+                node.pos.clone(),
             );
             let mut instructions = mir.generate(fnnode.nodearr.unwrap());
             mir::check(&mut mir, &mut instructions);
@@ -1217,6 +1222,12 @@ impl<'a> CodeGen<'a> {
             self.builtins.clone(),
             self.functions.clone(),
             "main".into(),
+            Position {
+                line: 0,
+                startcol: 0,
+                endcol: 0,
+                opcol: None
+            },
         );
         let mut instructions = mir.generate(&vec![]);
         mir::check(&mut mir, &mut instructions);

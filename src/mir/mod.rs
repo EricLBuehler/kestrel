@@ -12,9 +12,11 @@ use crate::{
 
 mod check;
 
+#[allow(dead_code)]
 pub struct Mir<'a> {
     pub info: FileInfo<'a>,
     fn_name: String,
+    fn_pos: Position,
     instructions: Vec<MirInstruction<'a>>,
     builtins: BuiltinTypes<'a>,
     functions: CodegenFunctions<'a>,
@@ -156,10 +158,12 @@ pub fn new<'a>(
     builtins: BuiltinTypes<'a>,
     functions: CodegenFunctions<'a>,
     fn_name: String,
+    fn_pos: Position,
 ) -> Mir<'a> {
     Mir {
         info,
         fn_name,
+        fn_pos,
         instructions: Vec::new(),
         builtins,
         functions,
@@ -169,7 +173,8 @@ pub fn new<'a>(
 
 pub fn check(this: &mut Mir, instructions: &mut Vec<MirInstruction>) {
     let (mut namespace, references, bindings_drop) = check::generate_lifetimes(this, instructions);
-    check::check(this, instructions, &mut namespace, &references);
+    check::check_references(this, instructions, &mut namespace, &references);
+    check::check_return(this, instructions);
     write_mir(this, bindings_drop, instructions.clone(), &mut namespace);
 }
 

@@ -51,7 +51,7 @@ define i32 @main(i32 %0, i32** %1) local_unnamed_addr #1 {
   %25 = alloca i1, align 1
   store i1 %24, i1* %25, align 1
   call void @x()
-  call void @x.1()
+  call void @x()
   ret i32 0
 }
 
@@ -66,11 +66,6 @@ declare { i1, i1 } @llvm.sadd.with.overflow.i1.i1(i1, i1) #2
 
 ; Function Attrs: mustprogress nofree norecurse nosync nounwind readnone willreturn
 define void @x() local_unnamed_addr #4 {
-  ret void
-}
-
-; Function Attrs: mustprogress nofree norecurse nosync nounwind readnone willreturn
-define void @x.1() local_unnamed_addr #4 {
   ret void
 }
 
