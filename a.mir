@@ -32,4 +32,8 @@ fn main {
     .30:  own .25
     .31:  store δ .25 -> std::void['28 .28 => .28]
     .32:  dropbinding δ
+    .33:  call fn x -> std::void['29 .29 => .29]
+    .34:  call fn x -> std::void['30 .30 => .30]
+}fn x {
+}fn x {
 }

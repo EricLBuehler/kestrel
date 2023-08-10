@@ -18,6 +18,7 @@ pub enum ErrorType {
     NestedFnDef,
     MultipleFunctionDefinitions,
     NonModuleLevelStatement,
+    FunctionNotFound,
 }
 
 impl std::fmt::Display for ErrorType {
@@ -42,6 +43,7 @@ pub fn repr_err(tp: ErrorType) -> &'static str {
         ErrorType::NestedFnDef => "nested function definitions are disallowed",
         ErrorType::MultipleFunctionDefinitions => "multiple function definitions are disallowed",
         ErrorType::NonModuleLevelStatement => "unexpected module level statement",
+        ErrorType::FunctionNotFound => "function not found",
     }
 }
 

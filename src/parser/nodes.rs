@@ -251,14 +251,14 @@ impl NodeData for ReturnNode {
 // ========================
 
 pub struct CallNode {
-    pub expr: Node,
+    pub name: String,
     pub args: Vec<Node>,
 }
 
 impl NodeData for CallNode {
     fn get_data(&self) -> NodeValue {
         let mut value = NodeValue::new();
-        value.nodes.insert(String::from("expr"), &self.expr);
+        value.raw.insert(String::from("name"), self.name.clone());
         value.nodearr = Some(&self.args);
 
         value

@@ -6,7 +6,9 @@ use inkwell::{
     module::FlagBehavior,
     module::Module,
     passes::PassManagerSubType,
+    types::{AnyTypeEnum, BasicMetadataTypeEnum},
     values::{BasicValueEnum, FunctionValue, PointerValue},
+    AddressSpace,
 };
 use std::{collections::HashMap, error::Error, fs::OpenOptions};
 
@@ -29,19 +31,30 @@ pub struct Namespace<'a> {
     bindings: HashMap<String, (Option<PointerValue<'a>>, Type<'a>, BindingTags)>,
 }
 
+#[derive(Clone)]
+pub struct CurFunctionState<'a> {
+    pub cur_block: Option<BasicBlock<'a>>,
+    pub returned: bool,
+    pub rettp: Type<'a>,
+}
+
+pub type CodegenFunctions<'a> =
+    HashMap<String, (Node, (Vec<Type<'a>>, Type<'a>), Option<FunctionValue<'a>>)>; //(args, (code, (args, rettp), function)
+
 pub struct CodeGen<'a> {
     pub context: &'a Context,
     pub module: Module<'a>,
     pub builder: Builder<'a>,
     pub info: &'a FileInfo<'a>,
     dibuilder: inkwell::debug_info::DebugInfoBuilder<'a>,
+    pub block: Option<BasicBlock<'a>>,
 
-    pub cur_block: Option<BasicBlock<'a>>,
+    pub cur_fnstate: Option<CurFunctionState<'a>>,
     pub cur_fn: Option<FunctionValue<'a>>,
 
     pub builtins: BuiltinTypes<'a>,
     pub extern_fns: HashMap<String, FunctionValue<'a>>,
-    pub functions: HashMap<String, Node>, //(args, code)
+    pub functions: CodegenFunctions<'a>, //(args, (code, (args, rettp))
     namespaces: HashMap<FunctionValue<'a>, Namespace<'a>>,
 
     pub flags: Vec<Flags>,
@@ -56,6 +69,123 @@ pub struct Data<'a> {
 
 struct ExprFlags {
     get_ref: bool,
+}
+
+macro_rules! kestrel_to_inkwell_tp {
+    ($this:expr, $tp:expr) => {{
+        match $tp.basictype {
+            BasicType::Bool => {
+                let inkwell_tp = $this.context.bool_type();
+                if $tp.ref_n > 0 {
+                    let mut inkwell_tp = inkwell_tp.ptr_type(AddressSpace::from(0u16));
+                    for _ in 1..$tp.ref_n {
+                        inkwell_tp = inkwell_tp.ptr_type(AddressSpace::from(0u16));
+                    }
+                    inkwell_tp.into()
+                } else {
+                    inkwell_tp.into()
+                }
+            }
+            BasicType::I128 | BasicType::U128 => {
+                let inkwell_tp = $this.context.i128_type();
+                if $tp.ref_n > 0 {
+                    let mut inkwell_tp = inkwell_tp.ptr_type(AddressSpace::from(0u16));
+                    for _ in 1..$tp.ref_n {
+                        inkwell_tp = inkwell_tp.ptr_type(AddressSpace::from(0u16));
+                    }
+                    inkwell_tp.into()
+                } else {
+                    inkwell_tp.into()
+                }
+            }
+            BasicType::I64 | BasicType::U64 => {
+                let inkwell_tp = $this.context.i64_type();
+                if $tp.ref_n > 0 {
+                    let mut inkwell_tp = inkwell_tp.ptr_type(AddressSpace::from(0u16));
+                    for _ in 1..$tp.ref_n {
+                        inkwell_tp = inkwell_tp.ptr_type(AddressSpace::from(0u16));
+                    }
+                    inkwell_tp.into()
+                } else {
+                    inkwell_tp.into()
+                }
+            }
+            BasicType::I32 | BasicType::U32 => {
+                let inkwell_tp = $this.context.i32_type();
+                if $tp.ref_n > 0 {
+                    let mut inkwell_tp = inkwell_tp.ptr_type(AddressSpace::from(0u16));
+                    for _ in 1..$tp.ref_n {
+                        inkwell_tp = inkwell_tp.ptr_type(AddressSpace::from(0u16));
+                    }
+                    inkwell_tp.into()
+                } else {
+                    inkwell_tp.into()
+                }
+            }
+            BasicType::I16 | BasicType::U16 => {
+                let inkwell_tp = $this.context.i16_type();
+                if $tp.ref_n > 0 {
+                    let mut inkwell_tp = inkwell_tp.ptr_type(AddressSpace::from(0u16));
+                    for _ in 1..$tp.ref_n {
+                        inkwell_tp = inkwell_tp.ptr_type(AddressSpace::from(0u16));
+                    }
+                    inkwell_tp.into()
+                } else {
+                    inkwell_tp.into()
+                }
+            }
+            BasicType::I8 | BasicType::U8 => {
+                let inkwell_tp = $this.context.i8_type();
+                if $tp.ref_n > 0 {
+                    let mut inkwell_tp = inkwell_tp.ptr_type(AddressSpace::from(0u16));
+                    for _ in 1..$tp.ref_n {
+                        inkwell_tp = inkwell_tp.ptr_type(AddressSpace::from(0u16));
+                    }
+                    inkwell_tp.into()
+                } else {
+                    inkwell_tp.into()
+                }
+            }
+            BasicType::Void => $this.context.void_type().into(),
+        }
+    }};
+}
+
+macro_rules! create_fn_tp {
+    ($this:expr, $return_tp:expr, $args:expr) => {{
+        let args: Vec<BasicMetadataTypeEnum> = $args
+            .iter()
+            .map(|x| kestrel_to_inkwell_tp!($this, (x.clone())))
+            .filter(|x: &AnyTypeEnum<'_>| !x.is_void_type() && !x.is_function_type())
+            .map(|x| match x {
+                AnyTypeEnum::ArrayType(tp) => tp.into(),
+                AnyTypeEnum::FloatType(tp) => tp.into(),
+                AnyTypeEnum::FunctionType(_) => {
+                    unreachable!()
+                }
+                AnyTypeEnum::IntType(tp) => tp.into(),
+                AnyTypeEnum::PointerType(tp) => tp.into(),
+                AnyTypeEnum::StructType(tp) => tp.into(),
+                AnyTypeEnum::VectorType(tp) => tp.into(),
+                AnyTypeEnum::VoidType(_) => {
+                    unreachable!()
+                }
+            })
+            .collect::<Vec<_>>();
+
+        match kestrel_to_inkwell_tp!($this, $return_tp) {
+            AnyTypeEnum::ArrayType(tp) => tp.fn_type(&args[..], false),
+            AnyTypeEnum::FloatType(tp) => tp.fn_type(&args[..], false),
+            AnyTypeEnum::IntType(tp) => tp.fn_type(&args[..], false),
+            AnyTypeEnum::PointerType(tp) => tp.fn_type(&args[..], false),
+            AnyTypeEnum::StructType(tp) => tp.fn_type(&args[..], false),
+            AnyTypeEnum::VectorType(tp) => tp.fn_type(&args[..], false),
+            AnyTypeEnum::VoidType(tp) => tp.fn_type(&args[..], false),
+            AnyTypeEnum::FunctionType(_) => {
+                unreachable!()
+            }
+        }
+    }};
 }
 
 impl<'a> CodeGen<'a> {
@@ -133,13 +263,64 @@ impl<'a> CodeGen<'a> {
                 );
             }
             NodeType::Return => self.compile_return(node, flags),
-            NodeType::Call => todo!(),
+            NodeType::Call => self.compile_call(node, flags),
+        }
+    }
+
+    fn add_attrs(&mut self, function: FunctionValue) {
+        let mut attr: inkwell::attributes::Attribute = self.context.create_enum_attribute(
+            inkwell::attributes::Attribute::get_named_enum_kind_id("noinline"),
+            0,
+        );
+        function.add_attribute(inkwell::attributes::AttributeLoc::Function, attr);
+
+        attr = self.context.create_enum_attribute(
+            inkwell::attributes::Attribute::get_named_enum_kind_id("norecurse"),
+            0,
+        );
+        function.add_attribute(inkwell::attributes::AttributeLoc::Function, attr);
+
+        if !self.optimized {
+            attr = self.context.create_enum_attribute(
+                inkwell::attributes::Attribute::get_named_enum_kind_id("optnone"),
+                0,
+            );
+            function.add_attribute(inkwell::attributes::AttributeLoc::Function, attr);
+        }
+
+        //TODO: Ensure this is true
+        attr = self.context.create_enum_attribute(
+            inkwell::attributes::Attribute::get_named_enum_kind_id("willreturn"),
+            0,
+        );
+        function.add_attribute(inkwell::attributes::AttributeLoc::Function, attr);
+
+        for flag in &self.flags {
+            if flag == &Flags::Sanitize {
+                let mut attr = self.context.create_enum_attribute(
+                    inkwell::attributes::Attribute::get_named_enum_kind_id("sanitize_address"),
+                    0,
+                );
+                function.add_attribute(inkwell::attributes::AttributeLoc::Function, attr);
+
+                attr = self.context.create_enum_attribute(
+                    inkwell::attributes::Attribute::get_named_enum_kind_id("sanitize_memory"),
+                    0,
+                );
+                function.add_attribute(inkwell::attributes::AttributeLoc::Function, attr);
+
+                attr = self.context.create_enum_attribute(
+                    inkwell::attributes::Attribute::get_named_enum_kind_id("sanitize_thread"),
+                    0,
+                );
+                function.add_attribute(inkwell::attributes::AttributeLoc::Function, attr);
+            }
         }
     }
 }
 
 impl<'a> CodeGen<'a> {
-    fn compile_i8(&mut self, node: &Node, flags: ExprFlags) -> Data<'a> {
+    fn compile_i8(&self, node: &Node, flags: ExprFlags) -> Data<'a> {
         if node
             .data
             .get_data()
@@ -166,7 +347,7 @@ impl<'a> CodeGen<'a> {
             node.data.get_data().raw.get("value").unwrap(),
             inkwell::types::StringRadix::Decimal,
         );
-        
+
         if let Some(int) = res {
             if flags.get_ref {
                 let ptr = self.builder.build_alloca(int.get_type(), "");
@@ -176,8 +357,7 @@ impl<'a> CodeGen<'a> {
                     data: Some(ptr.into()),
                     tp,
                 }
-            }
-            else {
+            } else {
                 Data {
                     data: Some(int.into()),
                     tp: self.builtins.get(&BasicType::I8).unwrap().clone(),
@@ -188,7 +368,7 @@ impl<'a> CodeGen<'a> {
         }
     }
 
-    fn compile_i16(&mut self, node: &Node, flags: ExprFlags) -> Data<'a> {
+    fn compile_i16(&self, node: &Node, flags: ExprFlags) -> Data<'a> {
         if node
             .data
             .get_data()
@@ -225,8 +405,7 @@ impl<'a> CodeGen<'a> {
                     data: Some(ptr.into()),
                     tp,
                 }
-            }
-            else {
+            } else {
                 Data {
                     data: Some(int.into()),
                     tp: self.builtins.get(&BasicType::I16).unwrap().clone(),
@@ -237,7 +416,7 @@ impl<'a> CodeGen<'a> {
         }
     }
 
-    fn compile_i32(&mut self, node: &Node, flags: ExprFlags) -> Data<'a> {
+    fn compile_i32(&self, node: &Node, flags: ExprFlags) -> Data<'a> {
         if node
             .data
             .get_data()
@@ -274,8 +453,7 @@ impl<'a> CodeGen<'a> {
                     data: Some(ptr.into()),
                     tp,
                 }
-            }
-            else {
+            } else {
                 Data {
                     data: Some(int.into()),
                     tp: self.builtins.get(&BasicType::I32).unwrap().clone(),
@@ -286,7 +464,7 @@ impl<'a> CodeGen<'a> {
         }
     }
 
-    fn compile_i64(&mut self, node: &Node, flags: ExprFlags) -> Data<'a> {
+    fn compile_i64(&self, node: &Node, flags: ExprFlags) -> Data<'a> {
         if node
             .data
             .get_data()
@@ -323,8 +501,7 @@ impl<'a> CodeGen<'a> {
                     data: Some(ptr.into()),
                     tp,
                 }
-            }
-            else {
+            } else {
                 Data {
                     data: Some(int.into()),
                     tp: self.builtins.get(&BasicType::I64).unwrap().clone(),
@@ -335,7 +512,7 @@ impl<'a> CodeGen<'a> {
         }
     }
 
-    fn compile_i128(&mut self, node: &Node, flags: ExprFlags) -> Data<'a> {
+    fn compile_i128(&self, node: &Node, flags: ExprFlags) -> Data<'a> {
         if node
             .data
             .get_data()
@@ -372,8 +549,7 @@ impl<'a> CodeGen<'a> {
                     data: Some(ptr.into()),
                     tp,
                 }
-            }
-            else {
+            } else {
                 Data {
                     data: Some(int.into()),
                     tp: self.builtins.get(&BasicType::I128).unwrap().clone(),
@@ -384,7 +560,7 @@ impl<'a> CodeGen<'a> {
         }
     }
 
-    fn compile_u8(&mut self, node: &Node, flags: ExprFlags) -> Data<'a> {
+    fn compile_u8(&self, node: &Node, flags: ExprFlags) -> Data<'a> {
         if node
             .data
             .get_data()
@@ -421,8 +597,7 @@ impl<'a> CodeGen<'a> {
                     data: Some(ptr.into()),
                     tp,
                 }
-            }
-            else {
+            } else {
                 Data {
                     data: Some(int.into()),
                     tp: self.builtins.get(&BasicType::U8).unwrap().clone(),
@@ -433,7 +608,7 @@ impl<'a> CodeGen<'a> {
         }
     }
 
-    fn compile_u16(&mut self, node: &Node, flags: ExprFlags) -> Data<'a> {
+    fn compile_u16(&self, node: &Node, flags: ExprFlags) -> Data<'a> {
         if node
             .data
             .get_data()
@@ -470,8 +645,7 @@ impl<'a> CodeGen<'a> {
                     data: Some(ptr.into()),
                     tp,
                 }
-            }
-            else {
+            } else {
                 Data {
                     data: Some(int.into()),
                     tp: self.builtins.get(&BasicType::U16).unwrap().clone(),
@@ -482,7 +656,7 @@ impl<'a> CodeGen<'a> {
         }
     }
 
-    fn compile_u32(&mut self, node: &Node, flags: ExprFlags) -> Data<'a> {
+    fn compile_u32(&self, node: &Node, flags: ExprFlags) -> Data<'a> {
         if node
             .data
             .get_data()
@@ -519,8 +693,7 @@ impl<'a> CodeGen<'a> {
                     data: Some(ptr.into()),
                     tp,
                 }
-            }
-            else {
+            } else {
                 Data {
                     data: Some(int.into()),
                     tp: self.builtins.get(&BasicType::U32).unwrap().clone(),
@@ -531,7 +704,7 @@ impl<'a> CodeGen<'a> {
         }
     }
 
-    fn compile_u64(&mut self, node: &Node, flags: ExprFlags) -> Data<'a> {
+    fn compile_u64(&self, node: &Node, flags: ExprFlags) -> Data<'a> {
         if node
             .data
             .get_data()
@@ -568,8 +741,7 @@ impl<'a> CodeGen<'a> {
                     data: Some(ptr.into()),
                     tp,
                 }
-            }
-            else {
+            } else {
                 Data {
                     data: Some(int.into()),
                     tp: self.builtins.get(&BasicType::U64).unwrap().clone(),
@@ -580,7 +752,7 @@ impl<'a> CodeGen<'a> {
         }
     }
 
-    fn compile_u128(&mut self, node: &Node, flags: ExprFlags) -> Data<'a> {
+    fn compile_u128(&self, node: &Node, flags: ExprFlags) -> Data<'a> {
         if node
             .data
             .get_data()
@@ -617,8 +789,7 @@ impl<'a> CodeGen<'a> {
                     data: Some(ptr.into()),
                     tp,
                 }
-            }
-            else {
+            } else {
                 Data {
                     data: Some(int.into()),
                     tp: self.builtins.get(&BasicType::U128).unwrap().clone(),
@@ -629,7 +800,7 @@ impl<'a> CodeGen<'a> {
         }
     }
 
-    fn compile_bool(&mut self, node: &Node, _flags: ExprFlags) -> Data<'a> {
+    fn compile_bool(&self, node: &Node, _flags: ExprFlags) -> Data<'a> {
         match node.data.get_data().booleans.get("value").unwrap() {
             true => {
                 let res = self.context.bool_type().const_int(1, false);
@@ -745,8 +916,7 @@ impl<'a> CodeGen<'a> {
                 },
                 tp,
             }
-        }
-        else {
+        } else {
             Data {
                 data: if binding.0.is_some() {
                     Some(self.builder.build_load(binding.0.unwrap(), ""))
@@ -808,7 +978,7 @@ impl<'a> CodeGen<'a> {
             self.builder
                 .build_store(binding.0.unwrap(), right.data.unwrap());
         }
-        
+
         Data {
             data: None,
             tp: self.builtins.get(&BasicType::Void).unwrap().clone(),
@@ -832,12 +1002,100 @@ impl<'a> CodeGen<'a> {
             ExprFlags { get_ref: false },
         );
 
+        if self.cur_fnstate.as_ref().unwrap().rettp != expr.tp {
+            raise_error(
+                &format!(
+                    "Expected '{}', got '{}'",
+                    self.cur_fnstate.as_ref().unwrap().rettp.qualname(),
+                    expr.tp.qualname()
+                ),
+                ErrorType::TypeMismatch,
+                &node.pos,
+                self.info,
+            );
+        }
+
         if expr.data.is_some() {
             self.builder.build_return(Some(expr.data.as_ref().unwrap()));
-        }
-        else {
+        } else {
             self.builder.build_return(None);
         }
+
+        self.cur_fnstate.as_mut().unwrap().returned = true;
+
+        Data {
+            data: None,
+            tp: self.builtins.get(&BasicType::Void).unwrap().clone(),
+        }
+    }
+
+    fn compile_call(&mut self, node: &Node, _flags: ExprFlags) -> Data<'a> {
+        let callnode = node.data.get_data();
+        let name = callnode.raw.get("name").unwrap().clone();
+
+        let mut func = self.functions.get(&name).unwrap().clone();
+
+        if func.2.is_none() {
+            let fnnode = func.0.data.get_data();
+
+            let fn_tp = create_fn_tp!(self, func.1 .1, func.1 .0);
+
+            let fn_real = self.module.add_function(&name, fn_tp, None);
+            func.2 = Some(fn_real);
+            let basic_block = self.context.append_basic_block(fn_real, "");
+
+            // Mir check
+            let mut mir = mir::new(
+                self.info.clone(),
+                self.builtins.clone(),
+                self.functions.clone(),
+                name,
+            );
+            let mut instructions = mir.generate(fnnode.nodearr.unwrap());
+            mir::check(&mut mir, &mut instructions);
+            //
+
+            self.namespaces.insert(
+                fn_real,
+                Namespace {
+                    bindings: HashMap::new(),
+                },
+            );
+
+            let old_block = self.block;
+
+            self.builder.position_at_end(basic_block);
+            self.block = Some(basic_block);
+
+            let old_state = self.cur_fnstate.clone();
+            self.cur_fnstate = Some(CurFunctionState {
+                cur_block: Some(basic_block),
+                returned: false,
+                rettp: func.1 .1.clone(),
+            });
+
+            let old_fn = self.cur_fn;
+            self.cur_fn = Some(fn_real);
+
+            //
+
+            //Compile code
+            self.compile_statements(fnnode.nodearr.unwrap());
+
+            if !self.cur_fnstate.as_ref().unwrap().returned
+                && func.1 .1.basictype == BasicType::Void
+            {
+                self.builder.build_return(None);
+            }
+            //
+
+            self.cur_fn = old_fn;
+            self.cur_fnstate = old_state;
+            self.block = old_block;
+
+            self.builder.position_at_end(self.block.unwrap());
+        }
+        self.builder.build_call(func.2.unwrap(), &[], "");
 
         Data {
             data: None,
@@ -858,12 +1116,19 @@ impl<'a> CodeGen<'a> {
                     "First definition here:".into(),
                 ],
                 ErrorType::MultipleFunctionDefinitions,
-                vec![&node.pos, &self.functions.get(name).as_ref().unwrap().pos],
+                vec![&node.pos, &self.functions.get(name).as_ref().unwrap().0.pos],
                 self.info,
             );
         }
 
-        self.functions.insert(name.clone(), node);
+        self.functions.insert(
+            name.clone(),
+            (
+                node,
+                (vec![], self.builtins.get(&BasicType::Void).unwrap().clone()),
+                None,
+            ),
+        );
     }
 
     fn create_fn(&mut self, node: &Node) {
@@ -887,7 +1152,12 @@ impl<'a> CodeGen<'a> {
             let basic_block = self.context.append_basic_block(realmain, "");
 
             // Mir check
-            let mut mir = mir::new(self.info.clone(), self.builtins.clone(), name.into());
+            let mut mir = mir::new(
+                self.info.clone(),
+                self.builtins.clone(),
+                self.functions.clone(),
+                name.into(),
+            );
             let mut instructions = mir.generate(fnnode.nodearr.unwrap());
             mir::check(&mut mir, &mut instructions);
             //
@@ -899,57 +1169,16 @@ impl<'a> CodeGen<'a> {
                 },
             );
 
-            let mut attr: inkwell::attributes::Attribute = self.context.create_enum_attribute(
-                inkwell::attributes::Attribute::get_named_enum_kind_id("noinline"),
-                0,
-            );
-            realmain.add_attribute(inkwell::attributes::AttributeLoc::Function, attr);
-
-            attr = self.context.create_enum_attribute(
-                inkwell::attributes::Attribute::get_named_enum_kind_id("norecurse"),
-                0,
-            );
-            realmain.add_attribute(inkwell::attributes::AttributeLoc::Function, attr);
-
-            if !self.optimized {
-                attr = self.context.create_enum_attribute(
-                    inkwell::attributes::Attribute::get_named_enum_kind_id("optnone"),
-                    0,
-                );
-                realmain.add_attribute(inkwell::attributes::AttributeLoc::Function, attr);
-            }
-
-            //TODO: Ensure this is true
-            attr = self.context.create_enum_attribute(
-                inkwell::attributes::Attribute::get_named_enum_kind_id("willreturn"),
-                0,
-            );
-            realmain.add_attribute(inkwell::attributes::AttributeLoc::Function, attr);
-
-            for flag in &self.flags {
-                if flag == &Flags::Sanitize {
-                    let mut attr = self.context.create_enum_attribute(
-                        inkwell::attributes::Attribute::get_named_enum_kind_id("sanitize_address"),
-                        0,
-                    );
-                    realmain.add_attribute(inkwell::attributes::AttributeLoc::Function, attr);
-
-                    attr = self.context.create_enum_attribute(
-                        inkwell::attributes::Attribute::get_named_enum_kind_id("sanitize_memory"),
-                        0,
-                    );
-                    realmain.add_attribute(inkwell::attributes::AttributeLoc::Function, attr);
-
-                    attr = self.context.create_enum_attribute(
-                        inkwell::attributes::Attribute::get_named_enum_kind_id("sanitize_thread"),
-                        0,
-                    );
-                    realmain.add_attribute(inkwell::attributes::AttributeLoc::Function, attr);
-                }
-            }
+            self.add_attrs(realmain);
 
             self.builder.position_at_end(basic_block);
-            self.cur_block = Some(basic_block);
+            self.block = Some(basic_block);
+
+            self.cur_fnstate = Some(CurFunctionState {
+                cur_block: Some(basic_block),
+                returned: false,
+                rettp: self.builtins.get(&BasicType::I32).unwrap().clone(),
+            });
             self.cur_fn = Some(realmain);
 
             //
@@ -957,8 +1186,10 @@ impl<'a> CodeGen<'a> {
             //Compile code
             self.compile_statements(fnnode.nodearr.unwrap());
 
-            self.builder
-                .build_return(Some(&self.context.i32_type().const_int(0, false)));
+            if !self.cur_fnstate.as_ref().unwrap().returned {
+                self.builder
+                    .build_return(Some(&self.context.i32_type().const_int(0, false)));
+            }
 
             //
         }
@@ -981,7 +1212,12 @@ impl<'a> CodeGen<'a> {
         let basic_block = self.context.append_basic_block(realmain, "");
 
         // Mir check
-        let mut mir = mir::new(self.info.clone(), self.builtins.clone(), "main".into());
+        let mut mir = mir::new(
+            self.info.clone(),
+            self.builtins.clone(),
+            self.functions.clone(),
+            "main".into(),
+        );
         let mut instructions = mir.generate(&vec![]);
         mir::check(&mut mir, &mut instructions);
         //
@@ -993,63 +1229,24 @@ impl<'a> CodeGen<'a> {
             },
         );
 
-        let mut attr: inkwell::attributes::Attribute = self.context.create_enum_attribute(
-            inkwell::attributes::Attribute::get_named_enum_kind_id("noinline"),
-            0,
-        );
-        realmain.add_attribute(inkwell::attributes::AttributeLoc::Function, attr);
-
-        attr = self.context.create_enum_attribute(
-            inkwell::attributes::Attribute::get_named_enum_kind_id("norecurse"),
-            0,
-        );
-        realmain.add_attribute(inkwell::attributes::AttributeLoc::Function, attr);
-
-        if !self.optimized {
-            attr = self.context.create_enum_attribute(
-                inkwell::attributes::Attribute::get_named_enum_kind_id("optnone"),
-                0,
-            );
-            realmain.add_attribute(inkwell::attributes::AttributeLoc::Function, attr);
-        }
-
-        //TODO: Ensure this is true
-        attr = self.context.create_enum_attribute(
-            inkwell::attributes::Attribute::get_named_enum_kind_id("willreturn"),
-            0,
-        );
-        realmain.add_attribute(inkwell::attributes::AttributeLoc::Function, attr);
-
-        for flag in &self.flags {
-            if flag == &Flags::Sanitize {
-                let mut attr = self.context.create_enum_attribute(
-                    inkwell::attributes::Attribute::get_named_enum_kind_id("sanitize_address"),
-                    0,
-                );
-                realmain.add_attribute(inkwell::attributes::AttributeLoc::Function, attr);
-
-                attr = self.context.create_enum_attribute(
-                    inkwell::attributes::Attribute::get_named_enum_kind_id("sanitize_memory"),
-                    0,
-                );
-                realmain.add_attribute(inkwell::attributes::AttributeLoc::Function, attr);
-
-                attr = self.context.create_enum_attribute(
-                    inkwell::attributes::Attribute::get_named_enum_kind_id("sanitize_thread"),
-                    0,
-                );
-                realmain.add_attribute(inkwell::attributes::AttributeLoc::Function, attr);
-            }
-        }
+        self.add_attrs(realmain);
 
         self.builder.position_at_end(basic_block);
-        self.cur_block = Some(basic_block);
+        self.block = Some(basic_block);
+
+        self.cur_fnstate = Some(CurFunctionState {
+            cur_block: Some(basic_block),
+            returned: false,
+            rettp: self.builtins.get(&BasicType::I32).unwrap().clone(),
+        });
         self.cur_fn = Some(realmain);
 
         //
 
-        self.builder
-            .build_return(Some(&self.context.i32_type().const_int(0, false)));
+        if !self.cur_fnstate.as_ref().unwrap().returned {
+            self.builder
+                .build_return(Some(&self.context.i32_type().const_int(0, false)));
+        }
     }
 }
 
@@ -1100,9 +1297,10 @@ pub fn generate_code(
         context: &context,
         module,
         builder: context.create_builder(),
+        block: None,
         info,
         dibuilder,
-        cur_block: None,
+        cur_fnstate: None,
         cur_fn: None,
         builtins: HashMap::new(),
         extern_fns: HashMap::new(),

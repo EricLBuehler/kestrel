@@ -4,9 +4,9 @@ fn main() {
     β = &100u64
     let γ = &&α
     let δ = true+false
-    
+    x()
+    x()
 }
 
 fn x() {
-    return 1
 }

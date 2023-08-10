@@ -50,6 +50,8 @@ define i32 @main(i32 %0, i32** %1) local_unnamed_addr #1 {
   %24 = phi i1 [ %17, %22 ], [ undef, %20 ]
   %25 = alloca i1, align 1
   store i1 %24, i1* %25, align 1
+  call void @x()
+  call void @x.1()
   ret i32 0
 }
 
@@ -62,10 +64,21 @@ declare i1 @llvm.expect.i1.i1(i1, i1) #3
 ; Function Attrs: mustprogress nofree nosync nounwind readnone speculatable willreturn
 declare { i1, i1 } @llvm.sadd.with.overflow.i1.i1(i1, i1) #2
 
+; Function Attrs: mustprogress nofree norecurse nosync nounwind readnone willreturn
+define void @x() local_unnamed_addr #4 {
+  ret void
+}
+
+; Function Attrs: mustprogress nofree norecurse nosync nounwind readnone willreturn
+define void @x.1() local_unnamed_addr #4 {
+  ret void
+}
+
 attributes #0 = { nofree nounwind }
 attributes #1 = { noinline norecurse nounwind optnone willreturn }
 attributes #2 = { mustprogress nofree nosync nounwind readnone speculatable willreturn }
 attributes #3 = { mustprogress nofree nosync nounwind readnone willreturn }
+attributes #4 = { mustprogress nofree norecurse nosync nounwind readnone willreturn }
 
 !llvm.module.flags = !{!0}
 !llvm.dbg.cu = !{!1}

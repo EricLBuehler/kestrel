@@ -74,6 +74,30 @@ main:                                   # @main
 	.size	main, .Lfunc_end0-main
 	.cfi_endproc
                                         # -- End function
+	.globl	x                               # -- Begin function x
+	.p2align	4, 0x90
+	.type	x,@function
+x:                                      # @x
+.Lfunc_begin1:
+	.cfi_startproc
+# %bb.0:
+	retq
+.Lfunc_end1:
+	.size	x, .Lfunc_end1-x
+	.cfi_endproc
+                                        # -- End function
+	.globl	x.1                             # -- Begin function x.1
+	.p2align	4, 0x90
+	.type	x.1,@function
+x.1:                                    # @x.1
+.Lfunc_begin2:
+	.cfi_startproc
+# %bb.0:
+	retq
+.Lfunc_end2:
+	.size	x.1, .Lfunc_end2-x.1
+	.cfi_endproc
+                                        # -- End function
 	.type	.L__unnamed_1,@object           # @0
 	.section	.rodata,"a",@progbits
 	.p2align	4

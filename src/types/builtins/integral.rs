@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use inkwell::{intrinsics::Intrinsic, types::BasicTypeEnum};
 
 use crate::{
-    codegen::{CodeGen, Data},
+    codegen::{CodeGen, CurFunctionState, Data},
     errors::{raise_error, ErrorType},
     mir::Mir,
     types::{BasicType, Lifetime, Trait, TraitType, Type},
@@ -86,6 +86,7 @@ fn integral_add<'a>(
         );
 
         codegen.builder.position_at_end(overflow_block);
+        codegen.block = Some(overflow_block);
 
         print_string(
             codegen,
@@ -101,15 +102,18 @@ fn integral_add<'a>(
         codegen.builder.build_unconditional_branch(done_block);
 
         codegen.builder.position_at_end(end_block);
+        codegen.block = Some(end_block);
+
         codegen.builder.build_unconditional_branch(done_block);
 
         overflow_block
-            .move_after(codegen.cur_block.unwrap())
+            .move_after(codegen.cur_fnstate.as_ref().unwrap().cur_block.unwrap())
             .unwrap();
         end_block.move_after(overflow_block).unwrap();
         done_block.move_after(done_block).unwrap();
 
         codegen.builder.position_at_end(done_block);
+        codegen.block = Some(done_block);
 
         let phi = codegen
             .builder
@@ -120,7 +124,11 @@ fn integral_add<'a>(
             phi.add_incoming(&[(&tp.get_undef(), overflow_block)]);
         }
 
-        codegen.cur_block = Some(done_block);
+        codegen.cur_fnstate = Some(CurFunctionState {
+            cur_block: Some(done_block),
+            returned: false,
+            rettp: codegen.cur_fnstate.as_ref().unwrap().rettp.clone(),
+        });
 
         Data {
             data: Some(phi.as_basic_value()),
@@ -148,7 +156,7 @@ fn integral_add_skeleton<'a>(
 ) -> Type<'a> {
     if this != other {
         raise_error(
-            &format!("Expected 'i32', got '{}'", other.basictype),
+            &format!("Expected 'std::i32', got '{}'", other.basictype),
             ErrorType::TypeMismatch,
             pos,
             &mir.info,

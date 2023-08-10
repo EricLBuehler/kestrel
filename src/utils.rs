@@ -19,7 +19,7 @@ pub struct Position {
     pub opcol: Option<usize>,
 }
 
-pub fn print_string(codegen: &mut CodeGen, message: &str) {
+pub fn print_string(codegen: &CodeGen, message: &str) {
     let str = codegen.context.const_string(message.as_bytes(), true);
 
     let global = codegen

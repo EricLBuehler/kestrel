@@ -6,8 +6,8 @@ use crate::{
 
 pub mod nodes;
 use self::nodes::{
-    BinaryNode, BoolNode, DecimalNode, FnNode, IdentifierNode, LetNode, Node, NodeType, OpType,
-    ReferenceNode, StoreNode, ReturnNode, CallNode,
+    BinaryNode, BoolNode, CallNode, DecimalNode, FnNode, IdentifierNode, LetNode, Node, NodeType,
+    OpType, ReferenceNode, ReturnNode, StoreNode,
 };
 
 pub struct Parser<'a> {
@@ -177,8 +177,8 @@ impl<'a> Parser<'a> {
     }
 
     fn backadvance(&mut self) {
-        let next = self.tokens.get(self.idx);
         self.idx -= 1;
+        let next = self.tokens.get(self.idx - 1);
 
         match next {
             Some(v) => {
@@ -209,7 +209,6 @@ impl<'a> Parser<'a> {
         match self.current.tp {
             TokenType::Plus => Precedence::Sum,
             TokenType::Equal => Precedence::Assign,
-            TokenType::LParen => Precedence::Call,
 
             _ => Precedence::Lowest,
         }
@@ -418,7 +417,6 @@ impl<'a> Parser<'a> {
             match self.current.tp {
                 TokenType::Plus => left = self.generate_binary(left, self.get_precedence()),
                 TokenType::Equal => left = self.generate_assign(left),
-                TokenType::LParen => left = self.generate_call(left),
                 _ => {
                     break;
                 }
@@ -583,6 +581,38 @@ impl<'a> Parser<'a> {
     }
 
     fn generate_identifier(&mut self) -> Node {
+        if self.next_is_type(TokenType::LParen) {
+            let startcol = self.current.start.startcol;
+            let line = self.current.start.line;
+
+            let name = self.current.data.clone();
+
+            self.advance();
+            self.advance();
+            let mut args = Vec::new();
+            while !self.current_is_type(TokenType::RParen) {
+                args.push(self.expr(Precedence::Lowest));
+                if self.current_is_type(TokenType::RParen) {
+                    continue;
+                }
+                self.expect(TokenType::Comma);
+                self.advance();
+            }
+            self.expect(TokenType::RParen);
+            let endcol = self.current.end.endcol;
+
+            return Node::new(
+                Position {
+                    startcol,
+                    endcol,
+                    opcol: None,
+                    line,
+                },
+                nodes::NodeType::Call,
+                Box::new(CallNode { name, args }),
+            );
+        }
+
         Node::new(
             Position {
                 startcol: self.current.start.startcol,
@@ -666,36 +696,6 @@ impl<'a> Parser<'a> {
             Box::new(StoreNode {
                 name: left.data.get_data().raw.get("value").unwrap().clone(),
                 expr,
-            }),
-        )
-    }
-
-    fn generate_call(&mut self, left: Node) -> Node {
-        self.advance();
-        let mut args = Vec::new();
-        while !self.current_is_type(TokenType::RParen) {
-            args.push(self.expr(Precedence::Lowest));
-            if self.current_is_type(TokenType::RParen) {
-                continue;
-            }
-            self.expect(TokenType::Comma);
-            self.advance();
-        }
-        self.expect(TokenType::RParen);
-        let endcol = self.current.end.endcol;
-        self.advance();
-        
-        Node::new(
-            Position {
-                startcol: left.pos.startcol,
-                endcol: endcol,
-                opcol: None,
-                line: left.pos.line,
-            },
-            nodes::NodeType::Call,
-            Box::new(CallNode {
-                expr: left,
-                args
             }),
         )
     }

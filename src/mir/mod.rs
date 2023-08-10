@@ -3,7 +3,7 @@ use std::{collections::HashMap, fmt::Display, fs::OpenOptions, io::Write};
 use indexmap::IndexMap;
 
 use crate::{
-    codegen::BindingTags,
+    codegen::{BindingTags, CodegenFunctions},
     errors::{raise_error, ErrorType},
     parser::nodes::{Node, NodeType, OpType},
     types::{BasicType, BuiltinTypes, Lifetime, Trait, TraitType, Type},
@@ -17,6 +17,7 @@ pub struct Mir<'a> {
     fn_name: String,
     instructions: Vec<MirInstruction<'a>>,
     builtins: BuiltinTypes<'a>,
+    functions: CodegenFunctions<'a>,
     namespace: HashMap<String, (Type<'a>, BindingTags)>,
 }
 
@@ -42,6 +43,7 @@ pub enum RawMirInstruction {
     DropBinding(String, usize),
     Bool(bool),
     Return(usize),
+    CallFunction(String),
 }
 
 #[derive(Clone)]
@@ -142,16 +144,25 @@ impl Display for RawMirInstruction {
             RawMirInstruction::Return(right) => {
                 write!(f, "return .{right}")
             }
+            RawMirInstruction::CallFunction(name) => {
+                write!(f, "call fn {name}")
+            }
         }
     }
 }
 
-pub fn new<'a>(info: FileInfo<'a>, builtins: BuiltinTypes<'a>, fn_name: String) -> Mir<'a> {
+pub fn new<'a>(
+    info: FileInfo<'a>,
+    builtins: BuiltinTypes<'a>,
+    functions: CodegenFunctions<'a>,
+    fn_name: String,
+) -> Mir<'a> {
     Mir {
         info,
         fn_name,
         instructions: Vec::new(),
         builtins,
+        functions,
         namespace: HashMap::new(),
     }
 }
@@ -816,16 +827,27 @@ impl<'a> Mir<'a> {
 
     fn generate_call(&mut self, node: &Node) -> MirResult<'a> {
         let callnode = node.data.get_data();
-        let mut expr = self.generate_expr(callnode.nodes.get("expr").unwrap());
+        let name = callnode.raw.get("name").unwrap().clone();
 
-        expr.1.ref_n += 1;
+        let func = self.functions.get(&name);
 
-        self.instructions.push(MirInstruction {
-            instruction: RawMirInstruction::Own(expr.0),
-            pos: node.pos.clone(),
-            tp: None,
-        });
+        match func {
+            Some(func) => {
+                self.instructions.push(MirInstruction {
+                    instruction: RawMirInstruction::CallFunction(name),
+                    pos: node.pos.clone(),
+                    tp: Some(func.1 .1.clone()),
+                });
+            }
+            None => {
+                let fmt: String = format!("Function '{}' not found.", name);
+                raise_error(&fmt, ErrorType::FunctionNotFound, &node.pos, &self.info);
+            }
+        }
 
-        (self.instructions.len() - 1, expr.1.clone())
+        (
+            self.instructions.len() - 1,
+            self.builtins.get(&BasicType::Void).unwrap().clone(),
+        )
     }
 }
