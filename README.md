@@ -18,7 +18,7 @@ Simple and safe.
     - [x] function calls
 
     MIR effect:
-    - [ ] Will require permutations to prove invariants (guaranteed return for now).
+    - [x] Will require permutations to prove invariants (guaranteed return for now).
 
 - **Add comparison traits** (by 8/12/23)
 
