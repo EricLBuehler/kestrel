@@ -527,10 +527,7 @@ pub fn check_references(
     }
 }
 
-pub fn check_return(
-    _this: &mut Mir,
-    _instructions: &mut [MirInstruction],
-) { 
+pub fn check_return(_this: &mut Mir, _instructions: &mut [MirInstruction]) {
     /*
     for instruction in instructions {
         if let RawMirInstruction::Return(_) = instruction.instruction {

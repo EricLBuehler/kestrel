@@ -1226,7 +1226,7 @@ impl<'a> CodeGen<'a> {
                 line: 0,
                 startcol: 0,
                 endcol: 0,
-                opcol: None
+                opcol: None,
             },
         );
         let mut instructions = mir.generate(&vec![]);
