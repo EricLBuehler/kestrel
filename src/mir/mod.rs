@@ -216,6 +216,9 @@ pub fn write_mir<'a>(
         .open("a.mir")
         .expect("Unable to open MIR output file.");
 
+    if f.metadata().unwrap().len() > 0 {
+        f.write_all("\n\n".as_bytes()).expect("Unable to write MIR.");
+    }
     f.write_all(out.as_bytes()).expect("Unable to write MIR.");
 }
 

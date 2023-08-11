@@ -34,5 +34,7 @@ fn main {
     .32:  dropbinding δ
     .33:  call fn x -> std::void['29 .29 => .29]
     .34:  call fn x -> std::void['30 .30 => .30]
-}fn x {
+}
+
+fn x {
 }
