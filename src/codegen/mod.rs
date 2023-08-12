@@ -837,12 +837,20 @@ impl<'a> CodeGen<'a> {
             OpType::Eq => {
                 (TraitType::Eq, "Eq")
             }
+            OpType::Ne => {
+                (TraitType::Ne, "Ne")
+            }
         };
+
+        let t = left.tp.traits.get(&traittp);
         
-        if let Some(Trait::Add { code, skeleton: _ }) = left.tp.traits.get(&traittp)
+        if let Some(Trait::Add { code, skeleton: _ }) = t
         {
             code(self, &node.pos, left, right)
-        } else if let Some(Trait::Eq { code, skeleton: _ }) = left.tp.traits.get(&traittp)
+        } else if let Some(Trait::Eq { code, skeleton: _ }) = t
+        {
+            code(self, &node.pos, left, right)
+        } else if let Some(Trait::Ne { code, skeleton: _ }) = t
         {
             code(self, &node.pos, left, right)
         } else {

@@ -113,6 +113,7 @@ impl NodeData for DecimalNode {
 pub enum OpType {
     Add,
     Eq,
+    Ne,
 }
 
 pub struct BinaryNode {

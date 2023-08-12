@@ -11,4 +11,5 @@ fn main() {
 }
 
 fn x() {
+    let res = 1!=2
 }

@@ -47,6 +47,7 @@ pub enum RawMirInstruction {
     Return(usize),
     CallFunction(String),
     Eq { left: usize, right: usize },
+    Ne { left: usize, right: usize },
 }
 
 #[derive(Clone)]
@@ -152,6 +153,9 @@ impl Display for RawMirInstruction {
             }
             RawMirInstruction::Eq { left, right } => {
                 write!(f, "eq .{left} .{right}")
+            }
+            RawMirInstruction::Ne { left, right } => {
+                write!(f, "ne .{left} .{right}")
             }
         }
     }
@@ -659,16 +663,25 @@ impl<'a> Mir<'a> {
             OpType::Eq => {
                 (TraitType::Eq, "Eq")
             }
+            OpType::Ne => {
+                (TraitType::Ne, "Ne")
+            }
         };
+
+        let t = left.1.traits.get(&traittp);
         
-        let res = if let Some(Trait::Add { code: _, skeleton }) = left.1.traits.get(&traittp)
+        let res = if let Some(Trait::Add { code: _, skeleton }) = t
         {
             skeleton(self, &node.pos, left.1, right.1)
         }
-        else if let Some(Trait::Eq { code: _, skeleton }) = left.1.traits.get(&traittp)
+        else if let Some(Trait::Eq { code: _, skeleton }) = t
         {
             skeleton(self, &node.pos, left.1, right.1)
-        }  else {
+        }
+        else if let Some(Trait::Ne { code: _, skeleton }) = t
+        {
+            skeleton(self, &node.pos, left.1, right.1)
+        } else {
             raise_error(
                 &format!("Type '{}' does not implement '{name}'.", left.1.qualname()),
                 ErrorType::TraitNotImplemented,
@@ -686,6 +699,12 @@ impl<'a> Mir<'a> {
             }
             TraitType::Eq => {
                 RawMirInstruction::Eq {
+                    left: left.0,
+                    right: right.0,
+                }
+            }
+            TraitType::Ne => {
+                RawMirInstruction::Ne {
                     left: left.0,
                     right: right.0,
                 }

@@ -66,6 +66,11 @@ pub fn calculate_last_use(i: &usize, instructions: &mut Vec<MirInstruction>) -> 
                     uses.push(j);
                 }
             }
+            RawMirInstruction::Ne { left, right } => {
+                if i == left || i == right {
+                    uses.push(j);
+                }
+            }
         }
     }
 
@@ -106,7 +111,7 @@ pub fn generate_lifetimes<'a>(
             RawMirInstruction::Add { left, right } => {
                 let left_tp = instructions.get(*left).unwrap().tp.as_ref().unwrap();
                 let right_tp = instructions.get(*right).unwrap().tp.as_ref().unwrap();
-                //_res will be used in the future with custom lifetimes
+                //TODO: _res will be used in the future with custom lifetimes
                 let _res = if let Some(Trait::Add { code: _, skeleton }) =
                     left_tp.traits.get(&TraitType::Add)
                 {
@@ -409,7 +414,7 @@ pub fn generate_lifetimes<'a>(
             RawMirInstruction::Eq { left, right } => {
                 let left_tp = instructions.get(*left).unwrap().tp.as_ref().unwrap();
                 let right_tp = instructions.get(*right).unwrap().tp.as_ref().unwrap();
-                //_res will be used in the future with custom lifetimes
+                //TODO: _res will be used in the future with custom lifetimes
                 let _res = if let Some(Trait::Eq { code: _, skeleton }) =
                     left_tp.traits.get(&TraitType::Eq)
                 {
@@ -422,6 +427,28 @@ pub fn generate_lifetimes<'a>(
                 } else {
                     raise_error(
                         &format!("Type '{}' does not implement 'Eq'.", left_tp.qualname()),
+                        ErrorType::TypeMismatch,
+                        &instructions.get(*left).unwrap().pos,
+                        &this.info,
+                    );
+                };
+            }
+            RawMirInstruction::Ne { left, right } => {
+                let left_tp = instructions.get(*left).unwrap().tp.as_ref().unwrap();
+                let right_tp = instructions.get(*right).unwrap().tp.as_ref().unwrap();
+                //TODO: _res will be used in the future with custom lifetimes
+                let _res = if let Some(Trait::Ne { code: _, skeleton }) =
+                    left_tp.traits.get(&TraitType::Ne)
+                {
+                    skeleton(
+                        this,
+                        &instructions.get(*left).unwrap().pos,
+                        left_tp.clone(),
+                        right_tp.clone(),
+                    )
+                } else {
+                    raise_error(
+                        &format!("Type '{}' does not implement 'Ne'.", left_tp.qualname()),
                         ErrorType::TypeMismatch,
                         &instructions.get(*left).unwrap().pos,
                         &this.info,

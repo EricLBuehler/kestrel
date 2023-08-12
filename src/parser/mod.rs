@@ -209,7 +209,7 @@ impl<'a> Parser<'a> {
         match self.current.tp {
             TokenType::Plus => Precedence::Sum,
             TokenType::Equal => Precedence::Assign,
-            TokenType::DoubleEqual => Precedence::Comparison,
+            TokenType::DoubleEqual | TokenType::NotEqual => Precedence::Comparison,
 
             _ => Precedence::Lowest,
         }
@@ -417,7 +417,8 @@ impl<'a> Parser<'a> {
         {
             match self.current.tp {
                 TokenType::Plus |
-                TokenType::DoubleEqual => left = self.generate_binary(left, self.get_precedence()),
+                TokenType::DoubleEqual |
+                TokenType::NotEqual => left = self.generate_binary(left, self.get_precedence()),
                 TokenType::Equal => left = self.generate_assign(left),
                 _ => {
                     break;
@@ -651,6 +652,7 @@ impl<'a> Parser<'a> {
         let op = match self.current.tp {
             TokenType::Plus => OpType::Add,
             TokenType::DoubleEqual => OpType::Eq,
+            TokenType::NotEqual => OpType::Ne,
             _ => {
                 unreachable!();
             }

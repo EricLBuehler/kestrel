@@ -42,4 +42,11 @@ fn main {
 }
 
 fn x {
+    .0:   i32 1 -> std::i32['1 .0 => .2]
+    .1:   i32 2 -> std::i32['2 .1 => .2]
+    .2:   ne .0 .1 -> std::i32['3 .2 => .5]
+    .3:   declare res['4 .3 => .5]
+    .4:   own .2
+    .5:   store res .2 -> std::void['5 .5 => .5]
+    .6:   dropbinding res
 }
