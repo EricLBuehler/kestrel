@@ -18,3 +18,9 @@
 
     MIR effect:
     - [x] Will require permutations to prove invariants (guaranteed return for now).
+    
+- **Add comparison traits** (by 8/12/23)
+
+    Add: 
+    - [x] `Eq`, `Ne` traits, implement for `std` types.
+    - [x] Add `==`, `!=` operators.
