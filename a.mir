@@ -2,7 +2,7 @@ fn main {
     .0:   u64 1 -> std::u64['1 .0 => .2]
     .1:   u64 2 -> std::u64['2 .1 => .2]
     .2:   add .0 .1 -> std::u64['3 .2 => .5]
-    .3:   declare α['4 .3 => .16]
+    .3:   declare α['4 .3 => .33]
     .4:   own .2
     .5:   store α .2 -> std::void['5 .5 => .5]
     .6:   load α -> std::u64['6 .6 => .7]
@@ -17,23 +17,28 @@ fn main {
     .15:  store β .13 -> std::void['15 .15 => .15]
     .16:  dropbinding β
     .17:  load α -> std::u64['16 .16 => .17]
-    .18:  dropbinding α
-    .19:  copy .16 -> std::u64['17 .17 => .18]
-    .20:  ref .17 -> &std::u64['19 .18 => .19]
-    .21:  ref .18 -> &&std::u64['21 .19 => .22]
-    .22:  declare γ['22 .20 => .22]
-    .23:  own .19
-    .24:  store γ .19 -> std::void['23 .22 => .22]
-    .25:  dropbinding γ
-    .26:  bool true -> std::bool['24 .23 => .25]
-    .27:  bool false -> std::bool['25 .24 => .25]
-    .28:  add .23 .24 -> std::bool['26 .25 => .28]
-    .29:  declare δ['27 .26 => .28]
-    .30:  own .25
-    .31:  store δ .25 -> std::void['28 .28 => .28]
-    .32:  dropbinding δ
-    .33:  call fn x -> std::void['29 .29 => .29]
-    .34:  call fn x -> std::void['30 .30 => .30]
+    .18:  copy .16 -> std::u64['17 .17 => .18]
+    .19:  ref .17 -> &std::u64['19 .18 => .19]
+    .20:  ref .18 -> &&std::u64['21 .19 => .22]
+    .21:  declare γ['22 .20 => .22]
+    .22:  own .19
+    .23:  store γ .19 -> std::void['23 .22 => .22]
+    .24:  dropbinding γ
+    .25:  bool true -> std::bool['24 .23 => .25]
+    .26:  bool false -> std::bool['25 .24 => .25]
+    .27:  add .23 .24 -> std::bool['26 .25 => .28]
+    .28:  declare δ['27 .26 => .28]
+    .29:  own .25
+    .30:  store δ .25 -> std::void['28 .28 => .28]
+    .31:  dropbinding δ
+    .32:  call fn x -> std::void['29 .29 => .29]
+    .33:  call fn x -> std::void['30 .30 => .30]
+    .34:  load α -> std::u64['31 .31 => .32]
+    .35:  copy .31 -> std::u64['32 .32 => .35]
+    .36:  load α -> std::u64['33 .33 => .34]
+    .37:  dropbinding α
+    .38:  copy .33 -> std::u64['34 .34 => .35]
+    .39:  eq .32 .34 -> std::u64['35 .35 => .35]
 }
 
 fn x {

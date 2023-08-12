@@ -112,6 +112,7 @@ impl NodeData for DecimalNode {
 #[derive(Debug, Copy, Clone)]
 pub enum OpType {
     Add,
+    Eq,
 }
 
 pub struct BinaryNode {

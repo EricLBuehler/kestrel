@@ -46,6 +46,7 @@ pub enum RawMirInstruction {
     Bool(bool),
     Return(usize),
     CallFunction(String),
+    Eq { left: usize, right: usize },
 }
 
 #[derive(Clone)]
@@ -148,6 +149,9 @@ impl Display for RawMirInstruction {
             }
             RawMirInstruction::CallFunction(name) => {
                 write!(f, "call fn {name}")
+            }
+            RawMirInstruction::Eq { left, right } => {
+                write!(f, "eq .{left} .{right}")
             }
         }
     }
@@ -648,26 +652,51 @@ impl<'a> Mir<'a> {
         let left = self.generate_expr(binary.nodes.get("left").unwrap());
         let right = self.generate_expr(binary.nodes.get("right").unwrap());
 
-        let res = match binary.op.unwrap() {
+        let (traittp, name) = match binary.op.unwrap() {
             OpType::Add => {
-                if let Some(Trait::Add { code: _, skeleton }) = left.1.traits.get(&TraitType::Add) {
-                    skeleton(self, &node.pos, left.1, right.1)
-                } else {
-                    raise_error(
-                        &format!("Type '{}' does not implement Add.", left.1.qualname()),
-                        ErrorType::TypeMismatch,
-                        &node.pos,
-                        &self.info,
-                    );
+                (TraitType::Add, "Add")
+            }
+            OpType::Eq => {
+                (TraitType::Eq, "Eq")
+            }
+        };
+        
+        let res = if let Some(Trait::Add { code: _, skeleton }) = left.1.traits.get(&traittp)
+        {
+            skeleton(self, &node.pos, left.1, right.1)
+        }
+        else if let Some(Trait::Eq { code: _, skeleton }) = left.1.traits.get(&traittp)
+        {
+            skeleton(self, &node.pos, left.1, right.1)
+        }  else {
+            raise_error(
+                &format!("Type '{}' does not implement '{name}'.", left.1.qualname()),
+                ErrorType::TraitNotImplemented,
+                &node.pos,
+                &self.info,
+            );
+        };
+
+        let instruction = match traittp {
+            TraitType::Add => {
+                RawMirInstruction::Add {
+                    left: left.0,
+                    right: right.0,
                 }
+            }
+            TraitType::Eq => {
+                RawMirInstruction::Eq {
+                    left: left.0,
+                    right: right.0,
+                }
+            }
+            _ => {
+                unreachable!();
             }
         };
 
         self.instructions.push(MirInstruction {
-            instruction: RawMirInstruction::Add {
-                left: left.0,
-                right: right.0,
-            },
+            instruction,
             pos: node.pos.clone(),
             tp: Some(res.clone()),
         });

@@ -830,20 +830,28 @@ impl<'a> CodeGen<'a> {
             ExprFlags { get_ref: false },
         );
 
-        match binary.op.unwrap() {
+        let (traittp, name) = match binary.op.unwrap() {
             OpType::Add => {
-                if let Some(Trait::Add { code, skeleton: _ }) = left.tp.traits.get(&TraitType::Add)
-                {
-                    code(self, &node.pos, left, right)
-                } else {
-                    raise_error(
-                        &format!("Type '{}' does not implement Add.", left.tp.qualname()),
-                        ErrorType::TraitNotImplemented,
-                        &node.pos,
-                        self.info,
-                    );
-                }
+                (TraitType::Add, "Add")
             }
+            OpType::Eq => {
+                (TraitType::Eq, "Eq")
+            }
+        };
+        
+        if let Some(Trait::Add { code, skeleton: _ }) = left.tp.traits.get(&traittp)
+        {
+            code(self, &node.pos, left, right)
+        } else if let Some(Trait::Eq { code, skeleton: _ }) = left.tp.traits.get(&traittp)
+        {
+            code(self, &node.pos, left, right)
+        } else {
+            raise_error(
+                &format!("Type '{}' does not implement '{name}'.", left.tp.qualname()),
+                ErrorType::TraitNotImplemented,
+                &node.pos,
+                self.info,
+            );
         }
     }
 

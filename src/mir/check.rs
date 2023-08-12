@@ -61,6 +61,11 @@ pub fn calculate_last_use(i: &usize, instructions: &mut Vec<MirInstruction>) -> 
                 }
             }
             RawMirInstruction::CallFunction(_) => {}
+            RawMirInstruction::Eq { left, right } => {
+                if i == left || i == right {
+                    uses.push(j);
+                }
+            }
         }
     }
 
@@ -113,7 +118,7 @@ pub fn generate_lifetimes<'a>(
                     )
                 } else {
                     raise_error(
-                        &format!("Type '{}' does not implement Add.", left_tp.qualname()),
+                        &format!("Type '{}' does not implement 'Add'.", left_tp.qualname()),
                         ErrorType::TypeMismatch,
                         &instructions.get(*left).unwrap().pos,
                         &this.info,
@@ -401,6 +406,28 @@ pub fn generate_lifetimes<'a>(
                 )
             }
             RawMirInstruction::CallFunction(_) => {}
+            RawMirInstruction::Eq { left, right } => {
+                let left_tp = instructions.get(*left).unwrap().tp.as_ref().unwrap();
+                let right_tp = instructions.get(*right).unwrap().tp.as_ref().unwrap();
+                //_res will be used in the future with custom lifetimes
+                let _res = if let Some(Trait::Eq { code: _, skeleton }) =
+                    left_tp.traits.get(&TraitType::Eq)
+                {
+                    skeleton(
+                        this,
+                        &instructions.get(*left).unwrap().pos,
+                        left_tp.clone(),
+                        right_tp.clone(),
+                    )
+                } else {
+                    raise_error(
+                        &format!("Type '{}' does not implement 'Eq'.", left_tp.qualname()),
+                        ErrorType::TypeMismatch,
+                        &instructions.get(*left).unwrap().pos,
+                        &this.info,
+                    );
+                };
+            }
         }
 
         if let RawMirInstruction::Declare { name: _, is_mut: _ } = instruction.instruction {

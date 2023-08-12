@@ -6,6 +6,8 @@ fn main() {
     let δ = true+false
     x()
     x()
+
+    α==α
 }
 
 fn x() {

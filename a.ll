@@ -52,6 +52,9 @@ define i32 @main(i32 %0, i32** %1) local_unnamed_addr #1 {
   store i1 %24, i1* %25, align 1
   call void @x()
   call void @x()
+  %26 = load i64, i64* %12, align 4
+  %27 = load i64, i64* %12, align 4
+  %28 = icmp eq i64 %26, %27
   ret i32 0
 }
 

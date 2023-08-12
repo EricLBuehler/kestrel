@@ -31,6 +31,7 @@ pub enum TokenType {
     RCurly,
     LCurly,
     Comma,
+    DoubleEqual,
 }
 
 pub struct Lexer<'a> {
@@ -80,6 +81,7 @@ impl std::fmt::Display for TokenType {
             TokenType::LCurly => write!(f, "lcurly"),
             TokenType::RCurly => write!(f, "rcurly"),
             TokenType::Comma => write!(f, "comma"),
+            TokenType::DoubleEqual => write!(f, "doubleequal"),
         }
     }
 }
@@ -180,23 +182,38 @@ pub fn generate_tokens(lexer: &mut Lexer, kwds: &[String]) -> (usize, Vec<Token>
             });
             advance(lexer);
         } else if cur == '=' {
+            let startcol = lexer.col;
+            let line = lexer.line;
+            let mut endcol = lexer.col + 1;
+            let mut data = String::from("=");
+            let mut tp = TokenType::Equal;
+            
+            advance(lexer);
+
+            if lexer.current == '=' {
+                endcol = lexer.col + 1;
+                data.push('=');
+                tp = TokenType::DoubleEqual;
+
+                advance(lexer);
+            }
+
             tokens.push(Token {
-                data: String::from("="),
-                tp: TokenType::Equal,
+                data,
+                tp,
                 start: Position {
-                    line: lexer.line,
-                    startcol: lexer.col,
-                    endcol: lexer.col + 1,
+                    line,
+                    startcol,
+                    endcol,
                     opcol: None,
                 },
                 end: Position {
-                    line: lexer.line,
-                    startcol: lexer.col,
-                    endcol: lexer.col + 1,
+                    line,
+                    startcol,
+                    endcol,
                     opcol: None,
                 },
             });
-            advance(lexer);
         } else if cur == '&' {
             tokens.push(Token {
                 data: String::from("&"),
