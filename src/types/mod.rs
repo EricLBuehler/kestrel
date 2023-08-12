@@ -19,6 +19,14 @@ pub enum Trait<'a> {
         code: fn(&mut CodeGen<'a>, &Position, Data<'a>, Data<'a>) -> Data<'a>,
         skeleton: fn(&mut Mir, &Position, Type<'a>, Type<'a>) -> Type<'a>,
     },
+    Eq {
+        code: fn(&mut CodeGen<'a>, &Position, Data<'a>, Data<'a>) -> Data<'a>,
+        skeleton: fn(&mut Mir, &Position, Type<'a>, Type<'a>) -> Type<'a>,
+    },
+    Ne {
+        code: fn(&mut CodeGen<'a>, &Position, Data<'a>, Data<'a>) -> Data<'a>,
+        skeleton: fn(&mut Mir, &Position, Type<'a>, Type<'a>) -> Type<'a>,
+    },
     Copy,
 }
 
@@ -26,6 +34,8 @@ pub enum Trait<'a> {
 pub enum TraitType {
     Add,
     Copy,
+    Eq,
+    Ne,
 }
 
 #[derive(Hash, PartialEq, Eq, PartialOrd, Ord, Clone, Debug)]

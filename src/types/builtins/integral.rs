@@ -148,7 +148,45 @@ fn integral_add<'a>(
     }
 }
 
-fn integral_add_skeleton<'a>(
+fn integral_eq<'a>(
+    codegen: &mut CodeGen<'a>,
+    _pos: &Position,
+    this: Data<'a>,
+    other: Data<'a>,
+) -> Data<'a> {    
+    let res = codegen.builder.build_int_compare(
+        inkwell::IntPredicate::EQ,
+        this.data.unwrap().into_int_value(),
+        other.data.unwrap().into_int_value(),
+        "",
+    );
+
+    Data {
+        data: Some(res.into()),
+        tp: this.tp,
+    }
+}
+
+fn integral_ne<'a>(
+    codegen: &mut CodeGen<'a>,
+    _pos: &Position,
+    this: Data<'a>,
+    other: Data<'a>,
+) -> Data<'a> {    
+    let res = codegen.builder.build_int_compare(
+        inkwell::IntPredicate::NE,
+        this.data.unwrap().into_int_value(),
+        other.data.unwrap().into_int_value(),
+        "",
+    );
+
+    Data {
+        data: Some(res.into()),
+        tp: this.tp,
+    }
+}
+
+fn integral_skeleton<'a>(
     mir: &mut Mir,
     pos: &Position,
     this: Type<'a>,
@@ -186,7 +224,21 @@ pub fn init_integral(codegen: &mut CodeGen) {
                     TraitType::Add,
                     Trait::Add {
                         code: integral_add,
-                        skeleton: integral_add_skeleton,
+                        skeleton: integral_skeleton,
+                    },
+                ),
+                (
+                    TraitType::Eq,
+                    Trait::Eq {
+                        code: integral_eq,
+                        skeleton: integral_skeleton,
+                    },
+                ),
+                (
+                    TraitType::Ne,
+                    Trait::Ne {
+                        code: integral_ne,
+                        skeleton: integral_skeleton,
                     },
                 ),
                 (TraitType::Copy, Trait::Copy),
