@@ -10,7 +10,9 @@ Simple and safe.
 ## Todo Roadmap
 - **Add comparison traits** (by 8/12/23)
 
-    Add: `Eq`, `Ne` traits, implement for `std` types.
+    Add: 
+    - [x] `Eq`, `Ne` traits, implement for `std` types.
+    - [ ] Add `==`, `!=` operators.
 
 - **Add control flow** (by 8/16/23)
 
