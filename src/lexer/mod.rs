@@ -140,7 +140,17 @@ pub fn print_tokens(len: usize, tokens: &Vec<Token>) {
 }
 
 pub fn is_identi(cur: char) -> bool {
-    !(cur == '+' || cur == '\n' || cur == '=' || cur.is_whitespace() || cur == '&' || cur == '!' || cur == '(' || cur == ')' || cur == '{' || cur == '}' || cur == ':')
+    !(cur == '+'
+        || cur == '\n'
+        || cur == '='
+        || cur.is_whitespace()
+        || cur == '&'
+        || cur == '!'
+        || cur == '('
+        || cur == ')'
+        || cur == '{'
+        || cur == '}'
+        || cur == ':')
 }
 
 pub fn generate_tokens(lexer: &mut Lexer, kwds: &[String]) -> (usize, Vec<Token>) {
@@ -522,9 +532,7 @@ fn make_identifier(lexer: &mut Lexer, kwds: &[String]) -> Token {
         opcol: None,
     };
 
-    while is_identi(lexer.current)
-        && lexer.current != '\0'
-    {
+    while is_identi(lexer.current) && lexer.current != '\0' {
         data.push(lexer.current);
         advance(lexer);
     }
@@ -547,7 +555,7 @@ fn make_identifier(lexer: &mut Lexer, kwds: &[String]) -> Token {
         end: Position {
             line: lexer.line,
             startcol: endcol,
-            endcol: endcol,
+            endcol,
             opcol: None,
         },
     }

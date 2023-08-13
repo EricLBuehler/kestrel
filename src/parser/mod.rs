@@ -362,7 +362,12 @@ impl<'a> Parser<'a> {
                 line: endline,
             },
             nodes::NodeType::Fn,
-            Box::new(FnNode { name, args, code, rettp: tp }),
+            Box::new(FnNode {
+                name,
+                args,
+                code,
+                rettp: tp,
+            }),
         )
     }
 

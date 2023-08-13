@@ -280,7 +280,11 @@ impl<'a> CodeGen<'a> {
             BasicType::Void => context.void_type().into(),
         }
     }
-    fn create_fn_tp(context: &'a Context, args: &Vec<Type<'a>>, return_type: &Type<'a>) -> FunctionType<'a> {
+    fn create_fn_tp(
+        context: &'a Context,
+        args: &[Type<'a>],
+        return_type: &Type<'a>,
+    ) -> FunctionType<'a> {
         let args: Vec<BasicMetadataTypeEnum> = args
             .iter()
             .map(|x| Self::kestrel_to_inkwell_tp(context, x))
@@ -310,7 +314,6 @@ impl<'a> CodeGen<'a> {
             AnyTypeEnum::VectorType(tp) => tp.fn_type(&args[..], false),
             AnyTypeEnum::VoidType(tp) => tp.fn_type(&args[..], false),
             AnyTypeEnum::FunctionType(_) => unreachable!(),
-            
         }
     }
 
@@ -335,9 +338,9 @@ impl<'a> CodeGen<'a> {
         ] {
             if name_str == &basictype.to_string() {
                 return builtins.get(&basictype).unwrap().clone();
-            }            
+            }
         }
-                
+
         let fmt: String = format!("Type '{}' not found.", name_str);
         raise_error(&fmt, ErrorType::TypeNotFound, &name.pos, info);
     }
@@ -1066,9 +1069,9 @@ impl<'a> CodeGen<'a> {
 
         let mut func = self.functions.get(&name).unwrap().clone();
 
-        let func_rettp = func.1.1.clone();
-        let args = func.1.0.clone();
-        
+        let func_rettp = func.1 .1.clone();
+        let args = func.1 .0.clone();
+
         if func.2.is_none() {
             let fnnode = func.0.data.get_data();
 
@@ -1119,19 +1122,16 @@ impl<'a> CodeGen<'a> {
 
             //Compile code
             self.compile_statements(fnnode.nodearr.unwrap());
-            
+
             if !self.cur_fnstate.as_ref().unwrap().returned
                 && func_rettp.basictype == BasicType::Void
             {
                 self.builder.build_return(None);
-            }
-            else if !self.cur_fnstate.as_ref().unwrap().returned
-            && func_rettp.basictype != BasicType::Void {
+            } else if !self.cur_fnstate.as_ref().unwrap().returned
+                && func_rettp.basictype != BasicType::Void
+            {
                 raise_error(
-                    &format!(
-                        "Expected 'void', got '{}'",
-                        func_rettp.qualname()
-                    ),
+                    &format!("Expected 'void', got '{}'", func_rettp.qualname()),
                     ErrorType::TypeMismatch,
                     &node.pos,
                     self.info,
@@ -1147,7 +1147,12 @@ impl<'a> CodeGen<'a> {
         }
 
         Data {
-            data: Some(self.builder.build_call(func.2.unwrap(), &[], "").try_as_basic_value().unwrap_left()),
+            data: Some(
+                self.builder
+                    .build_call(func.2.unwrap(), &[], "")
+                    .try_as_basic_value()
+                    .unwrap_left(),
+            ),
             tp: func_rettp,
         }
     }
@@ -1170,20 +1175,14 @@ impl<'a> CodeGen<'a> {
             );
         }
 
-        let rettp = if let Some(ref v) = fnnode.tp {  
+        let rettp = if let Some(ref v) = fnnode.tp {
             Self::resolve_type(&self.builtins, self.info, v)
         } else {
             self.builtins.get(&BasicType::Void).unwrap().clone()
         };
 
-        self.functions.insert(
-            name.clone(),
-            (
-                node,
-                (vec![], rettp),
-                None,
-            ),
-        );
+        self.functions
+            .insert(name.clone(), (node, (vec![], rettp), None));
     }
 
     fn create_fn(&mut self, node: &Node) {
