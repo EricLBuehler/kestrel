@@ -198,7 +198,7 @@ pub fn write_mir<'a>(
 
     let mut out = String::new();
 
-    out.push_str(&format!("fn {} {{\n", this.fn_name));
+    out.push_str(&format!("fn {}: {} {{\n", this.fn_name, this.functions.get(&this.fn_name).unwrap().1.1.qualname()));
     for (i, instruction) in instructions.iter().enumerate() {
         out.push_str("    ");
         out.push_str(&format!(".{:<5}", format!("{}:", i)));
