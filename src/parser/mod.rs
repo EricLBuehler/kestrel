@@ -332,6 +332,14 @@ impl<'a> Parser<'a> {
         self.expect(TokenType::RParen);
 
         self.advance();
+
+        let mut tp = None;
+        if self.current_is_type(TokenType::Colon) {
+            self.expect(TokenType::Colon);
+            self.advance();
+            tp = Some(self.expr(Precedence::Lowest));
+        }
+
         self.skip_newlines();
 
         self.expect(TokenType::LCurly);
@@ -354,7 +362,7 @@ impl<'a> Parser<'a> {
                 line: endline,
             },
             nodes::NodeType::Fn,
-            Box::new(FnNode { name, args, code }),
+            Box::new(FnNode { name, args, code, rettp: tp }),
         )
     }
 
@@ -416,9 +424,9 @@ impl<'a> Parser<'a> {
             && (prec as u32) < (self.get_precedence() as u32)
         {
             match self.current.tp {
-                TokenType::Plus |
-                TokenType::DoubleEqual |
-                TokenType::NotEqual => left = self.generate_binary(left, self.get_precedence()),
+                TokenType::Plus | TokenType::DoubleEqual | TokenType::NotEqual => {
+                    left = self.generate_binary(left, self.get_precedence())
+                }
                 TokenType::Equal => left = self.generate_assign(left),
                 _ => {
                     break;

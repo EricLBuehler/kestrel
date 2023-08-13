@@ -34,6 +34,7 @@ pub enum TokenType {
     DoubleEqual,
     Bang,
     NotEqual,
+    Colon,
 }
 
 pub struct Lexer<'a> {
@@ -86,6 +87,7 @@ impl std::fmt::Display for TokenType {
             TokenType::DoubleEqual => write!(f, "doubleequal"),
             TokenType::Bang => write!(f, "bang"),
             TokenType::NotEqual => write!(f, "notequal"),
+            TokenType::Colon => write!(f, "colon"),
         }
     }
 }
@@ -138,7 +140,7 @@ pub fn print_tokens(len: usize, tokens: &Vec<Token>) {
 }
 
 pub fn is_identi(cur: char) -> bool {
-    !(cur.is_ascii_digit() || cur == '+' || cur == '\n' || cur == '=' || cur.is_whitespace())
+    !(cur == '+' || cur == '\n' || cur == '=' || cur.is_whitespace() || cur == '&' || cur == '!' || cur == '(' || cur == ')' || cur == '{' || cur == '}' || cur == ':')
 }
 
 pub fn generate_tokens(lexer: &mut Lexer, kwds: &[String]) -> (usize, Vec<Token>) {
@@ -191,7 +193,7 @@ pub fn generate_tokens(lexer: &mut Lexer, kwds: &[String]) -> (usize, Vec<Token>
             let mut endcol = lexer.col + 1;
             let mut data = String::from("=");
             let mut tp = TokenType::Equal;
-            
+
             advance(lexer);
 
             if lexer.current == '=' {
@@ -224,7 +226,7 @@ pub fn generate_tokens(lexer: &mut Lexer, kwds: &[String]) -> (usize, Vec<Token>
             let mut endcol = lexer.col + 1;
             let mut data = String::from("!");
             let mut tp = TokenType::Bang;
-            
+
             advance(lexer);
 
             if lexer.current == '=' {
@@ -345,6 +347,24 @@ pub fn generate_tokens(lexer: &mut Lexer, kwds: &[String]) -> (usize, Vec<Token>
             tokens.push(Token {
                 data: String::from(","),
                 tp: TokenType::Comma,
+                start: Position {
+                    line: lexer.line,
+                    startcol: lexer.col,
+                    endcol: lexer.col + 1,
+                    opcol: None,
+                },
+                end: Position {
+                    line: lexer.line,
+                    startcol: lexer.col,
+                    endcol: lexer.col + 1,
+                    opcol: None,
+                },
+            });
+            advance(lexer);
+        } else if cur == ':' {
+            tokens.push(Token {
+                data: String::from(":"),
+                tp: TokenType::Colon,
                 start: Position {
                     line: lexer.line,
                     startcol: lexer.col,
@@ -504,15 +524,14 @@ fn make_identifier(lexer: &mut Lexer, kwds: &[String]) -> Token {
 
     while is_identi(lexer.current)
         && lexer.current != '\0'
-        && lexer.current != '('
-        && lexer.current != ')'
     {
         data.push(lexer.current);
         advance(lexer);
     }
 
+    let mut endcol = lexer.col;
     if lexer.current == '(' || lexer.current == ')' {
-        lexer.col -= unicode_width::UnicodeWidthChar::width(lexer.current).unwrap();
+        endcol -= unicode_width::UnicodeWidthChar::width(lexer.current).unwrap();
     }
 
     let tp = if kwds.contains(&data) {
@@ -527,8 +546,8 @@ fn make_identifier(lexer: &mut Lexer, kwds: &[String]) -> Token {
         start,
         end: Position {
             line: lexer.line,
-            startcol: lexer.col,
-            endcol: lexer.col,
+            startcol: endcol,
+            endcol: endcol,
             opcol: None,
         },
     }

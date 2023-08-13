@@ -50,11 +50,17 @@ define i32 @main(i32 %0, i32** %1) local_unnamed_addr #1 {
   %24 = phi i1 [ %17, %22 ], [ undef, %20 ]
   %25 = alloca i1, align 1
   store i1 %24, i1* %25, align 1
-  call void @x()
-  call void @x()
-  %26 = load i64, i64* %12, align 4
-  %27 = load i64, i64* %12, align 4
-  %28 = icmp eq i64 %26, %27
+  %26 = call i1 @x()
+  %27 = alloca i1, align 1
+  store i1 %26, i1* %27, align 1
+  %28 = call i1 @x()
+  %29 = alloca i1, align 1
+  store i1 %28, i1* %29, align 1
+  %30 = load i1, i1* %27, align 1
+  %31 = load i1, i1* %29, align 1
+  %32 = icmp eq i1 %30, %31
+  %33 = alloca i1, align 1
+  store i1 %32, i1* %33, align 1
   ret i32 0
 }
 
@@ -68,8 +74,8 @@ declare i1 @llvm.expect.i1.i1(i1, i1) #3
 declare { i1, i1 } @llvm.sadd.with.overflow.i1.i1(i1, i1) #2
 
 ; Function Attrs: mustprogress nofree norecurse nosync nounwind readnone willreturn
-define void @x() local_unnamed_addr #4 {
-  ret void
+define i1 @x() local_unnamed_addr #4 {
+  ret i1 true
 }
 
 attributes #0 = { nofree nounwind }

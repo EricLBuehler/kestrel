@@ -13,6 +13,9 @@ main:                                   # @main
 	.cfi_offset %rbp, -16
 	movq	%rsp, %rbp
 	.cfi_def_cfa_register %rbp
+	pushq	%rbx
+	pushq	%rax
+	.cfi_offset %rbx, -24
                                         # kill: killed $rsi
                                         # kill: killed $edi
 	movl	$1, %eax
@@ -61,12 +64,37 @@ main:                                   # @main
 	jmp	.LBB0_6
 .LBB0_6:
 	movq	%rsp, %rcx
+	movq	%rcx, %rdx
+	addq	$-16, %rdx
+	movq	%rdx, %rsp
+	andb	$1, %al
+	movb	%al, -16(%rcx)
+	callq	x@PLT
+	movq	%rsp, %rbx
+	movq	%rbx, %rcx
+	addq	$-16, %rcx
+	movq	%rcx, %rsp
+	andb	$1, %al
+	movb	%al, -16(%rbx)
+	callq	x@PLT
+	movq	%rsp, %rcx
+	movq	%rcx, %rdx
+	addq	$-16, %rdx
+	movq	%rdx, %rsp
+	andb	$1, %al
+	movb	%al, -16(%rcx)
+	movb	-16(%rbx), %al
+	movb	-16(%rcx), %cl
+	xorb	%cl, %al
+	xorb	$1, %al
+	movq	%rsp, %rcx
 	addq	$-16, %rcx
 	movq	%rcx, %rsp
 	andb	$1, %al
 	movb	%al, (%rcx)
 	xorl	%eax, %eax
-	movq	%rbp, %rsp
+	leaq	-8(%rbp), %rsp
+	popq	%rbx
 	popq	%rbp
 	.cfi_def_cfa %rsp, 8
 	retq
@@ -81,6 +109,7 @@ x:                                      # @x
 .Lfunc_begin1:
 	.cfi_startproc
 # %bb.0:
+	movb	$1, %al
 	retq
 .Lfunc_end1:
 	.size	x, .Lfunc_end1-x

@@ -657,29 +657,18 @@ impl<'a> Mir<'a> {
         let right = self.generate_expr(binary.nodes.get("right").unwrap());
 
         let (traittp, name) = match binary.op.unwrap() {
-            OpType::Add => {
-                (TraitType::Add, "Add")
-            }
-            OpType::Eq => {
-                (TraitType::Eq, "Eq")
-            }
-            OpType::Ne => {
-                (TraitType::Ne, "Ne")
-            }
+            OpType::Add => (TraitType::Add, "Add"),
+            OpType::Eq => (TraitType::Eq, "Eq"),
+            OpType::Ne => (TraitType::Ne, "Ne"),
         };
 
         let t = left.1.traits.get(&traittp);
-        
-        let res = if let Some(Trait::Add { code: _, skeleton }) = t
-        {
+
+        let res = if let Some(Trait::Add { code: _, skeleton }) = t {
             skeleton(self, &node.pos, left.1, right.1)
-        }
-        else if let Some(Trait::Eq { code: _, skeleton }) = t
-        {
+        } else if let Some(Trait::Eq { code: _, skeleton }) = t {
             skeleton(self, &node.pos, left.1, right.1)
-        }
-        else if let Some(Trait::Ne { code: _, skeleton }) = t
-        {
+        } else if let Some(Trait::Ne { code: _, skeleton }) = t {
             skeleton(self, &node.pos, left.1, right.1)
         } else {
             raise_error(
@@ -691,24 +680,18 @@ impl<'a> Mir<'a> {
         };
 
         let instruction = match traittp {
-            TraitType::Add => {
-                RawMirInstruction::Add {
-                    left: left.0,
-                    right: right.0,
-                }
-            }
-            TraitType::Eq => {
-                RawMirInstruction::Eq {
-                    left: left.0,
-                    right: right.0,
-                }
-            }
-            TraitType::Ne => {
-                RawMirInstruction::Ne {
-                    left: left.0,
-                    right: right.0,
-                }
-            }
+            TraitType::Add => RawMirInstruction::Add {
+                left: left.0,
+                right: right.0,
+            },
+            TraitType::Eq => RawMirInstruction::Eq {
+                left: left.0,
+                right: right.0,
+            },
+            TraitType::Ne => RawMirInstruction::Ne {
+                left: left.0,
+                right: right.0,
+            },
             _ => {
                 unreachable!();
             }
@@ -864,9 +847,7 @@ impl<'a> Mir<'a> {
 
     fn generate_return(&mut self, node: &Node) -> MirResult<'a> {
         let returnnode = node.data.get_data();
-        let mut expr = self.generate_expr(returnnode.nodes.get("expr").unwrap());
-
-        expr.1.ref_n += 1;
+        let expr = self.generate_expr(returnnode.nodes.get("expr").unwrap());
 
         self.instructions.push(MirInstruction {
             instruction: RawMirInstruction::Own(expr.0),
@@ -904,7 +885,7 @@ impl<'a> Mir<'a> {
 
         (
             self.instructions.len() - 1,
-            self.builtins.get(&BasicType::Void).unwrap().clone(),
+            func.unwrap().1.1.clone(),
         )
     }
 }

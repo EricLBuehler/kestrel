@@ -19,6 +19,7 @@ pub enum ErrorType {
     MultipleFunctionDefinitions,
     NonModuleLevelStatement,
     FunctionNotFound,
+    TypeNotFound,
 }
 
 impl std::fmt::Display for ErrorType {
@@ -44,6 +45,7 @@ pub fn repr_err(tp: ErrorType) -> &'static str {
         ErrorType::MultipleFunctionDefinitions => "multiple function definitions are disallowed",
         ErrorType::NonModuleLevelStatement => "unexpected module level statement",
         ErrorType::FunctionNotFound => "function not found",
+        ErrorType::TypeNotFound => "type not found",
     }
 }
 

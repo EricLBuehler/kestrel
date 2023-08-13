@@ -153,7 +153,7 @@ fn integral_eq<'a>(
     _pos: &Position,
     this: Data<'a>,
     other: Data<'a>,
-) -> Data<'a> {    
+) -> Data<'a> {
     let res = codegen.builder.build_int_compare(
         inkwell::IntPredicate::EQ,
         this.data.unwrap().into_int_value(),
@@ -163,7 +163,7 @@ fn integral_eq<'a>(
 
     Data {
         data: Some(res.into()),
-        tp: this.tp,
+        tp: codegen.builtins.get(&BasicType::Bool).unwrap().clone(),
     }
 }
 
@@ -172,7 +172,7 @@ fn integral_ne<'a>(
     _pos: &Position,
     this: Data<'a>,
     other: Data<'a>,
-) -> Data<'a> {    
+) -> Data<'a> {
     let res = codegen.builder.build_int_compare(
         inkwell::IntPredicate::NE,
         this.data.unwrap().into_int_value(),
@@ -182,7 +182,7 @@ fn integral_ne<'a>(
 
     Data {
         data: Some(res.into()),
-        tp: this.tp,
+        tp: codegen.builtins.get(&BasicType::Bool).unwrap().clone(),
     }
 }
 

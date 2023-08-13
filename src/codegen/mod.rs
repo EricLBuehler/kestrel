@@ -6,7 +6,7 @@ use inkwell::{
     module::FlagBehavior,
     module::Module,
     passes::PassManagerSubType,
-    types::{AnyTypeEnum, BasicMetadataTypeEnum},
+    types::{AnyTypeEnum, BasicMetadataTypeEnum, FunctionType},
     values::{BasicValueEnum, FunctionValue, PointerValue},
     AddressSpace,
 };
@@ -69,123 +69,6 @@ pub struct Data<'a> {
 
 struct ExprFlags {
     get_ref: bool,
-}
-
-macro_rules! kestrel_to_inkwell_tp {
-    ($this:expr, $tp:expr) => {{
-        match $tp.basictype {
-            BasicType::Bool => {
-                let inkwell_tp = $this.context.bool_type();
-                if $tp.ref_n > 0 {
-                    let mut inkwell_tp = inkwell_tp.ptr_type(AddressSpace::from(0u16));
-                    for _ in 1..$tp.ref_n {
-                        inkwell_tp = inkwell_tp.ptr_type(AddressSpace::from(0u16));
-                    }
-                    inkwell_tp.into()
-                } else {
-                    inkwell_tp.into()
-                }
-            }
-            BasicType::I128 | BasicType::U128 => {
-                let inkwell_tp = $this.context.i128_type();
-                if $tp.ref_n > 0 {
-                    let mut inkwell_tp = inkwell_tp.ptr_type(AddressSpace::from(0u16));
-                    for _ in 1..$tp.ref_n {
-                        inkwell_tp = inkwell_tp.ptr_type(AddressSpace::from(0u16));
-                    }
-                    inkwell_tp.into()
-                } else {
-                    inkwell_tp.into()
-                }
-            }
-            BasicType::I64 | BasicType::U64 => {
-                let inkwell_tp = $this.context.i64_type();
-                if $tp.ref_n > 0 {
-                    let mut inkwell_tp = inkwell_tp.ptr_type(AddressSpace::from(0u16));
-                    for _ in 1..$tp.ref_n {
-                        inkwell_tp = inkwell_tp.ptr_type(AddressSpace::from(0u16));
-                    }
-                    inkwell_tp.into()
-                } else {
-                    inkwell_tp.into()
-                }
-            }
-            BasicType::I32 | BasicType::U32 => {
-                let inkwell_tp = $this.context.i32_type();
-                if $tp.ref_n > 0 {
-                    let mut inkwell_tp = inkwell_tp.ptr_type(AddressSpace::from(0u16));
-                    for _ in 1..$tp.ref_n {
-                        inkwell_tp = inkwell_tp.ptr_type(AddressSpace::from(0u16));
-                    }
-                    inkwell_tp.into()
-                } else {
-                    inkwell_tp.into()
-                }
-            }
-            BasicType::I16 | BasicType::U16 => {
-                let inkwell_tp = $this.context.i16_type();
-                if $tp.ref_n > 0 {
-                    let mut inkwell_tp = inkwell_tp.ptr_type(AddressSpace::from(0u16));
-                    for _ in 1..$tp.ref_n {
-                        inkwell_tp = inkwell_tp.ptr_type(AddressSpace::from(0u16));
-                    }
-                    inkwell_tp.into()
-                } else {
-                    inkwell_tp.into()
-                }
-            }
-            BasicType::I8 | BasicType::U8 => {
-                let inkwell_tp = $this.context.i8_type();
-                if $tp.ref_n > 0 {
-                    let mut inkwell_tp = inkwell_tp.ptr_type(AddressSpace::from(0u16));
-                    for _ in 1..$tp.ref_n {
-                        inkwell_tp = inkwell_tp.ptr_type(AddressSpace::from(0u16));
-                    }
-                    inkwell_tp.into()
-                } else {
-                    inkwell_tp.into()
-                }
-            }
-            BasicType::Void => $this.context.void_type().into(),
-        }
-    }};
-}
-
-macro_rules! create_fn_tp {
-    ($this:expr, $return_tp:expr, $args:expr) => {{
-        let args: Vec<BasicMetadataTypeEnum> = $args
-            .iter()
-            .map(|x| kestrel_to_inkwell_tp!($this, (x.clone())))
-            .filter(|x: &AnyTypeEnum<'_>| !x.is_void_type() && !x.is_function_type())
-            .map(|x| match x {
-                AnyTypeEnum::ArrayType(tp) => tp.into(),
-                AnyTypeEnum::FloatType(tp) => tp.into(),
-                AnyTypeEnum::FunctionType(_) => {
-                    unreachable!()
-                }
-                AnyTypeEnum::IntType(tp) => tp.into(),
-                AnyTypeEnum::PointerType(tp) => tp.into(),
-                AnyTypeEnum::StructType(tp) => tp.into(),
-                AnyTypeEnum::VectorType(tp) => tp.into(),
-                AnyTypeEnum::VoidType(_) => {
-                    unreachable!()
-                }
-            })
-            .collect::<Vec<_>>();
-
-        match kestrel_to_inkwell_tp!($this, $return_tp) {
-            AnyTypeEnum::ArrayType(tp) => tp.fn_type(&args[..], false),
-            AnyTypeEnum::FloatType(tp) => tp.fn_type(&args[..], false),
-            AnyTypeEnum::IntType(tp) => tp.fn_type(&args[..], false),
-            AnyTypeEnum::PointerType(tp) => tp.fn_type(&args[..], false),
-            AnyTypeEnum::StructType(tp) => tp.fn_type(&args[..], false),
-            AnyTypeEnum::VectorType(tp) => tp.fn_type(&args[..], false),
-            AnyTypeEnum::VoidType(tp) => tp.fn_type(&args[..], false),
-            AnyTypeEnum::FunctionType(_) => {
-                unreachable!()
-            }
-        }
-    }};
 }
 
 impl<'a> CodeGen<'a> {
@@ -316,6 +199,147 @@ impl<'a> CodeGen<'a> {
                 function.add_attribute(inkwell::attributes::AttributeLoc::Function, attr);
             }
         }
+    }
+}
+
+impl<'a> CodeGen<'a> {
+    fn kestrel_to_inkwell_tp(context: &'a Context, tp: &Type<'a>) -> AnyTypeEnum<'a> {
+        match tp.basictype {
+            BasicType::Bool => {
+                let inkwell_tp = context.bool_type();
+                if tp.ref_n > 0 {
+                    let mut inkwell_tp = inkwell_tp.ptr_type(AddressSpace::from(0u16));
+                    for _ in 1..tp.ref_n {
+                        inkwell_tp = inkwell_tp.ptr_type(AddressSpace::from(0u16));
+                    }
+                    inkwell_tp.into()
+                } else {
+                    inkwell_tp.into()
+                }
+            }
+            BasicType::I128 | BasicType::U128 => {
+                let inkwell_tp = context.i128_type();
+                if tp.ref_n > 0 {
+                    let mut inkwell_tp = inkwell_tp.ptr_type(AddressSpace::from(0u16));
+                    for _ in 1..tp.ref_n {
+                        inkwell_tp = inkwell_tp.ptr_type(AddressSpace::from(0u16));
+                    }
+                    inkwell_tp.into()
+                } else {
+                    inkwell_tp.into()
+                }
+            }
+            BasicType::I64 | BasicType::U64 => {
+                let inkwell_tp = context.i64_type();
+                if tp.ref_n > 0 {
+                    let mut inkwell_tp = inkwell_tp.ptr_type(AddressSpace::from(0u16));
+                    for _ in 1..tp.ref_n {
+                        inkwell_tp = inkwell_tp.ptr_type(AddressSpace::from(0u16));
+                    }
+                    inkwell_tp.into()
+                } else {
+                    inkwell_tp.into()
+                }
+            }
+            BasicType::I32 | BasicType::U32 => {
+                let inkwell_tp = context.i32_type();
+                if tp.ref_n > 0 {
+                    let mut inkwell_tp = inkwell_tp.ptr_type(AddressSpace::from(0u16));
+                    for _ in 1..tp.ref_n {
+                        inkwell_tp = inkwell_tp.ptr_type(AddressSpace::from(0u16));
+                    }
+                    inkwell_tp.into()
+                } else {
+                    inkwell_tp.into()
+                }
+            }
+            BasicType::I16 | BasicType::U16 => {
+                let inkwell_tp = context.i16_type();
+                if tp.ref_n > 0 {
+                    let mut inkwell_tp = inkwell_tp.ptr_type(AddressSpace::from(0u16));
+                    for _ in 1..tp.ref_n {
+                        inkwell_tp = inkwell_tp.ptr_type(AddressSpace::from(0u16));
+                    }
+                    inkwell_tp.into()
+                } else {
+                    inkwell_tp.into()
+                }
+            }
+            BasicType::I8 | BasicType::U8 => {
+                let inkwell_tp = context.i8_type();
+                if tp.ref_n > 0 {
+                    let mut inkwell_tp = inkwell_tp.ptr_type(AddressSpace::from(0u16));
+                    for _ in 1..tp.ref_n {
+                        inkwell_tp = inkwell_tp.ptr_type(AddressSpace::from(0u16));
+                    }
+                    inkwell_tp.into()
+                } else {
+                    inkwell_tp.into()
+                }
+            }
+            BasicType::Void => context.void_type().into(),
+        }
+    }
+    fn create_fn_tp(context: &'a Context, args: &Vec<Type<'a>>, return_type: &Type<'a>) -> FunctionType<'a> {
+        let args: Vec<BasicMetadataTypeEnum> = args
+            .iter()
+            .map(|x| Self::kestrel_to_inkwell_tp(context, x))
+            .filter(|x: &AnyTypeEnum<'_>| !x.is_void_type() && !x.is_function_type())
+            .map(|x| match x {
+                AnyTypeEnum::ArrayType(tp) => tp.into(),
+                AnyTypeEnum::FloatType(tp) => tp.into(),
+                AnyTypeEnum::FunctionType(_) => {
+                    unreachable!()
+                }
+                AnyTypeEnum::IntType(tp) => tp.into(),
+                AnyTypeEnum::PointerType(tp) => tp.into(),
+                AnyTypeEnum::StructType(tp) => tp.into(),
+                AnyTypeEnum::VectorType(tp) => tp.into(),
+                AnyTypeEnum::VoidType(_) => {
+                    unreachable!()
+                }
+            })
+            .collect::<Vec<_>>();
+
+        match Self::kestrel_to_inkwell_tp(context, return_type) {
+            AnyTypeEnum::ArrayType(tp) => tp.fn_type(&args[..], false),
+            AnyTypeEnum::FloatType(tp) => tp.fn_type(&args[..], false),
+            AnyTypeEnum::IntType(tp) => tp.fn_type(&args[..], false),
+            AnyTypeEnum::PointerType(tp) => tp.fn_type(&args[..], false),
+            AnyTypeEnum::StructType(tp) => tp.fn_type(&args[..], false),
+            AnyTypeEnum::VectorType(tp) => tp.fn_type(&args[..], false),
+            AnyTypeEnum::VoidType(tp) => tp.fn_type(&args[..], false),
+            AnyTypeEnum::FunctionType(_) => unreachable!(),
+            
+        }
+    }
+
+    fn resolve_type(builtins: &BuiltinTypes<'a>, info: &FileInfo<'a>, name: &Node) -> Type<'a> {
+        assert!(name.tp == NodeType::Identifier);
+        let data = name.data.get_data();
+        let name_str = data.raw.get("value").unwrap();
+
+        for basictype in vec![
+            BasicType::I8,
+            BasicType::I16,
+            BasicType::I32,
+            BasicType::I64,
+            BasicType::I128,
+            BasicType::Bool,
+            BasicType::U8,
+            BasicType::U16,
+            BasicType::U32,
+            BasicType::U64,
+            BasicType::U128,
+            BasicType::Void,
+        ] {
+            if name_str == &basictype.to_string() {
+                return builtins.get(&basictype).unwrap().clone();
+            }            
+        }
+                
+        let fmt: String = format!("Type '{}' not found.", name_str);
+        raise_error(&fmt, ErrorType::TypeNotFound, &name.pos, info);
     }
 }
 
@@ -831,27 +855,18 @@ impl<'a> CodeGen<'a> {
         );
 
         let (traittp, name) = match binary.op.unwrap() {
-            OpType::Add => {
-                (TraitType::Add, "Add")
-            }
-            OpType::Eq => {
-                (TraitType::Eq, "Eq")
-            }
-            OpType::Ne => {
-                (TraitType::Ne, "Ne")
-            }
+            OpType::Add => (TraitType::Add, "Add"),
+            OpType::Eq => (TraitType::Eq, "Eq"),
+            OpType::Ne => (TraitType::Ne, "Ne"),
         };
 
         let t = left.tp.traits.get(&traittp);
-        
-        if let Some(Trait::Add { code, skeleton: _ }) = t
-        {
+
+        if let Some(Trait::Add { code, skeleton: _ }) = t {
             code(self, &node.pos, left, right)
-        } else if let Some(Trait::Eq { code, skeleton: _ }) = t
-        {
+        } else if let Some(Trait::Eq { code, skeleton: _ }) = t {
             code(self, &node.pos, left, right)
-        } else if let Some(Trait::Ne { code, skeleton: _ }) = t
-        {
+        } else if let Some(Trait::Ne { code, skeleton: _ }) = t {
             code(self, &node.pos, left, right)
         } else {
             raise_error(
@@ -1051,10 +1066,13 @@ impl<'a> CodeGen<'a> {
 
         let mut func = self.functions.get(&name).unwrap().clone();
 
+        let func_rettp = func.1.1.clone();
+        let args = func.1.0.clone();
+        
         if func.2.is_none() {
             let fnnode = func.0.data.get_data();
 
-            let fn_tp = create_fn_tp!(self, func.1 .1, func.1 .0);
+            let fn_tp = Self::create_fn_tp(self.context, &args, &func_rettp);
 
             let fn_real = self.module.add_function(&name, fn_tp, None);
 
@@ -1068,7 +1086,7 @@ impl<'a> CodeGen<'a> {
                 self.info.clone(),
                 self.builtins.clone(),
                 self.functions.clone(),
-                name,
+                name.clone(),
                 node.pos.clone(),
             );
             let mut instructions = mir.generate(fnnode.nodearr.unwrap());
@@ -1091,7 +1109,7 @@ impl<'a> CodeGen<'a> {
             self.cur_fnstate = Some(CurFunctionState {
                 cur_block: Some(basic_block),
                 returned: false,
-                rettp: func.1 .1.clone(),
+                rettp: func_rettp.clone(),
             });
 
             let old_fn = self.cur_fn;
@@ -1101,11 +1119,23 @@ impl<'a> CodeGen<'a> {
 
             //Compile code
             self.compile_statements(fnnode.nodearr.unwrap());
-
+            
             if !self.cur_fnstate.as_ref().unwrap().returned
-                && func.1 .1.basictype == BasicType::Void
+                && func_rettp.basictype == BasicType::Void
             {
                 self.builder.build_return(None);
+            }
+            else if !self.cur_fnstate.as_ref().unwrap().returned
+            && func_rettp.basictype != BasicType::Void {
+                raise_error(
+                    &format!(
+                        "Expected 'void', got '{}'",
+                        func_rettp.qualname()
+                    ),
+                    ErrorType::TypeMismatch,
+                    &node.pos,
+                    self.info,
+                );
             }
             //
 
@@ -1115,11 +1145,10 @@ impl<'a> CodeGen<'a> {
 
             self.builder.position_at_end(self.block.unwrap());
         }
-        self.builder.build_call(func.2.unwrap(), &[], "");
 
         Data {
-            data: None,
-            tp: self.builtins.get(&BasicType::Void).unwrap().clone(),
+            data: Some(self.builder.build_call(func.2.unwrap(), &[], "").try_as_basic_value().unwrap_left()),
+            tp: func_rettp,
         }
     }
 }
@@ -1141,11 +1170,17 @@ impl<'a> CodeGen<'a> {
             );
         }
 
+        let rettp = if let Some(ref v) = fnnode.tp {  
+            Self::resolve_type(&self.builtins, self.info, v)
+        } else {
+            self.builtins.get(&BasicType::Void).unwrap().clone()
+        };
+
         self.functions.insert(
             name.clone(),
             (
                 node,
-                (vec![], self.builtins.get(&BasicType::Void).unwrap().clone()),
+                (vec![], rettp),
                 None,
             ),
         );

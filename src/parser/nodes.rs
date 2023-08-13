@@ -63,6 +63,7 @@ pub struct NodeValue<'a> {
     pub args: Option<Vec<String>>,
     pub mapping: Option<&'a Vec<(Node, Node)>>,
     pub booleans: HashMap<String, bool>,
+    pub tp: Option<Node>,
 }
 
 pub trait NodeData {
@@ -85,6 +86,7 @@ impl<'a> NodeValue<'a> {
             args: None,
             mapping: None,
             booleans: HashMap::new(),
+            tp: None,
         }
     }
 }
@@ -222,6 +224,7 @@ pub struct FnNode {
     pub name: String,
     pub args: Vec<String>,
     pub code: Vec<Node>,
+    pub rettp: Option<Node>,
 }
 
 impl NodeData for FnNode {
@@ -230,6 +233,7 @@ impl NodeData for FnNode {
         value.nodearr = Some(&self.code);
         value.raw.insert(String::from("name"), self.name.clone());
         value.args = Some(self.args.clone());
+        value.tp = self.rettp.clone();
 
         value
     }

@@ -4,12 +4,12 @@ fn main() {
     β = &100u64
     let γ = &&α
     let δ = true+false
-    x()
-    x()
-
-    α==α
+    let a = x()
+    let b = x()
+    let c = a==b
 }
 
-fn x() {
+fn x(): bool {
     let res = 1!=2
+    return res
 }
