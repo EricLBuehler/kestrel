@@ -20,6 +20,7 @@ pub enum ErrorType {
     NonModuleLevelStatement,
     FunctionNotFound,
     TypeNotFound,
+    ReturnReference,
 }
 
 impl std::fmt::Display for ErrorType {
@@ -46,6 +47,7 @@ pub fn repr_err(tp: ErrorType) -> &'static str {
         ErrorType::NonModuleLevelStatement => "unexpected module level statement",
         ErrorType::FunctionNotFound => "function not found",
         ErrorType::TypeNotFound => "type not found",
+        ErrorType::ReturnReference => "references cannot be returned",
     }
 }
 

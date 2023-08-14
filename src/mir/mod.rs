@@ -853,6 +853,10 @@ impl<'a> Mir<'a> {
         let returnnode = node.data.get_data();
         let expr = self.generate_expr(returnnode.nodes.get("expr").unwrap());
 
+        if expr.1.ref_n != 0 {
+            raise_error("Cannot return reference.", ErrorType::ReturnReference, &node.pos, &self.info);
+        }
+
         self.instructions.push(MirInstruction {
             instruction: RawMirInstruction::Own(expr.0),
             pos: node.pos.clone(),
