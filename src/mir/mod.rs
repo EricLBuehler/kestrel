@@ -758,6 +758,15 @@ impl<'a> Mir<'a> {
 
         let tp = self.namespace.get(name).unwrap().0.clone();
 
+        if !tp.traits.contains_key(&TraitType::Copy) {
+            raise_error(
+                &format!("Type {} does not implement Copy", tp.qualname()),
+                ErrorType::TraitNotImplemented,
+                &node.pos,
+                &self.info,
+            );
+        }
+
         self.instructions.push(MirInstruction {
             instruction: RawMirInstruction::Load(name.to_string()),
             pos: node.pos.clone(),

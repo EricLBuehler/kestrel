@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use indexmap::IndexMap;
 
 use crate::{
-    errors::{raise_error, raise_error_multi, ErrorType},
+    errors::{raise_error_multi, ErrorType},
     types::{Lifetime, Trait, TraitType},
 };
 
@@ -122,12 +122,7 @@ pub fn generate_lifetimes<'a>(
                         right_tp.clone(),
                     )
                 } else {
-                    raise_error(
-                        &format!("Type '{}' does not implement 'Add'.", left_tp.qualname()),
-                        ErrorType::TypeMismatch,
-                        &instructions.get(*left).unwrap().pos,
-                        &this.info,
-                    );
+                    unreachable!()
                 };
             }
             RawMirInstruction::Declare { ref name, is_mut } => {
@@ -205,16 +200,6 @@ pub fn generate_lifetimes<'a>(
                 );
             }
             RawMirInstruction::Load(ref name) => {
-                if namespace.get(name).is_none() {
-                    let fmt: String = format!("Binding '{}' not found in scope.", name);
-                    raise_error(
-                        &fmt,
-                        ErrorType::BindingNotFound,
-                        &instruction.pos,
-                        &this.info,
-                    );
-                }
-
                 let old_instruction = &instructions
                     .get(namespace.get(name).unwrap().2.owner.unwrap())
                     .unwrap();
@@ -386,23 +371,7 @@ pub fn generate_lifetimes<'a>(
                 references.insert(i, res);
             }
 
-            RawMirInstruction::Copy(right) => {
-                let tp = instructions
-                    .get(*right)
-                    .as_ref()
-                    .unwrap()
-                    .tp
-                    .clone()
-                    .unwrap();
-                if !tp.traits.contains_key(&TraitType::Copy) {
-                    raise_error(
-                        &format!("Type {} does not implement Copy", tp.qualname()),
-                        ErrorType::TraitNotImplemented,
-                        &instruction.pos,
-                        &this.info,
-                    );
-                }
-            }
+            RawMirInstruction::Copy(_) => { }
             RawMirInstruction::DropBinding(_, _) => {}
             RawMirInstruction::Return(right) => {
                 assert_eq!(
@@ -425,12 +394,7 @@ pub fn generate_lifetimes<'a>(
                         right_tp.clone(),
                     )
                 } else {
-                    raise_error(
-                        &format!("Type '{}' does not implement 'Eq'.", left_tp.qualname()),
-                        ErrorType::TypeMismatch,
-                        &instructions.get(*left).unwrap().pos,
-                        &this.info,
-                    );
+                    unreachable!()
                 };
             }
             RawMirInstruction::Ne { left, right } => {
@@ -447,12 +411,7 @@ pub fn generate_lifetimes<'a>(
                         right_tp.clone(),
                     )
                 } else {
-                    raise_error(
-                        &format!("Type '{}' does not implement 'Ne'.", left_tp.qualname()),
-                        ErrorType::TypeMismatch,
-                        &instructions.get(*left).unwrap().pos,
-                        &this.info,
-                    );
+                    unreachable!()
                 };
             }
         }

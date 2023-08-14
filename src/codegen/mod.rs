@@ -857,10 +857,10 @@ impl<'a> CodeGen<'a> {
             ExprFlags { get_ref: false },
         );
 
-        let (traittp, name) = match binary.op.unwrap() {
-            OpType::Add => (TraitType::Add, "Add"),
-            OpType::Eq => (TraitType::Eq, "Eq"),
-            OpType::Ne => (TraitType::Ne, "Ne"),
+        let traittp = match binary.op.unwrap() {
+            OpType::Add => TraitType::Add,
+            OpType::Eq => TraitType::Eq,
+            OpType::Ne => TraitType::Ne,
         };
 
         let t = left.tp.traits.get(&traittp);
@@ -872,12 +872,7 @@ impl<'a> CodeGen<'a> {
         } else if let Some(Trait::Ne { code, skeleton: _ }) = t {
             code(self, &node.pos, left, right)
         } else {
-            raise_error(
-                &format!("Type '{}' does not implement '{name}'.", left.tp.qualname()),
-                ErrorType::TraitNotImplemented,
-                &node.pos,
-                self.info,
-            );
+            unreachable!()
         }
     }
 
@@ -932,11 +927,6 @@ impl<'a> CodeGen<'a> {
             .bindings
             .get(name);
 
-        if binding.is_none() {
-            let fmt: String = format!("Binding '{}' not found in scope.", name);
-            raise_error(&fmt, ErrorType::BindingNotFound, &node.pos, self.info);
-        }
-
         let binding = binding.unwrap();
 
         if flags.get_ref {
@@ -975,37 +965,7 @@ impl<'a> CodeGen<'a> {
             .bindings
             .get(name);
 
-        if binding.is_none() {
-            let fmt: String = format!("Binding '{}' not found in scope.", name);
-            raise_error(&fmt, ErrorType::BindingNotFound, &node.pos, self.info);
-        }
-
         let binding = binding.unwrap();
-
-        if right.tp != binding.1 {
-            raise_error(
-                &format!(
-                    "Expected '{}', got '{}'",
-                    binding.1.qualname(),
-                    right.tp.qualname()
-                ),
-                ErrorType::TypeMismatch,
-                &expr.pos,
-                self.info,
-            );
-        }
-
-        if !binding.2.is_mut {
-            raise_error(
-                &format!(
-                    "Binding '{}' is not mutable, so it cannot be assigned to.",
-                    name
-                ),
-                ErrorType::BindingNotMutable,
-                &node.pos,
-                self.info,
-            );
-        }
 
         if right.data.is_some() {
             debug_assert!(binding.0.is_some());
