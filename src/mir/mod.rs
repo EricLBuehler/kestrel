@@ -853,8 +853,14 @@ impl<'a> Mir<'a> {
         let returnnode = node.data.get_data();
         let expr = self.generate_expr(returnnode.nodes.get("expr").unwrap());
 
+        //TODO: Actual lifetime check
         if expr.1.ref_n != 0 {
-            raise_error("Cannot return reference.", ErrorType::ReturnReference, &node.pos, &self.info);
+            raise_error(
+                "Cannot return reference.",
+                ErrorType::ReturnReference,
+                &node.pos,
+                &self.info,
+            );
         }
 
         self.instructions.push(MirInstruction {
