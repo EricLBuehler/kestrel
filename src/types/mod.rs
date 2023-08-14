@@ -1,5 +1,7 @@
 use std::{collections::HashMap, fmt::Display};
 
+use strum_macros::EnumIter;
+
 use inkwell::AddressSpace;
 
 use crate::{
@@ -38,7 +40,7 @@ pub enum TraitType {
     Ne,
 }
 
-#[derive(Hash, PartialEq, Eq, PartialOrd, Ord, Clone, Debug)]
+#[derive(Hash, PartialEq, Eq, PartialOrd, Ord, Clone, Debug, EnumIter)]
 pub enum BasicType {
     I8,
     I16,
@@ -161,6 +163,13 @@ pub fn init_extern_fns(codegen: &mut CodeGen) {
             .into()],
         false,
     );
+
+    let p = codegen
+    .context
+    .i8_type()
+    .ptr_type(AddressSpace::from(0));
+    println!("{printftp:?}");
+
     let printf =
         codegen
             .module

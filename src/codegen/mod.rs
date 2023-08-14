@@ -22,6 +22,7 @@ use crate::{
     utils::{FileInfo, Position},
     Flags,
 };
+use strum::IntoEnumIterator;
 
 pub struct BindingTags {
     pub is_mut: bool,
@@ -322,20 +323,7 @@ impl<'a> CodeGen<'a> {
         let data = name.data.get_data();
         let name_str = data.raw.get("value").unwrap();
 
-        for basictype in vec![
-            BasicType::I8,
-            BasicType::I16,
-            BasicType::I32,
-            BasicType::I64,
-            BasicType::I128,
-            BasicType::Bool,
-            BasicType::U8,
-            BasicType::U16,
-            BasicType::U32,
-            BasicType::U64,
-            BasicType::U128,
-            BasicType::Void,
-        ] {
+        for basictype in BasicType::iter() {
             if name_str == &basictype.to_string() {
                 return builtins.get(&basictype).unwrap().clone();
             }
@@ -943,7 +931,18 @@ impl<'a> CodeGen<'a> {
         } else {
             Data {
                 data: if binding.0.is_some() {
-                    Some(self.builder.build_load(binding.0.unwrap(), ""))
+                    let itp = Self::kestrel_to_inkwell_tp(self.context, &binding.1);
+                    match itp {
+                        AnyTypeEnum::ArrayType(tp) => Some(self.builder.build_load(tp, binding.0.unwrap(), "")),
+                        AnyTypeEnum::FloatType(tp) => Some(self.builder.build_load(tp, binding.0.unwrap(), "")),
+                        AnyTypeEnum::FunctionType(_) => unimplemented!(), //TODO
+                        AnyTypeEnum::IntType(tp) => Some(self.builder.build_load(tp, binding.0.unwrap(), "")),
+                        AnyTypeEnum::PointerType(tp) => Some(self.builder.build_load(tp, binding.0.unwrap(), "")),
+                        AnyTypeEnum::StructType(tp) => Some(self.builder.build_load(tp, binding.0.unwrap(), "")),
+                        AnyTypeEnum::VectorType(tp) => Some(self.builder.build_load(tp, binding.0.unwrap(), "")),
+                        AnyTypeEnum::VoidType(_) => unreachable!(),
+                    }
+                    //match 
                 } else {
                     None
                 },
@@ -1362,6 +1361,7 @@ pub fn generate_code(
 
     let mut res: std::process::Output = std::process::Command::new("llc")
         .arg("a.ll")
+        .arg("-opaque-pointers")
         .output()
         .expect("Failed to execute llc");
     if !res.status.success() {

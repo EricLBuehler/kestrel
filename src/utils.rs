@@ -31,6 +31,7 @@ pub fn print_string(codegen: &CodeGen, message: &str) {
 
     let ptr = unsafe {
         codegen.builder.build_gep(
+            str.get_type(),
             global.as_pointer_value(),
             &[
                 codegen.context.i32_type().const_zero(),
@@ -39,6 +40,7 @@ pub fn print_string(codegen: &CodeGen, message: &str) {
             "",
         )
     };
+    println!("{:?}", ptr.get_type());
 
     codegen.builder.build_call(
         *codegen.extern_fns.get("printf").unwrap(),
