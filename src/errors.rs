@@ -72,8 +72,8 @@ pub fn raise_error(
 ) -> ! {
     let header: String = format!("error[E{:0>3}]: {}", errtp as u8 + 1, error);
     let location: String = format!("{}:{}:{}", info.name, pos.line + 1, pos.startcol + 1);
-    println!("{}", header.red().bold());
-    println!("{}", location.red());
+    eprintln!("{}", header.red().bold());
+    eprintln!("{}", location.red());
 
     let collected = info.data.clone().collect::<Vec<_>>();
     let lines = Vec::from_iter(collected.split(|num| *num == '\n'));
@@ -92,8 +92,8 @@ pub fn raise_error(
         }
     }
     let linestr = (pos.line + 1).to_string().blue().bold();
-    println!("{} | {}", linestr, snippet);
-    println!("{} | {}", " ".repeat(linestr.len()), arrows.green());
+    eprintln!("{} | {}", linestr, snippet);
+    eprintln!("{} | {}", " ".repeat(linestr.len()), arrows.green());
     std::process::exit(1);
 }
 
@@ -113,12 +113,12 @@ pub fn raise_error_multi(
         let location: String = format!("{}:{}:{}", info.name, pos.line + 1, pos.startcol + 1);
         if i == 0 {
             let header: String = format!("error[E{:0>3}]: {}", errtp.clone() as u8 + 1, error);
-            println!("{}", header.red().bold());
+            eprintln!("{}", header.red().bold());
         } else {
             let header: String = error.to_string();
-            println!("{}", header.yellow());
+            eprintln!("{}", header.yellow());
         }
-        println!("{}", location.red());
+        eprintln!("{}", location.red());
 
         let collected = info.data.clone().collect::<Vec<_>>();
         let lines = Vec::from_iter(collected.split(|num| *num == '\n'));
@@ -137,8 +137,8 @@ pub fn raise_error_multi(
             }
         }
         let linestr = (pos.line + 1).to_string().blue().bold();
-        println!("{} | {}", linestr, snippet);
-        println!("{} | {}", " ".repeat(linestr.len()), arrows.green());
+        eprintln!("{} | {}", linestr, snippet);
+        eprintln!("{} | {}", " ".repeat(linestr.len()), arrows.green());
     }
     std::process::exit(1);
 }

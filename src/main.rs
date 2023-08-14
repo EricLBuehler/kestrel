@@ -73,8 +73,8 @@ fn main() {
     let file_data = match res {
         Ok(_) => res.unwrap(),
         Err(_) => {
-            println!("File '{}' is unable to be opened or read.", args.name);
-            return;
+            eprintln!("File '{}' is unable to be opened or read.", args.name);
+            std::process::exit(1);
         }
     };
 

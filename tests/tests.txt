@@ -1,0 +1,7 @@
+Failing function definition
+fndef.ke
+error[E001]: Invalid or unexpected token (expected 'lparen', got 'lcurly').
+./tests/fndef.ke:1:5
+1 | fn x{
+  |     ^
+=-=

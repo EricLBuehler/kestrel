@@ -7,18 +7,22 @@ The Kestrel borrow checker ensures that several invariants are maintained:
 
 For example, this code is valid:
 ```
-let 😀🤠 = 1+2
-let mut 😐 = &😀🤠
-😐 = &100
-let 😐😐 = &😀🤠
+fn main() {
+    let 😀🤠 = 1+2
+    let mut 😐 = &😀🤠
+    😐 = &100
+    let 😐😐 = &😀🤠
+}
 ```
 
 This also works becuase of to the fact that the references to `😀🤠` on line 4 are essentially the same reference - and not separate. If they were separate this would cause a compilation error.
 ```
-let 😀🤠 = 1+2
-let mut 😐 = &😀🤠
-😐 = &100
-let 😐😐 = &&😀🤠
+fn main() {
+    let 😀🤠 = 1+2
+    let mut 😐 = &😀🤠
+    😐 = &100
+    let 😐😐 = &&😀🤠
+}
 ```
 
 The borrow checker runs before code generation. It works by converting the program into MIR (Mid Intermediate Representation), which is a simplified form of Kestrel that is boiled down to a set of simple instructions akin to assembly. These enable the borrow checker to analyze the program from a simpler view. See the .mir output files.

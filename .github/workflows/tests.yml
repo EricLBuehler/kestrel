@@ -33,3 +33,5 @@ jobs:
       run: ./kestrel program.ke -fno-ou-checks
     - name: Not optimized and all flags
       run: ./kestrel program.ke -fno-ou-checks -fsanitize
+    - name: Kestrel and Doc tests
+      run: python3 tests/tester.py
