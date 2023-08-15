@@ -1,5 +1,7 @@
 use std::{collections::HashMap, fmt::Display, fs::OpenOptions, io::Write};
 
+use indexmap::IndexMap;
+
 use crate::{
     codegen::{BindingTags, CodegenFunctions},
     errors::{raise_error, ErrorType},
@@ -178,13 +180,14 @@ pub fn check(this: &mut Mir, instructions: &mut Vec<MirInstruction>) {
     let (mut namespace, references) = check::generate_lifetimes(this, instructions);
     check::check_references(this, instructions, &mut namespace, &references);
     check::check_return(this, instructions);
-    write_mir(this, instructions.clone(), &mut namespace);
+    write_mir(this, instructions.clone(), &mut namespace, &references);
 }
 
 pub fn write_mir(
     this: &mut Mir,
     instructions: Vec<MirInstruction<'_>>,
     namespace: &mut MirNamespace,
+    references: &IndexMap<usize, MirReference>,
 ) {
     let mut out = String::new();
 
@@ -216,6 +219,16 @@ pub fn write_mir(
 
         out.push('\n');
     }
+
+    
+    out.push('\n');
+    
+    for (i, (_right, _reftype, life, _)) in references {
+        out.push_str("    ");
+        out.push_str(&format!("(ref .{:<5} {:} {life}", format!("{})", i), "&".repeat(instructions.get(*i).as_ref().unwrap().tp.as_ref().unwrap().ref_n)));
+        out.push('\n');
+    }
+    
     out.push('}');
 
     let mut f = OpenOptions::new()
