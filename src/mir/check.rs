@@ -105,8 +105,11 @@ pub fn generate_lifetimes(
                 let left_tp = instructions.get(*left).unwrap().tp.as_ref().unwrap();
                 let right_tp = instructions.get(*right).unwrap().tp.as_ref().unwrap();
                 //TODO: _res will be used in the future with custom lifetimes
-                let _res = if let Some(Trait::Add { code: _, skeleton }) =
-                    left_tp.traits.get(&TraitType::Add)
+                let _res = if let Some(Trait::Add {
+                    code: _,
+                    skeleton,
+                    ref_n: _,
+                }) = left_tp.traits.get(&TraitType::Add)
                 {
                     skeleton(
                         this,
@@ -355,8 +358,11 @@ pub fn generate_lifetimes(
                 let left_tp = instructions.get(*left).unwrap().tp.as_ref().unwrap();
                 let right_tp = instructions.get(*right).unwrap().tp.as_ref().unwrap();
                 //TODO: _res will be used in the future with custom lifetimes
-                let _res = if let Some(Trait::Eq { code: _, skeleton }) =
-                    left_tp.traits.get(&TraitType::Eq)
+                let _res = if let Some(Trait::Eq {
+                    code: _,
+                    skeleton,
+                    ref_n: _,
+                }) = left_tp.traits.get(&TraitType::Eq)
                 {
                     skeleton(
                         this,
@@ -372,8 +378,11 @@ pub fn generate_lifetimes(
                 let left_tp = instructions.get(*left).unwrap().tp.as_ref().unwrap();
                 let right_tp = instructions.get(*right).unwrap().tp.as_ref().unwrap();
                 //TODO: _res will be used in the future with custom lifetimes
-                let _res = if let Some(Trait::Ne { code: _, skeleton }) =
-                    left_tp.traits.get(&TraitType::Ne)
+                let _res = if let Some(Trait::Ne {
+                    code: _,
+                    skeleton,
+                    ref_n: _,
+                }) = left_tp.traits.get(&TraitType::Ne)
                 {
                     skeleton(
                         this,

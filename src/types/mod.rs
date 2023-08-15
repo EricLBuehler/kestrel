@@ -13,21 +13,49 @@ pub mod builtins;
 pub type BuiltinTypes<'a> = HashMap<BasicType, Type<'a>>;
 pub type Traits<'a> = HashMap<TraitType, Trait<'a>>;
 
+pub fn implements_trait(tp: &Type<'_>, trait_tp: TraitType) -> bool {
+    let trait_opt = tp.traits.get(&trait_tp);
+    trait_opt.is_some()
+        && match trait_opt.unwrap() {
+            Trait::Add {
+                code: _,
+                skeleton: _,
+                ref_n,
+            } => tp.ref_n == *ref_n,
+            Trait::Eq {
+                code: _,
+                skeleton: _,
+                ref_n,
+            } => tp.ref_n == *ref_n,
+            Trait::Ne {
+                code: _,
+                skeleton: _,
+                ref_n,
+            } => tp.ref_n == *ref_n,
+            Trait::Copy { ref_n } => tp.ref_n == *ref_n,
+        }
+}
+
 #[derive(Hash, PartialEq, Eq, PartialOrd, Ord, Clone, Debug)]
 pub enum Trait<'a> {
     Add {
         code: fn(&mut CodeGen<'a>, &Position, Data<'a>, Data<'a>) -> Data<'a>,
         skeleton: fn(&mut Mir, &Position, Type<'a>, Type<'a>) -> Type<'a>,
+        ref_n: usize,
     },
     Eq {
         code: fn(&mut CodeGen<'a>, &Position, Data<'a>, Data<'a>) -> Data<'a>,
         skeleton: fn(&mut Mir, &Position, Type<'a>, Type<'a>) -> Type<'a>,
+        ref_n: usize,
     },
     Ne {
         code: fn(&mut CodeGen<'a>, &Position, Data<'a>, Data<'a>) -> Data<'a>,
         skeleton: fn(&mut Mir, &Position, Type<'a>, Type<'a>) -> Type<'a>,
+        ref_n: usize,
     },
-    Copy,
+    Copy {
+        ref_n: usize,
+    },
 }
 
 #[derive(Hash, PartialEq, Eq, PartialOrd, Ord, Clone, Debug)]

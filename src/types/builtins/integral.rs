@@ -225,6 +225,7 @@ pub fn init_integral(codegen: &mut CodeGen) {
                     Trait::Add {
                         code: integral_add,
                         skeleton: integral_skeleton,
+                        ref_n: 0,
                     },
                 ),
                 (
@@ -232,6 +233,7 @@ pub fn init_integral(codegen: &mut CodeGen) {
                     Trait::Eq {
                         code: integral_eq,
                         skeleton: integral_skeleton,
+                        ref_n: 0,
                     },
                 ),
                 (
@@ -239,9 +241,10 @@ pub fn init_integral(codegen: &mut CodeGen) {
                     Trait::Ne {
                         code: integral_ne,
                         skeleton: integral_skeleton,
+                        ref_n: 0,
                     },
                 ),
-                (TraitType::Copy, Trait::Copy),
+                (TraitType::Copy, Trait::Copy { ref_n: 0 }),
             ]),
             qualname: format!("std::{basictype}"),
             lifetime: Lifetime::Static,

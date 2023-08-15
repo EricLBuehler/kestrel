@@ -4,7 +4,7 @@ use crate::{
     codegen::{BindingTags, CodegenFunctions},
     errors::{raise_error, ErrorType},
     parser::nodes::{Node, NodeType, OpType},
-    types::{BasicType, BuiltinTypes, Lifetime, Trait, TraitType, Type},
+    types::{implements_trait, BasicType, BuiltinTypes, Lifetime, Trait, TraitType, Type},
     utils::{FileInfo, Position},
 };
 
@@ -675,11 +675,26 @@ impl<'a> Mir<'a> {
 
         let t = left.1.traits.get(&traittp);
 
-        let res = if let Some(Trait::Add { code: _, skeleton }) = t {
+        let res = if let Some(Trait::Add {
+            code: _,
+            skeleton,
+            ref_n: _,
+        }) = t
+        {
             skeleton(self, &node.pos, left.1, right.1)
-        } else if let Some(Trait::Eq { code: _, skeleton }) = t {
+        } else if let Some(Trait::Eq {
+            code: _,
+            skeleton,
+            ref_n: _,
+        }) = t
+        {
             skeleton(self, &node.pos, left.1, right.1)
-        } else if let Some(Trait::Ne { code: _, skeleton }) = t {
+        } else if let Some(Trait::Ne {
+            code: _,
+            skeleton,
+            ref_n: _,
+        }) = t
+        {
             skeleton(self, &node.pos, left.1, right.1)
         } else {
             raise_error(
@@ -778,7 +793,7 @@ impl<'a> Mir<'a> {
             last_use: None,
         });
 
-        if tp.traits.contains_key(&TraitType::Copy) {
+        if implements_trait(&tp, TraitType::Copy) {
             self.instructions.push(MirInstruction {
                 instruction: RawMirInstruction::Copy(self.instructions.len() - 1),
                 pos: node.pos.clone(),

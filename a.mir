@@ -9,10 +9,9 @@ fn main: std::void {
     .7:   ref .6 -> &std::i32['7 .7 => .9]
     .8:   own .7
     .9:   store y .7 -> std::void['8 .9 => .9]
-    .10:  declare z['9 .10 => .15]
+    .10:  declare z['9 .10 => .14]
     .11:  load y -> &std::i32['10 .11 => .12]  dropbinding y
-    .12:  copy .11 -> &std::i32['11 .12 => .13]
-    .13:  ref .12 -> &&std::i32['12 .13 => .15]
-    .14:  own .13
-    .15:  store z .13 -> std::void['13 .15 => .15]  dropbinding z
+    .12:  ref .11 -> &&std::i32['11 .12 => .14]
+    .13:  own .12
+    .14:  store z .12 -> std::void['12 .14 => .14]  dropbinding z
 }

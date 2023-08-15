@@ -865,11 +865,26 @@ impl<'a> CodeGen<'a> {
 
         let t = left.tp.traits.get(&traittp);
 
-        if let Some(Trait::Add { code, skeleton: _ }) = t {
+        if let Some(Trait::Add {
+            code,
+            skeleton: _,
+            ref_n: _,
+        }) = t
+        {
             code(self, &node.pos, left, right)
-        } else if let Some(Trait::Eq { code, skeleton: _ }) = t {
+        } else if let Some(Trait::Eq {
+            code,
+            skeleton: _,
+            ref_n: _,
+        }) = t
+        {
             code(self, &node.pos, left, right)
-        } else if let Some(Trait::Ne { code, skeleton: _ }) = t {
+        } else if let Some(Trait::Ne {
+            code,
+            skeleton: _,
+            ref_n: _,
+        }) = t
+        {
             code(self, &node.pos, left, right)
         } else {
             unreachable!()
