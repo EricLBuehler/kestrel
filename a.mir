@@ -15,6 +15,6 @@ fn main: std::void {
     .13:  own .12
     .14:  store z .12 -> std::void['12 .14 => .14]  dropbinding z
 
-    (ref .7)    & ['6 .7 => .11]
-    (ref .12)   && ['10 .12 => .14]
+    & ref .7 ['6 .7 => .11]
+    && ref .12 ['10 .12 => .14]
 }

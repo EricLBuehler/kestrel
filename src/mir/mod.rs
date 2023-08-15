@@ -225,7 +225,7 @@ pub fn write_mir(
     
     for (i, (_right, _reftype, life, _)) in references {
         out.push_str("    ");
-        out.push_str(&format!("(ref .{:<5} {:} {life}", format!("{})", i), "&".repeat(instructions.get(*i).as_ref().unwrap().tp.as_ref().unwrap().ref_n)));
+        out.push_str(&format!("{} ref .{} {life}", "&".repeat(instructions.get(*i).as_ref().unwrap().tp.as_ref().unwrap().ref_n), i));
         out.push('\n');
     }
     
