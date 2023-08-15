@@ -332,6 +332,8 @@ pub fn generate_lifetimes(
                     }
                 }
 
+                lifetime_num += 1;
+
                 let res: MirReference = (
                     rt,
                     ReferenceType::Immutable,
