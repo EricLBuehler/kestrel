@@ -29,6 +29,9 @@ struct Args {
 
     #[clap(long, short, action)]
     optimize: bool,
+
+    #[clap(long = "dm", action)]
+    debug_mir: bool,
 }
 
 #[derive(PartialEq, Eq, PartialOrd, Ord, Debug, Clone)]
@@ -107,6 +110,7 @@ fn main() {
         &file_info,
         flags,
         args.optimize,
+        args.debug_mir,
     )
     .expect("Code generation error.");
 }

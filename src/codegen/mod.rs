@@ -59,6 +59,7 @@ pub struct CodeGen<'a> {
 
     pub flags: Vec<Flags>,
     pub optimized: bool,
+    pub debug_mir: bool,
 }
 
 #[derive(Debug)]
@@ -1066,6 +1067,7 @@ impl<'a> CodeGen<'a> {
                 self.functions.clone(),
                 name.clone(),
                 node.pos.clone(),
+                self.debug_mir,
             );
             let mut instructions = mir.generate(fnnode.nodearr.unwrap());
             mir::check(&mut mir, &mut instructions);
@@ -1187,6 +1189,7 @@ impl<'a> CodeGen<'a> {
                 self.functions.clone(),
                 name.into(),
                 node.pos.clone(),
+                self.debug_mir,
             );
             let mut instructions = mir.generate(fnnode.nodearr.unwrap());
             mir::check(&mut mir, &mut instructions);
@@ -1253,6 +1256,7 @@ impl<'a> CodeGen<'a> {
                 endcol: 0,
                 opcol: None,
             },
+            self.debug_mir,
         );
         let mut instructions = mir.generate(&vec![]);
         mir::check(&mut mir, &mut instructions);
@@ -1293,6 +1297,7 @@ pub fn generate_code(
     info: &FileInfo,
     flags: Vec<Flags>,
     optimize: bool,
+    debug_mir: bool,
 ) -> Result<(), Box<dyn Error>> {
     let context: inkwell::context::Context = Context::create();
     let module: inkwell::module::Module = context.create_module(module_name);
@@ -1344,6 +1349,7 @@ pub fn generate_code(
         namespaces: HashMap::new(),
         flags: flags.clone(),
         optimized: optimize,
+        debug_mir,
     };
 
     let f = OpenOptions::new()

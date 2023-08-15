@@ -10,7 +10,10 @@ use crate::{
     utils::{FileInfo, Position},
 };
 
+use self::mirxplore::explore;
+
 mod check;
+mod mirxplore;
 
 #[allow(dead_code)]
 pub struct Mir<'a> {
@@ -21,6 +24,7 @@ pub struct Mir<'a> {
     builtins: BuiltinTypes<'a>,
     functions: CodegenFunctions<'a>,
     namespace: HashMap<String, (Type<'a>, BindingTags)>,
+    debug_mir: bool,
 }
 
 #[derive(Clone, Debug)]
@@ -164,6 +168,7 @@ pub fn new<'a>(
     functions: CodegenFunctions<'a>,
     fn_name: String,
     fn_pos: Position,
+    debug_mir: bool,
 ) -> Mir<'a> {
     Mir {
         info,
@@ -173,6 +178,7 @@ pub fn new<'a>(
         builtins,
         functions,
         namespace: HashMap::new(),
+        debug_mir,
     }
 }
 
@@ -180,25 +186,22 @@ pub fn check(this: &mut Mir, instructions: &mut Vec<MirInstruction>) {
     let (mut namespace, references) = check::generate_lifetimes(this, instructions);
     check::check_references(this, instructions, &mut namespace, &references);
     check::check_return(this, instructions);
-    write_mir(this, instructions.clone(), &mut namespace, &references);
+    if !this.debug_mir {
+        write_mir(this, instructions.clone(), &mut namespace, &references);
+    } else {
+        explore(instructions, &mut namespace, &references);
+    }
 }
 
-pub fn write_mir(
-    this: &mut Mir,
-    instructions: Vec<MirInstruction<'_>>,
+pub fn output_mir(
+    instructions: &[MirInstruction<'_>],
     namespace: &mut MirNamespace,
-    references: &IndexMap<usize, MirReference>,
+    out: &mut String,
+    start: &usize,
 ) {
-    let mut out = String::new();
-
-    out.push_str(&format!(
-        "fn {}: {} {{\n",
-        this.fn_name,
-        this.functions.get(&this.fn_name).unwrap().1 .1.qualname()
-    ));
     for (i, instruction) in instructions.iter().enumerate() {
         out.push_str("    ");
-        out.push_str(&format!(".{:<5}", format!("{}:", i)));
+        out.push_str(&format!(".{:<5}", format!("{}:", i + start)));
         out.push_str(&instruction.instruction.to_string());
         if let RawMirInstruction::Declare { name, is_mut: _ } = &instruction.instruction {
             out.push_str(&namespace.get(name).unwrap().2.lifetime.to_string());
@@ -219,16 +222,45 @@ pub fn write_mir(
 
         out.push('\n');
     }
+}
 
-    
+pub fn write_mir(
+    this: &mut Mir,
+    instructions: Vec<MirInstruction<'_>>,
+    namespace: &mut MirNamespace,
+    references: &IndexMap<usize, MirReference>,
+) {
+    let mut out = String::new();
+
+    out.push_str(&format!(
+        "fn {}: {} {{\n",
+        this.fn_name,
+        this.functions.get(&this.fn_name).unwrap().1 .1.qualname()
+    ));
+
+    output_mir(&instructions, namespace, &mut out, &0);
+
     out.push('\n');
-    
+
     for (i, (_right, _reftype, life, _)) in references {
         out.push_str("    ");
-        out.push_str(&format!("{} ref .{} {life}", "&".repeat(instructions.get(*i).as_ref().unwrap().tp.as_ref().unwrap().ref_n), i));
+        out.push_str(&format!(
+            "{} ref .{} {life}",
+            "&".repeat(
+                instructions
+                    .get(*i)
+                    .as_ref()
+                    .unwrap()
+                    .tp
+                    .as_ref()
+                    .unwrap()
+                    .ref_n
+            ),
+            i
+        ));
         out.push('\n');
     }
-    
+
     out.push('}');
 
     let mut f = OpenOptions::new()
