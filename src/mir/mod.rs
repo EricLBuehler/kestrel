@@ -1,7 +1,5 @@
 use std::{collections::HashMap, fmt::Display, fs::OpenOptions, io::Write};
 
-use indexmap::IndexMap;
-
 use crate::{
     codegen::{BindingTags, CodegenFunctions},
     errors::{raise_error, ErrorType},
@@ -23,7 +21,7 @@ pub struct Mir<'a> {
     namespace: HashMap<String, (Type<'a>, BindingTags)>,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum RawMirInstruction {
     I8(String),
     I16(String),
@@ -42,7 +40,6 @@ pub enum RawMirInstruction {
     Load(String),
     Reference(usize),
     Copy(usize),
-    DropBinding(String, usize),
     Bool(bool),
     Return(usize),
     CallFunction(String),
@@ -55,6 +52,7 @@ pub struct MirInstruction<'a> {
     instruction: RawMirInstruction,
     pos: Position,
     tp: Option<Type<'a>>,
+    last_use: Option<String>,
 }
 
 type MirResult<'a> = (usize, Type<'a>);
@@ -77,7 +75,7 @@ type MirReference = (usize, ReferenceType, Lifetime, ReferenceBase); //(right, t
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum ReferenceBase {
-    I32(Lifetime),
+    Literal(Lifetime),
     Load {
         borrowed_life: Lifetime,
         value_life: Lifetime,
@@ -123,9 +121,6 @@ impl Display for RawMirInstruction {
             }
             RawMirInstruction::Copy(right) => {
                 write!(f, "copy .{right}")
-            }
-            RawMirInstruction::DropBinding(name, _) => {
-                write!(f, "dropbinding {name}")
             }
             RawMirInstruction::Bool(value) => {
                 write!(f, "bool {value}")
@@ -180,22 +175,17 @@ pub fn new<'a>(
 }
 
 pub fn check(this: &mut Mir, instructions: &mut Vec<MirInstruction>) {
-    let (mut namespace, references, bindings_drop) = check::generate_lifetimes(this, instructions);
+    let (mut namespace, references) = check::generate_lifetimes(this, instructions);
     check::check_references(this, instructions, &mut namespace, &references);
     check::check_return(this, instructions);
-    write_mir(this, bindings_drop, instructions.clone(), &mut namespace);
+    write_mir(this, instructions.clone(), &mut namespace);
 }
 
 pub fn write_mir<'a>(
     this: &mut Mir,
-    binding_drops: IndexMap<usize, MirInstruction<'a>>,
-    mut instructions: Vec<MirInstruction<'a>>,
+    instructions: Vec<MirInstruction<'a>>,
     namespace: &mut MirNamespace,
 ) {
-    for (k, v) in binding_drops {
-        instructions.insert(k, v);
-    }
-
     let mut out = String::new();
 
     out.push_str(&format!(
@@ -210,14 +200,20 @@ pub fn write_mir<'a>(
         if let RawMirInstruction::Declare { name, is_mut: _ } = &instruction.instruction {
             out.push_str(&namespace.get(name).unwrap().2.lifetime.to_string());
         }
-        if let RawMirInstruction::DropBinding(_, _) = &instruction.instruction {
-        } else if instruction.tp.is_some() {
+
+        if instruction.tp.is_some() {
             out.push_str(&format!(
                 " -> {}",
                 instruction.tp.as_ref().unwrap().qualname()
             ));
             out.push_str(&format!("{}", instruction.tp.as_ref().unwrap().lifetime));
         }
+
+        if instruction.last_use.is_some() {
+            out.push_str("  dropbinding ");
+            out.push_str(&instruction.last_use.as_ref().unwrap());
+        }
+            
         out.push('\n');
     }
     out.push('}');
@@ -299,6 +295,7 @@ impl<'a> Mir<'a> {
             ),
             pos: node.pos.clone(),
             tp: Some(self.builtins.get(&BasicType::I8).unwrap().clone()),
+            last_use: None,
         });
 
         (
@@ -336,6 +333,7 @@ impl<'a> Mir<'a> {
             ),
             pos: node.pos.clone(),
             tp: Some(self.builtins.get(&BasicType::I16).unwrap().clone()),
+            last_use: None,
         });
 
         (
@@ -373,6 +371,7 @@ impl<'a> Mir<'a> {
             ),
             pos: node.pos.clone(),
             tp: Some(self.builtins.get(&BasicType::I32).unwrap().clone()),
+            last_use: None,
         });
 
         (
@@ -410,6 +409,7 @@ impl<'a> Mir<'a> {
             ),
             pos: node.pos.clone(),
             tp: Some(self.builtins.get(&BasicType::I64).unwrap().clone()),
+            last_use: None,
         });
 
         (
@@ -447,6 +447,7 @@ impl<'a> Mir<'a> {
             ),
             pos: node.pos.clone(),
             tp: Some(self.builtins.get(&BasicType::I128).unwrap().clone()),
+            last_use: None,
         });
 
         (
@@ -484,6 +485,7 @@ impl<'a> Mir<'a> {
             ),
             pos: node.pos.clone(),
             tp: Some(self.builtins.get(&BasicType::U8).unwrap().clone()),
+            last_use: None,
         });
 
         (
@@ -521,6 +523,7 @@ impl<'a> Mir<'a> {
             ),
             pos: node.pos.clone(),
             tp: Some(self.builtins.get(&BasicType::U16).unwrap().clone()),
+            last_use: None,
         });
 
         (
@@ -558,6 +561,7 @@ impl<'a> Mir<'a> {
             ),
             pos: node.pos.clone(),
             tp: Some(self.builtins.get(&BasicType::U32).unwrap().clone()),
+            last_use: None,
         });
 
         (
@@ -595,6 +599,7 @@ impl<'a> Mir<'a> {
             ),
             pos: node.pos.clone(),
             tp: Some(self.builtins.get(&BasicType::U64).unwrap().clone()),
+            last_use: None,
         });
 
         (
@@ -632,6 +637,7 @@ impl<'a> Mir<'a> {
             ),
             pos: node.pos.clone(),
             tp: Some(self.builtins.get(&BasicType::U128).unwrap().clone()),
+            last_use: None,
         });
 
         (
@@ -647,6 +653,7 @@ impl<'a> Mir<'a> {
             ),
             pos: node.pos.clone(),
             tp: Some(self.builtins.get(&BasicType::Bool).unwrap().clone()),
+            last_use: None,
         });
 
         (
@@ -705,6 +712,7 @@ impl<'a> Mir<'a> {
             instruction,
             pos: node.pos.clone(),
             tp: Some(res.clone()),
+            last_use: None,
         });
 
         (self.instructions.len() - 1, res)
@@ -713,7 +721,6 @@ impl<'a> Mir<'a> {
     fn generate_let(&mut self, node: &Node) -> MirResult<'a> {
         let letnode = node.data.get_data();
         let name = letnode.raw.get("name").unwrap();
-        let right = self.generate_expr(letnode.nodes.get("expr").unwrap());
         let is_mut = letnode.booleans.get("is_mut").unwrap();
 
         self.instructions.push(MirInstruction {
@@ -723,11 +730,16 @@ impl<'a> Mir<'a> {
             },
             pos: node.pos.clone(),
             tp: None,
+            last_use: None,
         });
+
+        let right = self.generate_expr(letnode.nodes.get("expr").unwrap());
+
         self.instructions.push(MirInstruction {
             instruction: RawMirInstruction::Own(right.0),
             pos: node.pos.clone(),
             tp: None,
+            last_use: None,
         });
         self.instructions.push(MirInstruction {
             instruction: RawMirInstruction::Store {
@@ -736,6 +748,7 @@ impl<'a> Mir<'a> {
             },
             pos: node.pos.clone(),
             tp: Some(self.builtins.get(&BasicType::Void).unwrap().clone()),
+            last_use: None,
         });
 
         self.namespace
@@ -771,12 +784,14 @@ impl<'a> Mir<'a> {
             instruction: RawMirInstruction::Load(name.to_string()),
             pos: node.pos.clone(),
             tp: Some(tp.clone()),
+            last_use: None,
         });
 
         self.instructions.push(MirInstruction {
             instruction: RawMirInstruction::Copy(self.instructions.len() - 1),
             pos: node.pos.clone(),
             tp: Some(tp.clone()),
+            last_use: None,
         });
 
         (
@@ -827,6 +842,7 @@ impl<'a> Mir<'a> {
             instruction: RawMirInstruction::Own(right.0),
             pos: node.pos.clone(),
             tp: None,
+            last_use: None,
         });
         self.instructions.push(MirInstruction {
             instruction: RawMirInstruction::Store {
@@ -835,6 +851,7 @@ impl<'a> Mir<'a> {
             },
             pos: node.pos.clone(),
             tp: Some(self.builtins.get(&BasicType::Void).unwrap().clone()),
+            last_use: None,
         });
 
         (
@@ -853,6 +870,7 @@ impl<'a> Mir<'a> {
             instruction: RawMirInstruction::Reference(expr.0),
             pos: node.pos.clone(),
             tp: Some(expr.1.clone()),
+            last_use: None,
         });
 
         (self.instructions.len() - 1, expr.1.clone())
@@ -876,11 +894,13 @@ impl<'a> Mir<'a> {
             instruction: RawMirInstruction::Own(expr.0),
             pos: node.pos.clone(),
             tp: None,
+            last_use: None,
         });
         self.instructions.push(MirInstruction {
             instruction: RawMirInstruction::Return(expr.0),
             pos: node.pos.clone(),
             tp: Some(expr.1.clone()),
+            last_use: None,
         });
 
         (self.instructions.len() - 1, expr.1.clone())
@@ -898,6 +918,7 @@ impl<'a> Mir<'a> {
                     instruction: RawMirInstruction::CallFunction(name),
                     pos: node.pos.clone(),
                     tp: Some(func.1 .1.clone()),
+                    last_use: None,
                 });
             }
             None => {

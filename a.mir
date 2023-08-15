@@ -1,68 +1,18 @@
 fn main: std::void {
-    .0:   u64 1 -> std::u64['1 .0 => .2]
-    .1:   u64 2 -> std::u64['2 .1 => .2]
-    .2:   add .0 .1 -> std::u64['3 .2 => .5]
-    .3:   declare α['4 .3 => .16]
-    .4:   own .2
-    .5:   store α .2 -> std::void['5 .5 => .5]
-    .6:   load α -> std::u64['6 .6 => .7]
-    .7:   copy .6 -> std::u64['7 .7 => .8]
-    .8:   ref .7 -> &std::u64['9 .8 => .11]
-    .9:   declare mut β['10 .9 => .15]
-    .10:  own .8
-    .11:  store β .8 -> std::void['11 .11 => .11]
-    .12:  u64 100 -> std::u64['12 .12 => .13]
-    .13:  ref .12 -> &std::u64['14 .13 => .15]
+    .0:   declare x['1 .0 => .5]
+    .1:   i32 123 -> std::i32['2 .1 => .3]
+    .2:   own .1
+    .3:   store x .1 -> std::void['3 .3 => .3]
+    .4:   declare y['4 .4 => .11]
+    .5:   load x -> std::i32['5 .5 => .6]  dropbinding x
+    .6:   copy .5 -> std::i32['6 .6 => .7]
+    .7:   ref .6 -> &std::i32['7 .7 => .9]
+    .8:   own .7
+    .9:   store y .7 -> std::void['8 .9 => .9]
+    .10:  declare z['9 .10 => .15]
+    .11:  load y -> &std::i32['10 .11 => .12]  dropbinding y
+    .12:  copy .11 -> &std::i32['11 .12 => .13]
+    .13:  ref .12 -> &&std::i32['12 .13 => .15]
     .14:  own .13
-    .15:  store β .13 -> std::void['15 .15 => .15]
-    .16:  dropbinding β
-    .17:  load α -> std::u64['16 .16 => .17]
-    .18:  dropbinding α
-    .19:  copy .16 -> std::u64['17 .17 => .18]
-    .20:  ref .17 -> &std::u64['19 .18 => .19]
-    .21:  ref .18 -> &&std::u64['21 .19 => .22]
-    .22:  declare γ['22 .20 => .22]
-    .23:  own .19
-    .24:  store γ .19 -> std::void['23 .22 => .22]
-    .25:  dropbinding γ
-    .26:  bool true -> std::bool['24 .23 => .25]
-    .27:  bool false -> std::bool['25 .24 => .25]
-    .28:  add .23 .24 -> std::bool['26 .25 => .28]
-    .29:  declare δ['27 .26 => .28]
-    .30:  own .25
-    .31:  store δ .25 -> std::void['28 .28 => .28]
-    .32:  dropbinding δ
-    .33:  call fn x -> std::bool['29 .29 => .32]
-    .34:  declare a['30 .30 => .37]
-    .35:  own .29
-    .36:  store a .29 -> std::void['31 .32 => .32]
-    .37:  call fn x -> std::bool['32 .33 => .36]
-    .38:  declare b['33 .34 => .39]
-    .39:  own .33
-    .40:  store b .33 -> std::void['34 .36 => .36]
-    .41:  load a -> std::bool['35 .37 => .38]
-    .42:  dropbinding a
-    .43:  copy .37 -> std::bool['36 .38 => .41]
-    .44:  dropbinding b
-    .45:  load b -> std::bool['37 .39 => .40]
-    .46:  copy .39 -> std::bool['38 .40 => .41]
-    .47:  eq .38 .40 -> std::bool['39 .41 => .44]
-    .48:  declare c['40 .42 => .44]
-    .49:  own .41
-    .50:  store c .41 -> std::void['41 .44 => .44]
-    .51:  dropbinding c
-}
-
-fn x: std::bool {
-    .0:   i32 1 -> std::i32['1 .0 => .2]
-    .1:   i32 2 -> std::i32['2 .1 => .2]
-    .2:   ne .0 .1 -> std::i32['3 .2 => .5]
-    .3:   declare res['4 .3 => .6]
-    .4:   own .2
-    .5:   store res .2 -> std::void['5 .5 => .5]
-    .6:   load res -> std::i32['6 .6 => .7]
-    .7:   dropbinding res
-    .8:   copy .6 -> std::i32['7 .7 => .9]
-    .9:   own .7
-    .10:  return .7 -> std::i32['8 .9 => .9]
+    .15:  store z .13 -> std::void['13 .15 => .15]  dropbinding z
 }

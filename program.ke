@@ -1,15 +1,5 @@
 fn main() {
-    let α = 1u64+2u64
-    let mut β = &α
-    β = &100u64
-    let γ = &&α
-    let δ = true+false
-    let a = x()
-    let b = x()
-    let c = a==b
-}
-
-fn x(): bool {
-    let res = 1!=2
-    return res
+    let x = 123
+    let y = &x
+    let z = &y
 }
