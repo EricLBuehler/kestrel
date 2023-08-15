@@ -79,13 +79,10 @@ pub fn calculate_last_use(i: &usize, instructions: &mut Vec<MirInstruction>) -> 
     }
 }
 
-pub fn generate_lifetimes<'a>(
+pub fn generate_lifetimes(
     this: &mut Mir,
-    instructions: &mut Vec<MirInstruction<'a>>,
-) -> (
-    MirNamespace,
-    IndexMap<usize, MirReference>,
-) {
+    instructions: &mut Vec<MirInstruction<'_>>,
+) -> (MirNamespace, IndexMap<usize, MirReference>) {
     let mut namespace: MirNamespace = HashMap::new();
     let mut lifetime_num = 0;
     let mut references = IndexMap::new();
@@ -150,9 +147,7 @@ pub fn generate_lifetimes<'a>(
                     *uses.last().unwrap()
                 };
 
-                instructions.get_mut(
-                    end_mir
-                ).unwrap().last_use = Some(name.clone());
+                instructions.get_mut(end_mir).unwrap().last_use = Some(name.clone());
 
                 namespace.insert(
                     name.clone(),
@@ -298,13 +293,49 @@ pub fn generate_lifetimes<'a>(
                     }
                 }
 
+                let mut last = calculate_last_use(&i, instructions);
+                for j in (i..instructions.len()).rev() {
+                    if let RawMirInstruction::Store { name, right } =
+                        &instructions.get(j).as_ref().unwrap().instruction
+                    {
+                        if right == &i {
+                            let mut last_tmp = None;
+                            for k in (j + 1)..instructions.len() {
+                                if let RawMirInstruction::Store {
+                                    name: other_name,
+                                    right: other_right,
+                                } = &instructions.get(k).as_ref().unwrap().instruction
+                                {
+                                    if right == other_right && name == other_name {
+                                        last_tmp = Some(k);
+                                        break;
+                                    }
+                                }
+                            }
+                            last = last_tmp.unwrap_or(
+                                match namespace.get(name).as_ref().unwrap().2.lifetime {
+                                    Lifetime::ImplicitLifetime {
+                                        name: _,
+                                        start_mir: _,
+                                        end_mir,
+                                    } => end_mir,
+                                    Lifetime::Static => {
+                                        unreachable!();
+                                    }
+                                },
+                            );
+                            break;
+                        }
+                    }
+                }
+
                 let res: MirReference = (
                     rt,
                     ReferenceType::Immutable,
                     Lifetime::ImplicitLifetime {
                         name: lifetime_num.to_string(),
                         start_mir: i,
-                        end_mir: calculate_last_use(&i, instructions),
+                        end_mir: last,
                     },
                     referred_type,
                 );
@@ -312,7 +343,7 @@ pub fn generate_lifetimes<'a>(
                 references.insert(i, res);
             }
 
-            RawMirInstruction::Copy(_) => { }
+            RawMirInstruction::Copy(_) => {}
             RawMirInstruction::Return(right) => {
                 assert_eq!(
                     instructions.get(*right).unwrap().tp.as_ref().unwrap().ref_n,
@@ -411,7 +442,9 @@ pub fn check_references(
                 usize::MAX
             };
 
-            if let RawMirInstruction::Load(ref name) = instructions.get(*right).as_ref().unwrap().instruction {
+            if let RawMirInstruction::Load(ref name) =
+                instructions.get(*right).as_ref().unwrap().instruction
+            {
                 if l1_end > l2_start {
                     raise_error_multi(
                         vec![
@@ -426,22 +459,19 @@ pub fn check_references(
                         &this.info,
                     );
                 }
-            }
-            else {
-                if l1_end > l2_start {
-                    raise_error_multi(
-                        vec![
-                            "Value has multiple immutable references.".into(),
-                            "First reference here.".into(),
-                        ],
-                        ErrorType::MultipleImmutableReferences,
-                        vec![
-                            &instructions.get(*j).unwrap().pos,
-                            &instructions.get(*i).unwrap().pos,
-                        ],
-                        &this.info,
-                    );
-                }
+            } else if l1_end > l2_start {
+                raise_error_multi(
+                    vec![
+                        "Value has multiple immutable references.".into(),
+                        "First reference here.".into(),
+                    ],
+                    ErrorType::MultipleImmutableReferences,
+                    vec![
+                        &instructions.get(*j).unwrap().pos,
+                        &instructions.get(*i).unwrap().pos,
+                    ],
+                    &this.info,
+                );
             }
         }
     }

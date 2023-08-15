@@ -181,9 +181,9 @@ pub fn check(this: &mut Mir, instructions: &mut Vec<MirInstruction>) {
     write_mir(this, instructions.clone(), &mut namespace);
 }
 
-pub fn write_mir<'a>(
+pub fn write_mir(
     this: &mut Mir,
-    instructions: Vec<MirInstruction<'a>>,
+    instructions: Vec<MirInstruction<'_>>,
     namespace: &mut MirNamespace,
 ) {
     let mut out = String::new();
@@ -211,9 +211,9 @@ pub fn write_mir<'a>(
 
         if instruction.last_use.is_some() {
             out.push_str("  dropbinding ");
-            out.push_str(&instruction.last_use.as_ref().unwrap());
+            out.push_str(instruction.last_use.as_ref().unwrap());
         }
-            
+
         out.push('\n');
     }
     out.push('}');
