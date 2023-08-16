@@ -24,7 +24,6 @@ for test in filter(lambda x: len(x), tests.split("=-=")):
 
     check(title, name, expected)   
 
-"""
 for file in os.listdir("docs"):
     data = pathlib.Path(f"docs/{file}").read_text()
 
@@ -32,4 +31,4 @@ for file in os.listdir("docs"):
     for i, code in enumerate(re.findall(pattern, data, re.DOTALL | re.MULTILINE)):
         with open("./tests/tmp.ke", "w") as f:
             f.write(code)
-        check(f"Code snippet #{i} in {file}", "tmp.ke", "")"""
+        check(f"Code snippet #{i} in {file}", "tmp.ke", "")
