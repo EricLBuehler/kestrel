@@ -1,7 +1,18 @@
-Failing function definition
+Expected failing - mangled function definition
 fndef.ke
 error[E001]: Invalid or unexpected token (expected 'lparen', got 'lcurly').
 ./tests/fndef.ke:1:5
 1 | fn x{
   |     ^
+=-=
+Expected failing - overlapping immutable references
+irefoverlap.ke
+error[E009]: Binding 'x' has multiple immutable references.
+./tests/irefoverlap.ke:4:13
+4 |     let z = &y
+  |             ^^         
+First reference here.
+./tests/irefoverlap.ke:3:13
+3 |     let y = &x
+  |             ^^
 =-=

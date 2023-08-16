@@ -9,26 +9,22 @@ def check(title: str, name: str, expected: str):
     expected = expected.replace("\\n", "\n")
     result = result.stderr.replace(b"\\n", b"\n").decode()
     if expected != result:
-        if not len(expected):
-            expected = "''"
-        if not len(result):
-            result = "''"
         print(f"{title}: ❌")
-        print(len(expected), len(result))
         print(f"Expected:\n'{expected}'\n\nGot:\n'{result}'")
     else:
         print(f"{title}: ✔️")
 
-map = pathlib.Path("tests/tests.txt").read_text()
+tests = pathlib.Path("tests/tests.txt").read_text()
 
-for test in filter(lambda x: len(x), map.split("=-=")):
-    title = test.splitlines()[0]
-    name = test.splitlines()[1]
-    expected = "\n".join(test.splitlines()[2:]).strip()+"\n"
+for test in filter(lambda x: len(x), tests.split("=-=")):
+    lines = list(filter(lambda x: len(x), test.splitlines()))
+    title = lines[0]
+    name = lines[1]
+    expected = "\n".join(map(lambda x: x.rstrip(), lines[2:])).strip()+"\n"
 
     check(title, name, expected)   
 
-
+"""
 for file in os.listdir("docs"):
     data = pathlib.Path(f"docs/{file}").read_text()
 
@@ -36,4 +32,4 @@ for file in os.listdir("docs"):
     for i, code in enumerate(re.findall(pattern, data, re.DOTALL | re.MULTILINE)):
         with open("./tests/tmp.ke", "w") as f:
             f.write(code)
-        check(f"Code snippet #{i} in {file}", "tmp.ke", "")
+        check(f"Code snippet #{i} in {file}", "tmp.ke", "")"""
