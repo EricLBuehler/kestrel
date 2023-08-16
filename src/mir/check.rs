@@ -3,8 +3,8 @@ use std::collections::HashMap;
 use indexmap::IndexMap;
 
 use crate::{
-    errors::{raise_error_multi, ErrorType},
-    types::{Lifetime, Trait, TraitType},
+    errors::{raise_error_multi, ErrorType, raise_error},
+    types::{Lifetime, Trait, TraitType, implements_trait},
 };
 
 use super::{
@@ -67,6 +67,11 @@ pub fn calculate_last_use(i: &usize, instructions: &mut Vec<MirInstruction>) -> 
             }
             RawMirInstruction::Ne { left, right } => {
                 if i == left || i == right {
+                    uses.push(j);
+                }
+            }
+            RawMirInstruction::Deref(right) => {
+                if i == right {
                     uses.push(j);
                 }
             }
@@ -395,6 +400,21 @@ pub fn generate_lifetimes(
                 } else {
                     unreachable!()
                 };
+            }
+            RawMirInstruction::Deref(right) => {
+                let rt_instruction = instructions.get(*right).unwrap();
+                let mut tp = rt_instruction.tp.as_ref().unwrap().clone();
+                tp.ref_n -= 1;
+                if !implements_trait(&tp, TraitType::Copy) {
+                    if let RawMirInstruction::Load(name) = &rt_instruction.instruction {
+                        let fmt: String = format!("Cannot move non Copy-able type '{}' out of binding '{}'.", tp.qualname(), name);
+                        raise_error(&fmt, ErrorType::CannotMoveOutOfBinding, &rt_instruction.pos, &this.info);
+                    }
+                    else {
+                        let fmt: String = format!("Cannot move out of not Copy-able type '{}'.", tp.qualname());
+                        raise_error(&fmt, ErrorType::CannotMoveOutOfNonCopy, &rt_instruction.pos, &this.info);
+                    }
+                }
             }
         }
 

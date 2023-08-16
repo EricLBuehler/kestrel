@@ -16,3 +16,8 @@ First reference here.
 3 |     let y = &x
   |             ^^
 =-=
+Expected failing - test E018
+E018.keerror[E018]: Cannot deref non-reference type 'std::i32'.
+./tests/E018.ke:5:13
+5 |     let _ = *x
+  |             ^^  

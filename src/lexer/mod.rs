@@ -35,6 +35,7 @@ pub enum TokenType {
     Bang,
     NotEqual,
     Colon,
+    Asterisk,
 }
 
 pub struct Lexer<'a> {
@@ -88,6 +89,7 @@ impl std::fmt::Display for TokenType {
             TokenType::Bang => write!(f, "bang"),
             TokenType::NotEqual => write!(f, "notequal"),
             TokenType::Colon => write!(f, "colon"),
+            TokenType::Asterisk => write!(f, "asterisk"),
         }
     }
 }
@@ -375,6 +377,24 @@ pub fn generate_tokens(lexer: &mut Lexer, kwds: &[String]) -> (usize, Vec<Token>
             tokens.push(Token {
                 data: String::from(":"),
                 tp: TokenType::Colon,
+                start: Position {
+                    line: lexer.line,
+                    startcol: lexer.col,
+                    endcol: lexer.col + 1,
+                    opcol: None,
+                },
+                end: Position {
+                    line: lexer.line,
+                    startcol: lexer.col,
+                    endcol: lexer.col + 1,
+                    opcol: None,
+                },
+            });
+            advance(lexer);
+        }  else if cur == '*' {
+            tokens.push(Token {
+                data: String::from("*"),
+                tp: TokenType::Asterisk,
                 start: Position {
                     line: lexer.line,
                     startcol: lexer.col,

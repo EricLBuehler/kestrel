@@ -8,8 +8,10 @@ define i32 @main(i32 %0, i32** %1) local_unnamed_addr #0 {
   store i32 123, i32* %3, align 4
   %4 = alloca i32*, align 8
   store i32* %3, i32** %4, align 8
-  %5 = alloca i32**, align 8
-  store i32** %4, i32*** %5, align 8
+  %5 = load i32*, i32** %4, align 8
+  %6 = load i32, i32* %5, align 4
+  %7 = alloca i32, align 4
+  store i32 %6, i32* %7, align 4
   ret i32 0
 }
 

@@ -7,7 +7,7 @@ use crate::{
 pub mod nodes;
 use self::nodes::{
     BinaryNode, BoolNode, CallNode, DecimalNode, FnNode, IdentifierNode, LetNode, Node, NodeType,
-    OpType, ReferenceNode, ReturnNode, StoreNode,
+    OpType, ReferenceNode, ReturnNode, StoreNode, DerefNode,
 };
 
 pub struct Parser<'a> {
@@ -409,6 +409,7 @@ impl<'a> Parser<'a> {
                 "false" => Some(self.generate_false()),
                 _ => None,
             },
+            TokenType::Asterisk => Some(self.generate_asterisk()),
             _ => None,
         }
     }
@@ -657,6 +658,23 @@ impl<'a> Parser<'a> {
             },
             nodes::NodeType::Reference,
             Box::new(ReferenceNode { expr }),
+        )
+    }
+
+    fn generate_asterisk(&mut self) -> Node {
+        let pos = self.current.start.clone();
+        self.advance();
+        let expr = self.expr(Precedence::Lowest);
+        self.backadvance();
+        Node::new(
+            Position {
+                startcol: pos.startcol,
+                endcol: expr.pos.endcol,
+                opcol: None,
+                line: pos.line,
+            },
+            nodes::NodeType::Deref,
+            Box::new(DerefNode { expr }),
         )
     }
 

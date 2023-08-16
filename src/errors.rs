@@ -21,6 +21,9 @@ pub enum ErrorType {
     FunctionNotFound,
     TypeNotFound,
     ReturnReference,
+    DerefNonref,
+    CannotMoveOutOfBinding,
+    CannotMoveOutOfNonCopy,
 }
 
 impl std::fmt::Display for ErrorType {
@@ -48,6 +51,9 @@ pub fn repr_err(tp: ErrorType) -> &'static str {
         ErrorType::FunctionNotFound => "function not found",
         ErrorType::TypeNotFound => "type not found",
         ErrorType::ReturnReference => "references cannot be returned",
+        ErrorType::DerefNonref => "references cannot be dereferenced",
+        ErrorType::CannotMoveOutOfBinding => "cannot move non Copy-able type out of binding",
+        ErrorType::CannotMoveOutOfNonCopy => "cannot move out of non Copy-able type",
     }
 }
 

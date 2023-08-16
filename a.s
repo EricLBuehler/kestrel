@@ -13,8 +13,9 @@ main:                                   # @main
 	movl	$123, -20(%rsp)
 	leaq	-20(%rsp), %rax
 	movq	%rax, -16(%rsp)
-	leaq	-16(%rsp), %rax
-	movq	%rax, -8(%rsp)
+	movq	-16(%rsp), %rax
+	movl	(%rax), %eax
+	movl	%eax, -4(%rsp)
 	xorl	%eax, %eax
 	retq
 .Lfunc_end0:

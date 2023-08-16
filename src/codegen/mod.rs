@@ -68,8 +68,14 @@ pub struct Data<'a> {
     pub tp: Type<'a>,
 }
 
+enum RefOptions {
+    Normal,
+    Deref,
+    Ref,
+}
+
 struct ExprFlags {
-    get_ref: bool,
+    ref_opt: RefOptions,
 }
 
 impl<'a> CodeGen<'a> {
@@ -114,7 +120,7 @@ impl<'a> CodeGen<'a> {
         };
 
         for node in ast {
-            res = self.compile_expr(node, ExprFlags { get_ref: false });
+            res = self.compile_expr(node, ExprFlags { ref_opt: RefOptions::Normal });
         }
 
         res
@@ -148,6 +154,7 @@ impl<'a> CodeGen<'a> {
             }
             NodeType::Return => self.compile_return(node, flags),
             NodeType::Call => self.compile_call(node, flags),
+            NodeType::Deref => self.compile_deref(node, flags),
         }
     }
 
@@ -377,7 +384,7 @@ impl<'a> CodeGen<'a> {
         );
 
         if let Some(int) = res {
-            if flags.get_ref {
+            if matches!(flags.ref_opt, RefOptions::Ref) {
                 let ptr = self.builder.build_alloca(int.get_type(), "");
                 let mut tp = self.builtins.get(&BasicType::I8).unwrap().clone();
                 tp.ref_n += 1;
@@ -425,7 +432,7 @@ impl<'a> CodeGen<'a> {
         );
 
         if let Some(int) = res {
-            if flags.get_ref {
+            if matches!(flags.ref_opt, RefOptions::Ref) {
                 let ptr = self.builder.build_alloca(int.get_type(), "");
                 let mut tp = self.builtins.get(&BasicType::I16).unwrap().clone();
                 tp.ref_n += 1;
@@ -473,7 +480,7 @@ impl<'a> CodeGen<'a> {
         );
 
         if let Some(int) = res {
-            if flags.get_ref {
+            if matches!(flags.ref_opt, RefOptions::Ref) {
                 let ptr = self.builder.build_alloca(int.get_type(), "");
                 let mut tp = self.builtins.get(&BasicType::I32).unwrap().clone();
                 tp.ref_n += 1;
@@ -521,7 +528,7 @@ impl<'a> CodeGen<'a> {
         );
 
         if let Some(int) = res {
-            if flags.get_ref {
+            if matches!(flags.ref_opt, RefOptions::Ref) {
                 let ptr = self.builder.build_alloca(int.get_type(), "");
                 let mut tp = self.builtins.get(&BasicType::I64).unwrap().clone();
                 tp.ref_n += 1;
@@ -569,7 +576,7 @@ impl<'a> CodeGen<'a> {
         );
 
         if let Some(int) = res {
-            if flags.get_ref {
+            if matches!(flags.ref_opt, RefOptions::Ref) {
                 let ptr = self.builder.build_alloca(int.get_type(), "");
                 let mut tp = self.builtins.get(&BasicType::I128).unwrap().clone();
                 tp.ref_n += 1;
@@ -617,7 +624,7 @@ impl<'a> CodeGen<'a> {
         );
 
         if let Some(int) = res {
-            if flags.get_ref {
+            if matches!(flags.ref_opt, RefOptions::Ref) {
                 let ptr = self.builder.build_alloca(int.get_type(), "");
                 let mut tp = self.builtins.get(&BasicType::U8).unwrap().clone();
                 tp.ref_n += 1;
@@ -665,7 +672,7 @@ impl<'a> CodeGen<'a> {
         );
 
         if let Some(int) = res {
-            if flags.get_ref {
+            if matches!(flags.ref_opt, RefOptions::Ref) {
                 let ptr = self.builder.build_alloca(int.get_type(), "");
                 let mut tp = self.builtins.get(&BasicType::U16).unwrap().clone();
                 tp.ref_n += 1;
@@ -713,7 +720,7 @@ impl<'a> CodeGen<'a> {
         );
 
         if let Some(int) = res {
-            if flags.get_ref {
+            if matches!(flags.ref_opt, RefOptions::Ref) {
                 let ptr = self.builder.build_alloca(int.get_type(), "");
                 let mut tp = self.builtins.get(&BasicType::U32).unwrap().clone();
                 tp.ref_n += 1;
@@ -761,7 +768,7 @@ impl<'a> CodeGen<'a> {
         );
 
         if let Some(int) = res {
-            if flags.get_ref {
+            if matches!(flags.ref_opt, RefOptions::Ref) {
                 let ptr = self.builder.build_alloca(int.get_type(), "");
                 let mut tp = self.builtins.get(&BasicType::U64).unwrap().clone();
                 tp.ref_n += 1;
@@ -809,7 +816,7 @@ impl<'a> CodeGen<'a> {
         );
 
         if let Some(int) = res {
-            if flags.get_ref {
+            if matches!(flags.ref_opt, RefOptions::Ref) {
                 let ptr = self.builder.build_alloca(int.get_type(), "");
                 let mut tp = self.builtins.get(&BasicType::U128).unwrap().clone();
                 tp.ref_n += 1;
@@ -851,11 +858,11 @@ impl<'a> CodeGen<'a> {
         let binary = node.data.get_data();
         let left = self.compile_expr(
             binary.nodes.get("left").unwrap(),
-            ExprFlags { get_ref: false },
+            ExprFlags { ref_opt: RefOptions::Normal },
         );
         let right = self.compile_expr(
             binary.nodes.get("right").unwrap(),
-            ExprFlags { get_ref: false },
+            ExprFlags { ref_opt: RefOptions::Normal },
         );
 
         let traittp = match binary.op.unwrap() {
@@ -897,7 +904,7 @@ impl<'a> CodeGen<'a> {
         let name = letnode.raw.get("name").unwrap();
         let right = self.compile_expr(
             letnode.nodes.get("expr").unwrap(),
-            ExprFlags { get_ref: false },
+            ExprFlags { ref_opt: RefOptions::Normal },
         );
         let is_mut = letnode.booleans.get("is_mut").unwrap();
 
@@ -945,7 +952,7 @@ impl<'a> CodeGen<'a> {
 
         let binding = binding.unwrap();
 
-        if flags.get_ref {
+        if matches!(flags.ref_opt, RefOptions::Ref) {
             let mut tp = binding.1.clone();
             tp.ref_n += 1;
             Data {
@@ -955,6 +962,17 @@ impl<'a> CodeGen<'a> {
                     None
                 },
                 tp,
+            }
+        } else if matches!(flags.ref_opt, RefOptions::Deref) {
+            let mut tp = binding.1.clone();
+            tp.ref_n -= 1;
+            Data {
+                data: if binding.0.is_some() {
+                    Some(self.builder.build_load(self.builder.build_load(binding.0.unwrap(), "").into_pointer_value(), ""))
+                } else {
+                    None
+                },
+                tp: binding.1.clone(),
             }
         } else {
             Data {
@@ -972,7 +990,7 @@ impl<'a> CodeGen<'a> {
         let storenode = node.data.get_data();
         let name = storenode.raw.get("name").unwrap();
         let expr = storenode.nodes.get("expr").unwrap();
-        let right = self.compile_expr(expr, ExprFlags { get_ref: false });
+        let right = self.compile_expr(expr, ExprFlags { ref_opt: RefOptions::Normal });
 
         let binding = self
             .namespaces
@@ -999,7 +1017,7 @@ impl<'a> CodeGen<'a> {
         let referencenode = node.data.get_data();
         let expr = self.compile_expr(
             referencenode.nodes.get("expr").unwrap(),
-            ExprFlags { get_ref: true },
+            ExprFlags { ref_opt: RefOptions::Ref },
         );
 
         expr
@@ -1009,7 +1027,7 @@ impl<'a> CodeGen<'a> {
         let returnnode = node.data.get_data();
         let expr = self.compile_expr(
             returnnode.nodes.get("expr").unwrap(),
-            ExprFlags { get_ref: false },
+            ExprFlags { ref_opt: RefOptions::Normal },
         );
 
         if self.cur_fnstate.as_ref().unwrap().rettp != expr.tp {
@@ -1133,6 +1151,17 @@ impl<'a> CodeGen<'a> {
             tp: func_rettp,
         }
     }
+
+    fn compile_deref(&mut self, node: &Node, _flags: ExprFlags) -> Data<'a> {
+        let derefnode = node.data.get_data();
+        let expr = self.compile_expr(
+            derefnode.nodes.get("expr").unwrap(),
+            ExprFlags { ref_opt: RefOptions::Deref },
+        );
+
+        expr
+    }
+
 }
 
 impl<'a> CodeGen<'a> {

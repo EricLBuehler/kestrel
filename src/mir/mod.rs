@@ -51,6 +51,7 @@ pub enum RawMirInstruction {
     CallFunction(String),
     Eq { left: usize, right: usize },
     Ne { left: usize, right: usize },
+    Deref(usize),
 }
 
 #[derive(Clone)]
@@ -157,6 +158,9 @@ impl Display for RawMirInstruction {
             }
             RawMirInstruction::Ne { left, right } => {
                 write!(f, "ne .{left} .{right}")
+            }
+            RawMirInstruction::Deref(right) => {
+                write!(f, "deref .{right}")
             }
         }
     }
@@ -306,6 +310,7 @@ impl<'a> Mir<'a> {
             NodeType::Return => self.generate_return(node),
             NodeType::Fn => unreachable!(),
             NodeType::Call => self.generate_call(node),
+            NodeType::Deref => self.generate_deref(node),
         }
     }
 }
@@ -981,5 +986,26 @@ impl<'a> Mir<'a> {
         }
 
         (self.instructions.len() - 1, func.unwrap().1 .1.clone())
+    }
+
+    fn generate_deref(&mut self, node: &Node) -> MirResult<'a> {
+        let derefnode = node.data.get_data();
+        let mut expr = self.generate_expr(derefnode.nodes.get("expr").unwrap());
+
+        if expr.1.ref_n == 0 {
+            let fmt: String = format!("Cannot deref non-reference type '{}'.", expr.1.qualname());
+            raise_error(&fmt, ErrorType::DerefNonref, &node.pos, &self.info);
+        }
+
+        expr.1.ref_n -= 1;
+
+        self.instructions.push(MirInstruction {
+            instruction: RawMirInstruction::Deref(expr.0),
+            pos: node.pos.clone(),
+            tp: Some(expr.1.clone()),
+            last_use: None,
+        });
+
+        (self.instructions.len() - 1, expr.1.clone())
     }
 }
