@@ -204,11 +204,11 @@ pub fn output_mir(
     start: &usize,
     info: &FileInfo,
 ) {
-    let mut cur_line = 0;
+    let mut cur_line = None;
 
     for (i, instruction) in instructions.iter().enumerate() {
-        if instruction.pos.line != cur_line {
-            cur_line = instruction.pos.line;
+        if Some(instruction.pos.line) != cur_line {
+            cur_line = Some(instruction.pos.line);
             out.push_str("    ");
             out.push_str(&format!(
                 "{}:{}\n",
