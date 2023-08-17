@@ -1,5 +1,7 @@
 # MIR instructions
 
+Kestrel MIR is a boiled-down version of Kestrel. It expresses program flow by breaking down code into instructions, and is between LLVM IR and Kestrel in terms of abstraction. Its procedural, simplified form allows the Kestrel ownership and borrow checker to run.
+
 ## `I8(literal)`
 Introduce a literal `i8`.
 ## `I16(literal)`
