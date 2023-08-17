@@ -193,7 +193,7 @@ pub fn check(this: &mut Mir, instructions: &mut Vec<MirInstruction>) {
     if !this.debug_mir {
         write_mir(this, instructions.clone(), &mut namespace, &references);
     } else {
-        explore(instructions, &mut namespace, &references);
+        explore(instructions, &mut namespace, &references, &this.info);
     }
 }
 
@@ -202,8 +202,21 @@ pub fn output_mir(
     namespace: &mut MirNamespace,
     out: &mut String,
     start: &usize,
+    info: &FileInfo,
 ) {
+    let mut cur_line = 0;
+
     for (i, instruction) in instructions.iter().enumerate() {
+        if instruction.pos.line != cur_line {
+            cur_line = instruction.pos.line;
+            out.push_str("    ");
+            out.push_str(&format!(
+                "{}:{}\n",
+                info.name,
+                instruction.pos.line + 1
+            ));
+        }
+
         out.push_str("    ");
         out.push_str(&format!(".{:<5}", format!("{}:", i + start)));
         out.push_str(&instruction.instruction.to_string());
@@ -242,7 +255,7 @@ pub fn write_mir(
         this.functions.get(&this.fn_name).unwrap().1 .1.qualname()
     ));
 
-    output_mir(&instructions, namespace, &mut out, &0);
+    output_mir(&instructions, namespace, &mut out, &0, &this.info);
 
     out.push('\n');
 

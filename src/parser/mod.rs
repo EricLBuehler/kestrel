@@ -239,6 +239,7 @@ impl<'a> Parser<'a> {
     }
 
     fn generate_let(&mut self) -> Node {
+        let startcol = self.current.start.startcol;
         self.advance();
 
         let is_mut = self.current_is_keyword("mut");
@@ -261,7 +262,7 @@ impl<'a> Parser<'a> {
 
         Node::new(
             Position {
-                startcol: name.pos.startcol,
+                startcol: startcol,
                 endcol: expr.pos.endcol,
                 opcol: None,
                 line: name.pos.line,

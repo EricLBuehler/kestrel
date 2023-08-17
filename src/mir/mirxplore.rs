@@ -2,7 +2,7 @@ use std::io::{self, Write};
 
 use indexmap::IndexMap;
 
-use crate::{mir::output_mir, types::Lifetime};
+use crate::{mir::output_mir, types::Lifetime, utils::FileInfo};
 
 use super::{MirInstruction, MirNamespace, MirReference};
 
@@ -11,6 +11,7 @@ pub fn explore(
     instructions: &[MirInstruction<'_>],
     namespace: &mut MirNamespace,
     references: &IndexMap<usize, MirReference>,
+    info: &FileInfo,
 ) {
     let mut buf = String::from("");
     println!("Kestrel MIR Debugger");
@@ -52,6 +53,7 @@ pub fn explore(
                         namespace,
                         &mut out,
                         start_mir,
+                        info,
                     );
                     println!("{out}");
                 }
@@ -84,6 +86,7 @@ pub fn explore(
                         namespace,
                         &mut out,
                         start_mir,
+                        info,
                     );
                     println!("{out}");
                 }
