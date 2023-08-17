@@ -120,7 +120,12 @@ impl<'a> CodeGen<'a> {
         };
 
         for node in ast {
-            res = self.compile_expr(node, ExprFlags { ref_opt: RefOptions::Normal });
+            res = self.compile_expr(
+                node,
+                ExprFlags {
+                    ref_opt: RefOptions::Normal,
+                },
+            );
         }
 
         res
@@ -858,11 +863,15 @@ impl<'a> CodeGen<'a> {
         let binary = node.data.get_data();
         let left = self.compile_expr(
             binary.nodes.get("left").unwrap(),
-            ExprFlags { ref_opt: RefOptions::Normal },
+            ExprFlags {
+                ref_opt: RefOptions::Normal,
+            },
         );
         let right = self.compile_expr(
             binary.nodes.get("right").unwrap(),
-            ExprFlags { ref_opt: RefOptions::Normal },
+            ExprFlags {
+                ref_opt: RefOptions::Normal,
+            },
         );
 
         let traittp = match binary.op.unwrap() {
@@ -904,7 +913,9 @@ impl<'a> CodeGen<'a> {
         let name = letnode.raw.get("name").unwrap();
         let right = self.compile_expr(
             letnode.nodes.get("expr").unwrap(),
-            ExprFlags { ref_opt: RefOptions::Normal },
+            ExprFlags {
+                ref_opt: RefOptions::Normal,
+            },
         );
         let is_mut = letnode.booleans.get("is_mut").unwrap();
 
@@ -968,7 +979,14 @@ impl<'a> CodeGen<'a> {
             tp.ref_n -= 1;
             Data {
                 data: if binding.0.is_some() {
-                    Some(self.builder.build_load(self.builder.build_load(binding.0.unwrap(), "").into_pointer_value(), ""))
+                    Some(
+                        self.builder.build_load(
+                            self.builder
+                                .build_load(binding.0.unwrap(), "")
+                                .into_pointer_value(),
+                            "",
+                        ),
+                    )
                 } else {
                     None
                 },
@@ -990,7 +1008,12 @@ impl<'a> CodeGen<'a> {
         let storenode = node.data.get_data();
         let name = storenode.raw.get("name").unwrap();
         let expr = storenode.nodes.get("expr").unwrap();
-        let right = self.compile_expr(expr, ExprFlags { ref_opt: RefOptions::Normal });
+        let right = self.compile_expr(
+            expr,
+            ExprFlags {
+                ref_opt: RefOptions::Normal,
+            },
+        );
 
         let binding = self
             .namespaces
@@ -1017,7 +1040,9 @@ impl<'a> CodeGen<'a> {
         let referencenode = node.data.get_data();
         let expr = self.compile_expr(
             referencenode.nodes.get("expr").unwrap(),
-            ExprFlags { ref_opt: RefOptions::Ref },
+            ExprFlags {
+                ref_opt: RefOptions::Ref,
+            },
         );
 
         expr
@@ -1027,7 +1052,9 @@ impl<'a> CodeGen<'a> {
         let returnnode = node.data.get_data();
         let expr = self.compile_expr(
             returnnode.nodes.get("expr").unwrap(),
-            ExprFlags { ref_opt: RefOptions::Normal },
+            ExprFlags {
+                ref_opt: RefOptions::Normal,
+            },
         );
 
         if self.cur_fnstate.as_ref().unwrap().rettp != expr.tp {
@@ -1156,12 +1183,13 @@ impl<'a> CodeGen<'a> {
         let derefnode = node.data.get_data();
         let expr = self.compile_expr(
             derefnode.nodes.get("expr").unwrap(),
-            ExprFlags { ref_opt: RefOptions::Deref },
+            ExprFlags {
+                ref_opt: RefOptions::Deref,
+            },
         );
 
         expr
     }
-
 }
 
 impl<'a> CodeGen<'a> {

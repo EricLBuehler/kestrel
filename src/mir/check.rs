@@ -3,8 +3,8 @@ use std::collections::HashMap;
 use indexmap::IndexMap;
 
 use crate::{
-    errors::{raise_error_multi, ErrorType, raise_error},
-    types::{Lifetime, Trait, TraitType, implements_trait},
+    errors::{raise_error, raise_error_multi, ErrorType},
+    types::{implements_trait, Lifetime, Trait, TraitType},
 };
 
 use super::{
@@ -407,12 +407,26 @@ pub fn generate_lifetimes(
                 tp.ref_n -= 1;
                 if !implements_trait(&tp, TraitType::Copy) {
                     if let RawMirInstruction::Load(name) = &rt_instruction.instruction {
-                        let fmt: String = format!("Cannot move non Copy-able type '{}' out of binding '{}'.", tp.qualname(), name);
-                        raise_error(&fmt, ErrorType::CannotMoveOutOfBinding, &rt_instruction.pos, &this.info);
-                    }
-                    else {
-                        let fmt: String = format!("Cannot move out of not Copy-able type '{}'.", tp.qualname());
-                        raise_error(&fmt, ErrorType::CannotMoveOutOfNonCopy, &rt_instruction.pos, &this.info);
+                        let fmt: String = format!(
+                            "Cannot move non Copy-able type '{}' out of binding '{}'.",
+                            tp.qualname(),
+                            name
+                        );
+                        raise_error(
+                            &fmt,
+                            ErrorType::CannotMoveOutOfBinding,
+                            &rt_instruction.pos,
+                            &this.info,
+                        );
+                    } else {
+                        let fmt: String =
+                            format!("Cannot move out of not Copy-able type '{}'.", tp.qualname());
+                        raise_error(
+                            &fmt,
+                            ErrorType::CannotMoveOutOfNonCopy,
+                            &rt_instruction.pos,
+                            &this.info,
+                        );
                     }
                 }
             }

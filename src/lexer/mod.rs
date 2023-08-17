@@ -391,7 +391,7 @@ pub fn generate_tokens(lexer: &mut Lexer, kwds: &[String]) -> (usize, Vec<Token>
                 },
             });
             advance(lexer);
-        }  else if cur == '*' {
+        } else if cur == '*' {
             tokens.push(Token {
                 data: String::from("*"),
                 tp: TokenType::Asterisk,

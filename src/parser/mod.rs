@@ -6,8 +6,8 @@ use crate::{
 
 pub mod nodes;
 use self::nodes::{
-    BinaryNode, BoolNode, CallNode, DecimalNode, FnNode, IdentifierNode, LetNode, Node, NodeType,
-    OpType, ReferenceNode, ReturnNode, StoreNode, DerefNode,
+    BinaryNode, BoolNode, CallNode, DecimalNode, DerefNode, FnNode, IdentifierNode, LetNode, Node,
+    NodeType, OpType, ReferenceNode, ReturnNode, StoreNode,
 };
 
 pub struct Parser<'a> {
