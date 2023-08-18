@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use indexmap::IndexMap;
 
 use crate::{
@@ -9,7 +7,7 @@ use crate::{
 
 use super::{
     Mir, MirInstruction, MirNamespace, MirReference, MirTag, RawMirInstruction, ReferenceBase,
-    ReferenceType,
+    ReferenceType, check,
 };
 
 pub fn calculate_last_use(i: &usize, instructions: &mut Vec<MirInstruction>) -> usize {
@@ -75,6 +73,15 @@ pub fn calculate_last_use(i: &usize, instructions: &mut Vec<MirInstruction>) -> 
                     uses.push(j);
                 }
             }
+            RawMirInstruction::IfCondition {
+                code: _,
+                check_n: _,
+                right,
+            } => {
+                if i == right {
+                    uses.push(j);
+                }
+            }
         }
     }
 
@@ -84,11 +91,11 @@ pub fn calculate_last_use(i: &usize, instructions: &mut Vec<MirInstruction>) -> 
     }
 }
 
-pub fn generate_lifetimes(
-    this: &mut Mir,
-    instructions: &mut Vec<MirInstruction<'_>>,
-) -> (MirNamespace, IndexMap<usize, MirReference>) {
-    let mut namespace: MirNamespace = HashMap::new();
+pub fn generate_lifetimes<'a>(
+    this: &mut Mir<'a>,
+    instructions: &mut Vec<MirInstruction<'a>>,
+    namespace: &mut MirNamespace,
+) -> IndexMap<usize, MirReference> {
     let mut lifetime_num = 0;
     let mut references = IndexMap::new();
 
@@ -382,14 +389,20 @@ pub fn generate_lifetimes(
                 };
             }
             RawMirInstruction::Ne { left, right } => {
-                let left_tp = instructions.get(*left).unwrap().tp.as_ref().unwrap();
-                let right_tp = instructions.get(*right).unwrap().tp.as_ref().unwrap();
+                let left_tp = instructions.get(*left).unwrap().clone().tp.unwrap().clone();
+                let right_tp = instructions
+                    .get(*right)
+                    .unwrap()
+                    .clone()
+                    .tp
+                    .unwrap()
+                    .clone();
                 //TODO: _res will be used in the future with custom lifetimes
                 let _res = if let Some(Trait::Ne {
                     code: _,
                     skeleton,
                     ref_n: _,
-                }) = left_tp.traits.get(&TraitType::Ne)
+                }) = left_tp.traits.get(&TraitType::Ne).clone()
                 {
                     skeleton(
                         this,
@@ -430,6 +443,13 @@ pub fn generate_lifetimes(
                     }
                 }
             }
+            RawMirInstruction::IfCondition {
+                code,
+                check_n: _,
+                right: _,
+            } => {
+                check(this, &mut code.clone(), false, namespace);
+            }
         }
 
         if let RawMirInstruction::Declare { name: _, is_mut: _ } = instruction.instruction {
@@ -450,7 +470,7 @@ pub fn generate_lifetimes(
         }
     }
 
-    (namespace, references)
+    references
 }
 
 pub fn check_references(

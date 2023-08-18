@@ -12,6 +12,14 @@ define i32 @main(i32 %0, i32** %1) local_unnamed_addr #0 {
   %6 = load i32, i32* %5, align 4
   %7 = alloca i32, align 4
   store i32 %6, i32* %7, align 4
+  br label %8
+
+8:                                                ; preds = %2
+  %9 = alloca i32, align 4
+  store i32 100, i32* %9, align 4
+  br label %10
+
+10:                                               ; preds = %8
   ret i32 0
 }
 

@@ -45,12 +45,12 @@ pub enum Trait<'a> {
     },
     Eq {
         code: fn(&mut CodeGen<'a>, &Position, Data<'a>, Data<'a>) -> Data<'a>,
-        skeleton: fn(&mut Mir, &Position, Type<'a>, Type<'a>) -> Type<'a>,
+        skeleton: fn(&mut Mir<'a>, &Position, Type<'a>, Type<'a>) -> Type<'a>,
         ref_n: usize,
     },
     Ne {
         code: fn(&mut CodeGen<'a>, &Position, Data<'a>, Data<'a>) -> Data<'a>,
-        skeleton: fn(&mut Mir, &Position, Type<'a>, Type<'a>) -> Type<'a>,
+        skeleton: fn(&mut Mir<'a>, &Position, Type<'a>, Type<'a>) -> Type<'a>,
         ref_n: usize,
     },
     Copy {

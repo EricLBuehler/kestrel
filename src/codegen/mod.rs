@@ -160,6 +160,7 @@ impl<'a> CodeGen<'a> {
             NodeType::Return => self.compile_return(node, flags),
             NodeType::Call => self.compile_call(node, flags),
             NodeType::Deref => self.compile_deref(node, flags),
+            NodeType::If => self.compile_if(node, flags),
         }
     }
 
@@ -1115,7 +1116,7 @@ impl<'a> CodeGen<'a> {
                 self.debug_mir,
             );
             let mut instructions = mir.generate(fnnode.nodearr.unwrap());
-            mir::check(&mut mir, &mut instructions);
+            mir::check(&mut mir, &mut instructions, true, &mut HashMap::new());
             //
 
             self.namespaces.insert(
@@ -1190,6 +1191,39 @@ impl<'a> CodeGen<'a> {
 
         expr
     }
+
+    fn compile_if(&mut self, node: &Node, _flags: ExprFlags) -> Data<'a> {
+        let ifnode = node.data.get_data();
+        let expr = self.compile_expr(
+            ifnode.nodes.get("expr").unwrap(),
+            ExprFlags {
+                ref_opt: RefOptions::Normal,
+            },
+        );
+
+        let if_block = self.context.append_basic_block(self.cur_fn.unwrap(), "");
+
+        let done_block = self.context.append_basic_block(self.cur_fn.unwrap(), "");
+
+        if_block
+            .move_after(self.cur_fnstate.as_ref().unwrap().cur_block.unwrap())
+            .unwrap();
+
+        self.builder.build_conditional_branch(
+            expr.data.unwrap().into_int_value(),
+            if_block,
+            done_block,
+        );
+
+        self.builder.position_at_end(if_block);
+
+        self.compile_statements(&ifnode.nodearr.unwrap());
+        self.builder.build_unconditional_branch(done_block);
+
+        self.builder.position_at_end(done_block);
+
+        expr
+    }
 }
 
 impl<'a> CodeGen<'a> {
@@ -1249,7 +1283,7 @@ impl<'a> CodeGen<'a> {
                 self.debug_mir,
             );
             let mut instructions = mir.generate(fnnode.nodearr.unwrap());
-            mir::check(&mut mir, &mut instructions);
+            mir::check(&mut mir, &mut instructions, true, &mut HashMap::new());
             //
 
             self.namespaces.insert(
@@ -1316,7 +1350,7 @@ impl<'a> CodeGen<'a> {
             self.debug_mir,
         );
         let mut instructions = mir.generate(&vec![]);
-        mir::check(&mut mir, &mut instructions);
+        mir::check(&mut mir, &mut instructions, true, &mut HashMap::new());
         //
 
         self.namespaces.insert(

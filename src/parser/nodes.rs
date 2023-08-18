@@ -53,6 +53,7 @@ pub enum NodeType {
     Return,
     Call,
     Deref,
+    If,
 }
 
 #[derive(Debug)]
@@ -281,6 +282,23 @@ pub struct DerefNode {
 impl NodeData for DerefNode {
     fn get_data(&self) -> NodeValue {
         let mut value = NodeValue::new();
+        value.nodes.insert(String::from("expr"), &self.expr);
+
+        value
+    }
+}
+
+// ========================
+
+pub struct ConditionalNode {
+    pub expr: Node,
+    pub code: Vec<Node>,
+}
+
+impl NodeData for ConditionalNode {
+    fn get_data(&self) -> NodeValue {
+        let mut value = NodeValue::new();
+        value.nodearr = Some(&self.code);
         value.nodes.insert(String::from("expr"), &self.expr);
 
         value

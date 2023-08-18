@@ -17,6 +17,17 @@ fn main: std::void {
     .12:  deref .11 -> std::i32['12 .12 => .14]
     .13:  own .12
     .14:  store z .12 -> std::void['13 .14 => .14]  dropbinding z
+    program.ke:6
+    .15:  i32 1 -> std::i32['14 .15 => .17]
+    .16:  i32 1 -> std::i32['15 .16 => .17]
+    .17:  eq .15 .16 -> std::bool['16 .17 => .18]
+    .18:  ifcondition #0 .17 {
+        program.ke:7
+        .0:   declare a['1 .0 => .3]
+        .1:   i32 100 -> std::i32['static]
+        .2:   own .1
+        .3:   store a .1 -> std::void['static]
+    } -> std::void['17 .18 => .18]
 
     & ref .7 ['7 .7 => .11]
 }

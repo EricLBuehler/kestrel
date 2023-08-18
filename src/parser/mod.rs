@@ -6,8 +6,8 @@ use crate::{
 
 pub mod nodes;
 use self::nodes::{
-    BinaryNode, BoolNode, CallNode, DecimalNode, DerefNode, FnNode, IdentifierNode, LetNode, Node,
-    NodeType, OpType, ReferenceNode, ReturnNode, StoreNode,
+    BinaryNode, BoolNode, CallNode, ConditionalNode, DecimalNode, DerefNode, FnNode,
+    IdentifierNode, LetNode, Node, NodeType, OpType, ReferenceNode, ReturnNode, StoreNode,
 };
 
 pub struct Parser<'a> {
@@ -232,6 +232,7 @@ impl<'a> Parser<'a> {
             }
             "fn" => self.generate_fn(),
             "return" => self.generate_return(),
+            "if" => self.generate_if(),
             _ => {
                 unreachable!();
             }
@@ -386,6 +387,42 @@ impl<'a> Parser<'a> {
             },
             nodes::NodeType::Return,
             Box::new(ReturnNode { expr }),
+        )
+    }
+
+    fn generate_if(&mut self) -> Node {
+        let startcol = self.current.start.startcol;
+
+        self.advance();
+
+        let expr = self.expr(Precedence::Lowest);
+
+        self.skip_newlines();
+
+        self.expect(TokenType::LCurly);
+
+        let endcol = self.current.end.endcol;
+        let endline = self.current.end.line;
+
+        self.advance();
+        self.skip_newlines();
+
+        let code = self.block();
+
+        self.expect(TokenType::RCurly);
+
+        self.advance();
+        self.skip_newlines();
+
+        Node::new(
+            Position {
+                startcol,
+                endcol,
+                opcol: None,
+                line: endline,
+            },
+            nodes::NodeType::If,
+            Box::new(ConditionalNode { expr, code }),
         )
     }
 

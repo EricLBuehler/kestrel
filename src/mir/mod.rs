@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fmt::Display, fs::OpenOptions, io::Write};
+use std::{collections::HashMap, fs::OpenOptions, io::Write};
 
 use indexmap::IndexMap;
 
@@ -21,14 +21,14 @@ pub struct Mir<'a> {
     fn_name: String,
     fn_pos: Position,
     instructions: Vec<MirInstruction<'a>>,
-    builtins: BuiltinTypes<'a>,
+    pub builtins: BuiltinTypes<'a>,
     functions: CodegenFunctions<'a>,
     namespace: HashMap<String, (Type<'a>, BindingTags)>,
     debug_mir: bool,
 }
 
 #[derive(Clone, Debug)]
-pub enum RawMirInstruction {
+pub enum RawMirInstruction<'a> {
     I8(String),
     I16(String),
     I32(String),
@@ -39,9 +39,18 @@ pub enum RawMirInstruction {
     U32(String),
     U64(String),
     U128(String),
-    Add { left: usize, right: usize },
-    Declare { name: String, is_mut: bool },
-    Store { name: String, right: usize },
+    Add {
+        left: usize,
+        right: usize,
+    },
+    Declare {
+        name: String,
+        is_mut: bool,
+    },
+    Store {
+        name: String,
+        right: usize,
+    },
     Own(usize),
     Load(String),
     Reference(usize),
@@ -49,14 +58,25 @@ pub enum RawMirInstruction {
     Bool(bool),
     Return(usize),
     CallFunction(String),
-    Eq { left: usize, right: usize },
-    Ne { left: usize, right: usize },
+    Eq {
+        left: usize,
+        right: usize,
+    },
+    Ne {
+        left: usize,
+        right: usize,
+    },
     Deref(usize),
+    IfCondition {
+        code: Vec<MirInstruction<'a>>,
+        check_n: usize,
+        right: usize,
+    },
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct MirInstruction<'a> {
-    instruction: RawMirInstruction,
+    instruction: RawMirInstruction<'a>,
     pos: Position,
     tp: Option<Type<'a>>,
     last_use: Option<String>,
@@ -90,79 +110,89 @@ pub enum ReferenceBase {
     Reference(Lifetime),
 }
 
-impl Display for RawMirInstruction {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
+impl<'a> RawMirInstruction<'a> {
+    fn fmt(&self, f: &mut String, namespace: &mut MirNamespace, info: &FileInfo) {
+        f.push_str(&match self {
             RawMirInstruction::Add { left, right } => {
-                write!(f, "add .{left} .{right}")
+                format!("add .{left} .{right}")
             }
             RawMirInstruction::Declare { name, is_mut } => {
-                write!(f, "declare {}{}", if *is_mut { "mut " } else { "" }, name)
+                format!("declare {}{}", if *is_mut { "mut " } else { "" }, name)
             }
             RawMirInstruction::I8(value) => {
-                write!(f, "i8 {value}")
+                format!("i8 {value}")
             }
             RawMirInstruction::I16(value) => {
-                write!(f, "i16 {value}")
+                format!("i16 {value}")
             }
             RawMirInstruction::I32(value) => {
-                write!(f, "i32 {value}")
+                format!("i32 {value}")
             }
             RawMirInstruction::I64(value) => {
-                write!(f, "i64 {value}")
+                format!("i64 {value}")
             }
             RawMirInstruction::I128(value) => {
-                write!(f, "i128 {value}")
+                format!("i128 {value}")
             }
             RawMirInstruction::Load(name) => {
-                write!(f, "load {name}")
+                format!("load {name}")
             }
             RawMirInstruction::Own(result) => {
-                write!(f, "own .{result}")
+                format!("own .{result}")
             }
             RawMirInstruction::Store { name, right } => {
-                write!(f, "store {name} .{right}")
+                format!("store {name} .{right}")
             }
             RawMirInstruction::Reference(right) => {
-                write!(f, "ref .{right}")
+                format!("ref .{right}")
             }
             RawMirInstruction::Copy(right) => {
-                write!(f, "copy .{right}")
+                format!("copy .{right}")
             }
             RawMirInstruction::Bool(value) => {
-                write!(f, "bool {value}")
+                format!("bool {value}")
             }
             RawMirInstruction::U8(value) => {
-                write!(f, "u8 {value}")
+                format!("u8 {value}")
             }
             RawMirInstruction::U16(value) => {
-                write!(f, "u16 {value}")
+                format!("u16 {value}")
             }
             RawMirInstruction::U32(value) => {
-                write!(f, "u32 {value}")
+                format!("u32 {value}")
             }
             RawMirInstruction::U64(value) => {
-                write!(f, "u64 {value}")
+                format!("u64 {value}")
             }
             RawMirInstruction::U128(value) => {
-                write!(f, "u128 {value}")
+                format!("u128 {value}")
             }
             RawMirInstruction::Return(right) => {
-                write!(f, "return .{right}")
+                format!("return .{right}")
             }
             RawMirInstruction::CallFunction(name) => {
-                write!(f, "call fn {name}")
+                format!("call fn {name}")
             }
             RawMirInstruction::Eq { left, right } => {
-                write!(f, "eq .{left} .{right}")
+                format!("eq .{left} .{right}")
             }
             RawMirInstruction::Ne { left, right } => {
-                write!(f, "ne .{left} .{right}")
+                format!("ne .{left} .{right}")
             }
             RawMirInstruction::Deref(right) => {
-                write!(f, "deref .{right}")
+                format!("deref .{right}")
             }
-        }
+            RawMirInstruction::IfCondition {
+                code,
+                check_n,
+                right,
+            } => {
+                let mut out = String::new();
+                output_mir(code, namespace, &mut out, &0, info);
+                out = out.split("\n").map(|x| String::from("    ") + x).collect::<Vec<String>>().join("\n");
+                format!("ifcondition #{check_n} .{right} {{\n{}}}", out)
+            }
+        })
     }
 }
 
@@ -186,14 +216,16 @@ pub fn new<'a>(
     }
 }
 
-pub fn check(this: &mut Mir, instructions: &mut Vec<MirInstruction>) {
-    let (mut namespace, references) = check::generate_lifetimes(this, instructions);
-    check::check_references(this, instructions, &mut namespace, &references);
+pub fn check<'a>(this: &mut Mir<'a>, instructions: &mut Vec<MirInstruction<'a>>, head: bool, namespace: &mut MirNamespace) {
+    let references = check::generate_lifetimes(this, instructions, namespace);
+    check::check_references(this, instructions, namespace, &references);
     check::check_return(this, instructions);
-    if !this.debug_mir {
-        write_mir(this, instructions.clone(), &mut namespace, &references);
-    } else {
-        explore(instructions, &mut namespace, &references, &this.info);
+    if head {
+        if !this.debug_mir {
+            write_mir(this, instructions.clone(), namespace, &references);
+        } else {
+            explore(instructions, namespace, &references, &this.info);
+        }
     }
 }
 
@@ -210,16 +242,13 @@ pub fn output_mir(
         if Some(instruction.pos.line) != cur_line {
             cur_line = Some(instruction.pos.line);
             out.push_str("    ");
-            out.push_str(&format!(
-                "{}:{}\n",
-                info.name,
-                instruction.pos.line + 1
-            ));
+            out.push_str(&format!("{}:{}\n", info.name, instruction.pos.line + 1));
         }
 
         out.push_str("    ");
         out.push_str(&format!(".{:<5}", format!("{}:", i + start)));
-        out.push_str(&instruction.instruction.to_string());
+        instruction.instruction.fmt(out, namespace, info);
+
         if let RawMirInstruction::Declare { name, is_mut: _ } = &instruction.instruction {
             out.push_str(&namespace.get(name).unwrap().2.lifetime.to_string());
         }
@@ -324,6 +353,7 @@ impl<'a> Mir<'a> {
             NodeType::Fn => unreachable!(),
             NodeType::Call => self.generate_call(node),
             NodeType::Deref => self.generate_deref(node),
+            NodeType::If => self.generate_if(node),
         }
     }
 }
@@ -1016,6 +1046,55 @@ impl<'a> Mir<'a> {
             instruction: RawMirInstruction::Deref(expr.0),
             pos: node.pos.clone(),
             tp: Some(expr.1.clone()),
+            last_use: None,
+        });
+
+        (self.instructions.len() - 1, expr.1.clone())
+    }
+
+    fn generate_if(&mut self, node: &Node) -> MirResult<'a> {
+        let ifnode = node.data.get_data();
+        let code = ifnode.nodearr.unwrap().clone();
+        let expr = self.generate_expr(ifnode.nodes.get("expr").unwrap());
+
+        if expr.1.basictype != BasicType::Bool {
+            raise_error(
+                &format!("Expected 'std::bool', got '{}'", expr.1.qualname()),
+                ErrorType::TypeMismatch,
+                &node.pos,
+                &self.info,
+            );
+        }
+
+        let mut mir = self::new(
+            self.info.clone(),
+            self.builtins.clone(),
+            self.functions.clone(),
+            self.fn_name.clone(),
+            self.fn_pos.clone(),
+            self.debug_mir,
+        );
+
+        let instructions = mir.generate(&code);
+
+        self.instructions.push(MirInstruction {
+            instruction: RawMirInstruction::IfCondition {
+                code: instructions.clone(),
+                check_n: 0,
+                right: expr.0,
+            },
+            pos: node.pos.clone(),
+            tp: Some(
+                instructions
+                    .into_iter()
+                    .map(|x| {
+                        x.tp.as_ref()
+                            .unwrap_or(mir.builtins.get(&BasicType::Void).unwrap())
+                            .clone()
+                    })
+                    .last()
+                    .unwrap_or(mir.builtins.get(&BasicType::Void).unwrap().clone()),
+            ),
             last_use: None,
         });
 

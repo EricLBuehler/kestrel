@@ -2,4 +2,8 @@ fn main() {
     let x = 123
     let y = &x
     let z = *y
+
+    if 1==1 {
+        let a = 100
+    }
 }

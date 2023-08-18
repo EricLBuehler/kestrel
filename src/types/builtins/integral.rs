@@ -110,7 +110,6 @@ fn integral_add<'a>(
             .move_after(codegen.cur_fnstate.as_ref().unwrap().cur_block.unwrap())
             .unwrap();
         end_block.move_after(overflow_block).unwrap();
-        done_block.move_after(done_block).unwrap();
 
         codegen.builder.position_at_end(done_block);
         codegen.block = Some(done_block);
@@ -186,7 +185,7 @@ fn integral_ne<'a>(
     }
 }
 
-fn integral_skeleton<'a>(
+fn integral_skeleton_op<'a>(
     mir: &mut Mir,
     pos: &Position,
     this: Type<'a>,
@@ -201,6 +200,23 @@ fn integral_skeleton<'a>(
         );
     }
     this
+}
+
+fn integral_skeleton_cmp<'a>(
+    mir: &mut Mir<'a>,
+    pos: &Position,
+    this: Type<'a>,
+    other: Type<'a>,
+) -> Type<'a> {
+    if this != other {
+        raise_error(
+            &format!("Expected 'std::i32', got '{}'", other.basictype),
+            ErrorType::TypeMismatch,
+            pos,
+            &mir.info,
+        );
+    }
+    mir.builtins.get(&BasicType::Bool).unwrap().clone()
 }
 
 pub fn init_integral(codegen: &mut CodeGen) {
@@ -224,7 +240,7 @@ pub fn init_integral(codegen: &mut CodeGen) {
                     TraitType::Add,
                     Trait::Add {
                         code: integral_add,
-                        skeleton: integral_skeleton,
+                        skeleton: integral_skeleton_op,
                         ref_n: 0,
                     },
                 ),
@@ -232,7 +248,7 @@ pub fn init_integral(codegen: &mut CodeGen) {
                     TraitType::Eq,
                     Trait::Eq {
                         code: integral_eq,
-                        skeleton: integral_skeleton,
+                        skeleton: integral_skeleton_cmp,
                         ref_n: 0,
                     },
                 ),
@@ -240,7 +256,7 @@ pub fn init_integral(codegen: &mut CodeGen) {
                     TraitType::Ne,
                     Trait::Ne {
                         code: integral_ne,
-                        skeleton: integral_skeleton,
+                        skeleton: integral_skeleton_cmp,
                         ref_n: 0,
                     },
                 ),
