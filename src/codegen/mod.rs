@@ -1218,7 +1218,7 @@ impl<'a> CodeGen<'a> {
 
         self.builder.position_at_end(if_block);
 
-        self.compile_statements(&ifnode.nodearr.unwrap());
+        self.compile_statements(ifnode.nodearr.unwrap());
         self.builder.build_unconditional_branch(done_block);
 
         self.builder.position_at_end(done_block);

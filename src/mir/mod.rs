@@ -121,25 +121,17 @@ type MirReference = (usize, ReferenceType, Lifetime, ReferenceBase); //(right, t
 #[derive(Debug, Eq, PartialOrd, Ord, Clone)]
 pub enum ReferenceBase {
     Literal(Lifetime),
-    Load {
-        name: BlockName,
-    },
+    Load { name: BlockName },
     Reference(Lifetime),
 }
 
 impl PartialEq for ReferenceBase {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
-            (ReferenceBase::Literal(life1), ReferenceBase::Literal(life2)) => {
-                life1 == life2
-            }
-            (ReferenceBase::Load { name: _ }, ReferenceBase::Load { name: _ }) => {
-                true
-            }
-            (ReferenceBase::Reference(life1), ReferenceBase::Reference(life2)) => {
-                life1 == life2
-            }
-            _ => false
+            (ReferenceBase::Literal(life1), ReferenceBase::Literal(life2)) => life1 == life2,
+            (ReferenceBase::Load { name: _ }, ReferenceBase::Load { name: _ }) => true,
+            (ReferenceBase::Reference(life1), ReferenceBase::Reference(life2)) => life1 == life2,
+            _ => false,
         }
     }
 }
@@ -225,7 +217,7 @@ impl<'a> RawMirInstruction<'a> {
                 let mut out = String::new();
                 output_mir(&code[*offset..], &mut out, &0, info, blocks);
                 out = out
-                    .split("\n")
+                    .split('\n')
                     .map(|x| String::from("    ") + x)
                     .collect::<Vec<String>>()
                     .join("\n");
@@ -940,7 +932,6 @@ impl<'a> Mir<'a> {
             .namespace
             .insert(name.clone(), (right.1, BindingTags { is_mut: *is_mut }));
 
-
         (
             self.instructions.len() - 1,
             self.builtins.get(&BasicType::Void).unwrap().clone(),
@@ -951,26 +942,33 @@ impl<'a> Mir<'a> {
         let identifiernode = node.data.get_data();
         let name = identifiernode.raw.get("value").unwrap();
 
-        for blockid in self.blocks.get(self.cur_block).unwrap().parents.iter().rev() {
+        for blockid in self
+            .blocks
+            .get(self.cur_block)
+            .unwrap()
+            .parents
+            .iter()
+            .rev()
+        {
             let block = self.blocks.get(*blockid).unwrap();
             if block.namespace.get(name).is_none() {
                 continue;
             }
-            
+
             let tp = block.namespace.get(name).unwrap().0.clone();
-    
+
             let blockname = BlockName {
                 name: name.clone(),
                 blockid: block.blockid,
             };
-    
+
             self.instructions.push(MirInstruction {
                 instruction: RawMirInstruction::Load(blockname),
                 pos: node.pos.clone(),
                 tp: Some(tp.clone()),
                 last_use: None,
             });
-    
+
             if implements_trait(&tp, TraitType::Copy) {
                 self.instructions.push(MirInstruction {
                     instruction: RawMirInstruction::Copy(self.instructions.len() - 1),
@@ -979,13 +977,13 @@ impl<'a> Mir<'a> {
                     last_use: None,
                 });
             }
-    
+
             return (
                 self.instructions.len() - 1,
                 block.namespace.get(name).unwrap().0.clone(),
-            )
+            );
         }
-        
+
         let fmt: String = format!("Binding '{}' not found in scope.", name);
         raise_error(&fmt, ErrorType::BindingNotFound, &node.pos, &self.info);
     }
@@ -1175,7 +1173,7 @@ impl<'a> Mir<'a> {
 
         self.blocks.push(cur_block.clone());
 
-        let old_block = self.cur_block.clone();
+        let old_block = self.cur_block;
         self.cur_block = cur_block.blockid;
 
         let len = self.instructions.len();

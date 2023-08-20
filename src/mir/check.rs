@@ -214,13 +214,9 @@ pub fn generate_lifetimes<'a>(
                     )
                     .unwrap();
 
-
                 if !(block.namespace_check.get(&name.name).unwrap().2.is_owned
                     || old_instruction.tp.is_some()
-                        && implements_trait(old_instruction
-                            .tp
-                            .as_ref()
-                            .unwrap(), TraitType::Copy))
+                        && implements_trait(old_instruction.tp.as_ref().unwrap(), TraitType::Copy))
                 {
                     raise_error_multi(
                         vec![
@@ -298,9 +294,7 @@ pub fn generate_lifetimes<'a>(
                             break;
                         }
                         RawMirInstruction::Load(name) => {
-                            referred_type = ReferenceBase::Load {
-                                name: name.clone()
-                            };
+                            referred_type = ReferenceBase::Load { name: name.clone() };
                             break;
                         }
                         RawMirInstruction::Copy(new_rt) => {
@@ -437,7 +431,7 @@ pub fn generate_lifetimes<'a>(
                     code: _,
                     skeleton,
                     ref_n: _,
-                }) = left_tp.traits.get(&TraitType::Ne).clone()
+                }) = left_tp.traits.get(&TraitType::Ne)
                 {
                     skeleton(
                         this,
@@ -541,7 +535,7 @@ pub fn check_references(
             } else {
                 usize::MAX
             };
-            
+
             if base1 == base2 {
                 if let RawMirInstruction::Load(ref name) =
                     instructions.get(*right).as_ref().unwrap().instruction

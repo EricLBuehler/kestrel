@@ -263,7 +263,7 @@ impl<'a> Parser<'a> {
 
         Node::new(
             Position {
-                startcol: startcol,
+                startcol,
                 endcol: expr.pos.endcol,
                 opcol: None,
                 line: name.pos.line,
