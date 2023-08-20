@@ -16,8 +16,5 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-    - name: Install Typos
-      run: cargo install typos-cli
-    - name: Run Typos
-      run: typos
-    
+    - name: typos-action
+      uses: crate-ci/typos@v1.0.4
