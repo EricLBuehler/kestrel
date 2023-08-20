@@ -1,5 +1,5 @@
 	.text
-	.file	"program.ke"
+	.file	"tmp.ke"
 	.globl	main                            # -- Begin function main
 	.p2align	4, 0x90
 	.type	main,@function
@@ -13,22 +13,40 @@ main:                                   # @main
 	.cfi_offset %rbp, -16
 	movq	%rsp, %rbp
 	.cfi_def_cfa_register %rbp
-	subq	$16, %rsp
                                         # kill: killed $rsi
                                         # kill: killed $edi
-	leaq	-12(%rbp), %rax
-	movq	%rax, -8(%rbp)
-# %bb.1:
+	movl	$1, %eax
+	addl	$2, %eax
+	seto	%cl
+	testb	$1, %cl
+	jne	.LBB0_1
+	jmp	.LBB0_2
+.LBB0_1:
+	movabsq	$.L__unnamed_1, %rdi
+	callq	printf@PLT
+                                        # implicit-def: $eax
+	jmp	.LBB0_3
+.LBB0_2:
+	jmp	.LBB0_3
+.LBB0_3:
+	movq	%rsp, %rcx
+	movq	%rcx, %rdx
+	addq	$-16, %rdx
+	movq	%rdx, %rsp
+	movl	%eax, -16(%rcx)
 	movq	%rsp, %rax
-	addq	$-16, %rax
-	movq	%rax, %rsp
-	movl	$1, (%rax)
-# %bb.2:
-	movq	-8(%rbp), %rax
+	movq	%rax, %rcx
+	addq	$-16, %rcx
+	movq	%rcx, %rsp
+	movq	%rdx, -16(%rax)
 	movq	%rsp, %rcx
 	addq	$-16, %rcx
 	movq	%rcx, %rsp
-	movq	%rax, (%rcx)
+	movq	%rcx, -16(%rax)
+	movq	%rsp, %rax
+	addq	$-16, %rax
+	movq	%rax, %rsp
+	movq	%rdx, (%rax)
 	xorl	%eax, %eax
 	movq	%rbp, %rsp
 	popq	%rbp
@@ -38,4 +56,11 @@ main:                                   # @main
 	.size	main, .Lfunc_end0-main
 	.cfi_endproc
                                         # -- End function
+	.type	.L__unnamed_1,@object           # @0
+	.section	.rodata,"a",@progbits
+	.p2align	4
+.L__unnamed_1:
+	.asciz	"Error: std::i32 addition overflow!\n    ./tests/tmp.ke:2:17\n"
+	.size	.L__unnamed_1, 60
+
 	.section	".note.GNU-stack","",@progbits

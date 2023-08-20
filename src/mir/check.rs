@@ -541,7 +541,7 @@ pub fn check_references(
             } else {
                 usize::MAX
             };
-
+            
             if base1 == base2 {
                 if let RawMirInstruction::Load(ref name) =
                     instructions.get(*right).as_ref().unwrap().instruction

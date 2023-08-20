@@ -118,13 +118,30 @@ pub struct MirTag {
 type MirNamespace = HashMap<String, (Option<usize>, Option<usize>, MirTag)>; //(declaration, right, tag)
 type MirReference = (usize, ReferenceType, Lifetime, ReferenceBase); //(right, type, lifetime, referred)
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
+#[derive(Debug, Eq, PartialOrd, Ord, Clone)]
 pub enum ReferenceBase {
     Literal(Lifetime),
     Load {
         name: BlockName,
     },
     Reference(Lifetime),
+}
+
+impl PartialEq for ReferenceBase {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (ReferenceBase::Literal(life1), ReferenceBase::Literal(life2)) => {
+                life1 == life2
+            }
+            (ReferenceBase::Load { name: _ }, ReferenceBase::Load { name: _ }) => {
+                true
+            }
+            (ReferenceBase::Reference(life1), ReferenceBase::Reference(life2)) => {
+                life1 == life2
+            }
+            _ => false
+        }
+    }
 }
 
 impl<'a> RawMirInstruction<'a> {
