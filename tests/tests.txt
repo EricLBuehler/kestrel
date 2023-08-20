@@ -23,7 +23,7 @@ error[E018]: Cannot deref non-reference type 'std::i32'.
 5 |     let _ = *x
   |             ^^  
 =-=
-Expeted failing - use after move with if
+Expected failing - use after move with if
 E007_if.ke
 error[E007]: Use of binding 'x' after move.
 ./tests/E007_if.ke:7:13

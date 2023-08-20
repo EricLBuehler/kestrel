@@ -4,6 +4,8 @@ import os
 import re
 import sys
 
+print("Kestrel Automated Test Suite (KATS)")
+
 def check(title: str, name: str, expected: str):
     result = subprocess.run(["./kestrel", "./tests/"+name], capture_output=True)
 
@@ -19,6 +21,11 @@ def check(title: str, name: str, expected: str):
 
 tests = pathlib.Path("tests/tests.txt").read_text()
 
+print("\n\nTests have been loaded, running...")
+
+
+print("\n========================================\n")
+
 status = []
 
 for test in filter(lambda x: len(x), tests.split("=-=")):
@@ -29,6 +36,10 @@ for test in filter(lambda x: len(x), tests.split("=-=")):
 
     status.append(check(title, name, expected))
 
+    print("\n========================================\n")
+
+print("\n\nRunning doc tests...\n")
+
 for file in os.listdir("docs"):
     data = pathlib.Path(f"docs/{file}").read_text()
 
@@ -38,6 +49,8 @@ for file in os.listdir("docs"):
             f.write(code)
 
         status.append(check(f"Code snippet #{i} in {file}", "tmp.ke", ""))
+
+        print("\n========================================\n")
 
 
 if False in status:
