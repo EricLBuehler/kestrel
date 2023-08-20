@@ -193,7 +193,7 @@ fn integral_skeleton_op<'a>(
 ) -> Type<'a> {
     if this != other {
         raise_error(
-            &format!("Expected 'std::i32', got '{}'", other.basictype),
+            &format!("Expected 'std::i32', got '{}'", other.qualname()),
             ErrorType::TypeMismatch,
             pos,
             &mir.info,
@@ -210,7 +210,7 @@ fn integral_skeleton_cmp<'a>(
 ) -> Type<'a> {
     if this != other {
         raise_error(
-            &format!("Expected 'std::i32', got '{}'", other.basictype),
+            &format!("Expected 'std::i32', got '{}'", other.qualname()),
             ErrorType::TypeMismatch,
             pos,
             &mir.info,

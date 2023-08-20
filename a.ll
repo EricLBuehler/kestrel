@@ -5,21 +5,19 @@ target triple = "x86_64-unknown-linux-gnu"
 ; Function Attrs: noinline norecurse nounwind optnone willreturn
 define i32 @main(i32 %0, i32** %1) local_unnamed_addr #0 {
   %3 = alloca i32, align 4
-  store i32 123, i32* %3, align 4
   %4 = alloca i32*, align 8
   store i32* %3, i32** %4, align 8
-  %5 = load i32*, i32** %4, align 8
-  %6 = load i32, i32* %5, align 4
-  %7 = alloca i32, align 4
-  store i32 %6, i32* %7, align 4
-  br label %8
+  br label %5
 
-8:                                                ; preds = %2
-  %9 = alloca i32, align 4
-  store i32 100, i32* %9, align 4
-  br label %10
+5:                                                ; preds = %2
+  %6 = alloca i32, align 4
+  store i32 1, i32* %6, align 4
+  br label %7
 
-10:                                               ; preds = %8
+7:                                                ; preds = %5
+  %8 = load i32*, i32** %4, align 8
+  %9 = alloca i32*, align 8
+  store i32* %8, i32** %9, align 8
   ret i32 0
 }
 

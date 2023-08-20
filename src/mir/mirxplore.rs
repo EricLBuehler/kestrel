@@ -4,14 +4,15 @@ use indexmap::IndexMap;
 
 use crate::{mir::output_mir, types::Lifetime, utils::FileInfo};
 
-use super::{MirInstruction, MirNamespace, MirReference};
+use super::{Block, Mir, MirInstruction, MirReference};
 
 #[allow(unused_assignments)]
 pub fn explore(
+    this: &mut Mir,
     instructions: &[MirInstruction<'_>],
-    namespace: &mut MirNamespace,
-    references: &IndexMap<usize, MirReference>,
-    info: &FileInfo,
+    block: Block,
+    references: IndexMap<usize, MirReference>,
+    info: FileInfo,
 ) {
     let mut buf = String::from("");
     println!("Kestrel MIR Debugger");
@@ -29,12 +30,12 @@ pub fn explore(
             println!("Type `quit`, `binding [name]`, or `ref [number]`");
             println!("Note: the reference number is the MIR reference number.");
         } else if res[0] == "binding" {
-            let data = namespace.get(res[1]);
+            let data = block.namespace_check.get(res[1]);
             if data.is_none() {
                 println!(
                     "Binding {} is not found, here are the defined ones: {:?}",
                     res[1],
-                    namespace.keys().collect::<Vec<_>>()
+                    block.namespace_check.keys().collect::<Vec<_>>()
                 );
                 continue;
             }
@@ -50,10 +51,10 @@ pub fn explore(
                     let mut out = String::from("");
                     output_mir(
                         &instructions[*start_mir..=*end_mir],
-                        namespace,
                         &mut out,
                         start_mir,
-                        info,
+                        &info,
+                        this.blocks.clone(),
                     );
                     println!("{out}");
                 }
@@ -83,10 +84,10 @@ pub fn explore(
                     let mut out = String::from("");
                     output_mir(
                         &instructions[*start_mir..=*end_mir],
-                        namespace,
                         &mut out,
                         start_mir,
-                        info,
+                        &info,
+                        this.blocks.clone(),
                     );
                     println!("{out}");
                 }

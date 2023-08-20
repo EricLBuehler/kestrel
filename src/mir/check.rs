@@ -6,8 +6,8 @@ use crate::{
 };
 
 use super::{
-    Mir, MirInstruction, MirNamespace, MirReference, MirTag, RawMirInstruction, ReferenceBase,
-    ReferenceType, check,
+    check, Mir, MirInstruction, MirReference, MirTag, RawMirInstruction, ReferenceBase,
+    ReferenceType,
 };
 
 pub fn calculate_last_use(i: &usize, instructions: &mut Vec<MirInstruction>) -> usize {
@@ -77,6 +77,7 @@ pub fn calculate_last_use(i: &usize, instructions: &mut Vec<MirInstruction>) -> 
                 code: _,
                 check_n: _,
                 right,
+                offset: _,
             } => {
                 if i == right {
                     uses.push(j);
@@ -94,7 +95,6 @@ pub fn calculate_last_use(i: &usize, instructions: &mut Vec<MirInstruction>) -> 
 pub fn generate_lifetimes<'a>(
     this: &mut Mir<'a>,
     instructions: &mut Vec<MirInstruction<'a>>,
-    namespace: &mut MirNamespace,
 ) -> IndexMap<usize, MirReference> {
     let mut lifetime_num = 0;
     let mut references = IndexMap::new();
@@ -134,6 +134,8 @@ pub fn generate_lifetimes<'a>(
                 };
             }
             RawMirInstruction::Declare { ref name, is_mut } => {
+                let block = this.blocks.get_mut(name.blockid).unwrap();
+
                 lifetime_num += 1;
 
                 let mut uses = Vec::new();
@@ -162,10 +164,10 @@ pub fn generate_lifetimes<'a>(
                     *uses.last().unwrap()
                 };
 
-                instructions.get_mut(end_mir).unwrap().last_use = Some(name.clone());
+                instructions.get_mut(end_mir).unwrap().last_use = Some(name.name.clone());
 
-                namespace.insert(
-                    name.clone(),
+                block.namespace_check.insert(
+                    name.name.clone(),
                     (
                         Some(i),
                         None,
@@ -183,22 +185,46 @@ pub fn generate_lifetimes<'a>(
                 );
             }
             RawMirInstruction::Load(ref name) => {
-                let old_instruction = &instructions
-                    .get(namespace.get(name).unwrap().2.owner.unwrap())
+                let block = this.blocks.get(name.blockid).unwrap();
+
+                let old_blockid = block
+                    .namespace_check
+                    .get(&name.name)
+                    .unwrap()
+                    .2
+                    .owner
+                    .unwrap()
+                    .1;
+
+                let old_block = this.blocks.get(old_blockid).unwrap();
+
+                let old_instruction = old_block
+                    .instructions
+                    .as_ref()
+                    .unwrap()
+                    .get(
+                        block
+                            .namespace_check
+                            .get(&name.name)
+                            .unwrap()
+                            .2
+                            .owner
+                            .unwrap()
+                            .0,
+                    )
                     .unwrap();
 
-                if !(namespace.get(name).unwrap().2.is_owned
+
+                if !(block.namespace_check.get(&name.name).unwrap().2.is_owned
                     || old_instruction.tp.is_some()
-                        && old_instruction
+                        && implements_trait(old_instruction
                             .tp
                             .as_ref()
-                            .unwrap()
-                            .traits
-                            .contains_key(&TraitType::Copy))
+                            .unwrap(), TraitType::Copy))
                 {
                     raise_error_multi(
                         vec![
-                            format!("Use of binding '{name}' after move."),
+                            format!("Use of binding '{}' after move.", name.name),
                             "It was moved here:".into(),
                         ],
                         ErrorType::MovedBinding,
@@ -206,30 +232,47 @@ pub fn generate_lifetimes<'a>(
                         &this.info,
                     );
                 } else {
-                    namespace.get_mut(name).unwrap().2.owner = Some(i);
+                    let block = this.blocks.get_mut(name.blockid).unwrap();
+                    block.namespace_check.get_mut(&name.name).unwrap().2.owner =
+                        Some((i, name.blockid));
                 }
             }
             RawMirInstruction::Own(ref item) => {
                 if let RawMirInstruction::Load(ref name) =
                     instructions.get_mut(*item).unwrap().instruction
                 {
-                    namespace.get_mut(name).unwrap().2.is_owned = false;
+                    let block = this.blocks.get_mut(name.blockid).unwrap();
+
+                    block
+                        .namespace_check
+                        .get_mut(&name.name)
+                        .unwrap()
+                        .2
+                        .is_owned = false;
                 }
             }
             RawMirInstruction::Store {
                 ref name,
                 ref right,
             } => {
-                namespace.insert(
-                    name.clone(),
+                let block = this.blocks.get_mut(name.blockid).unwrap();
+
+                block.namespace_check.insert(
+                    name.name.clone(),
                     (
-                        namespace.get(name).unwrap().0,
+                        block.namespace_check.get(&name.name).unwrap().0,
                         Some(*right),
                         MirTag {
                             is_owned: true,
-                            is_mut: namespace.get(name).unwrap().2.is_mut,
-                            owner: Some(*right),
-                            lifetime: namespace.get(name).unwrap().2.lifetime.clone(),
+                            is_mut: block.namespace_check.get(&name.name).unwrap().2.is_mut,
+                            owner: Some((*right, name.blockid)),
+                            lifetime: block
+                                .namespace_check
+                                .get(&name.name)
+                                .unwrap()
+                                .2
+                                .lifetime
+                                .clone(),
                         },
                     ),
                 );
@@ -254,26 +297,9 @@ pub fn generate_lifetimes<'a>(
                             );
                             break;
                         }
-                        RawMirInstruction::Load(_) => {
+                        RawMirInstruction::Load(name) => {
                             referred_type = ReferenceBase::Load {
-                                borrowed_life: instructions
-                                    .get(rt)
-                                    .as_ref()
-                                    .unwrap()
-                                    .tp
-                                    .as_ref()
-                                    .unwrap()
-                                    .lifetime
-                                    .clone(),
-                                value_life: instructions
-                                    .get(rt)
-                                    .as_ref()
-                                    .unwrap()
-                                    .tp
-                                    .as_ref()
-                                    .unwrap()
-                                    .lifetime
-                                    .clone(),
+                                name: name.clone()
                             };
                             break;
                         }
@@ -313,6 +339,8 @@ pub fn generate_lifetimes<'a>(
                     if let RawMirInstruction::Store { name, right } =
                         &instructions.get(j).as_ref().unwrap().instruction
                     {
+                        let block = this.blocks.get_mut(name.blockid).unwrap();
+
                         if right == &i {
                             let mut last_tmp = None;
                             for k in (j + 1)..instructions.len() {
@@ -328,7 +356,14 @@ pub fn generate_lifetimes<'a>(
                                 }
                             }
                             last = last_tmp.unwrap_or(
-                                match namespace.get(name).as_ref().unwrap().2.lifetime {
+                                match block
+                                    .namespace_check
+                                    .get(&name.name)
+                                    .as_ref()
+                                    .unwrap()
+                                    .2
+                                    .lifetime
+                                {
                                     Lifetime::ImplicitLifetime {
                                         name: _,
                                         start_mir: _,
@@ -423,7 +458,7 @@ pub fn generate_lifetimes<'a>(
                         let fmt: String = format!(
                             "Cannot move non Copy-able type '{}' out of binding '{}'.",
                             tp.qualname(),
-                            name
+                            &name.name
                         );
                         raise_error(
                             &fmt,
@@ -447,8 +482,9 @@ pub fn generate_lifetimes<'a>(
                 code,
                 check_n: _,
                 right: _,
+                offset: _,
             } => {
-                check(this, &mut code.clone(), false, namespace);
+                check(this, &mut code.clone(), false);
             }
         }
 
@@ -476,11 +512,10 @@ pub fn generate_lifetimes<'a>(
 pub fn check_references(
     this: &mut Mir,
     instructions: &mut [MirInstruction],
-    _namespace: &mut MirNamespace,
     references: &IndexMap<usize, MirReference>,
 ) {
-    for (i, (right, _reftype, life, _)) in references {
-        for (j, (_right, _reftype, other_life, _)) in references {
+    for (i, (right, _reftype, life, base1)) in references {
+        for (j, (_right, _reftype, other_life, base2)) in references {
             if i >= j {
                 continue;
             }
@@ -507,13 +542,31 @@ pub fn check_references(
                 usize::MAX
             };
 
-            if let RawMirInstruction::Load(ref name) =
-                instructions.get(*right).as_ref().unwrap().instruction
-            {
-                if l1_end > l2_start {
+            if base1 == base2 {
+                if let RawMirInstruction::Load(ref name) =
+                    instructions.get(*right).as_ref().unwrap().instruction
+                {
+                    if l1_end > l2_start {
+                        raise_error_multi(
+                            vec![
+                                format!(
+                                    "Binding '{}' has multiple immutable references.",
+                                    &name.name
+                                ),
+                                "First reference here.".into(),
+                            ],
+                            ErrorType::MultipleImmutableReferences,
+                            vec![
+                                &instructions.get(*j).unwrap().pos,
+                                &instructions.get(*i).unwrap().pos,
+                            ],
+                            &this.info,
+                        );
+                    }
+                } else if l1_end > l2_start {
                     raise_error_multi(
                         vec![
-                            format!("Binding '{}' has multiple immutable references.", name),
+                            "Value has multiple immutable references.".into(),
                             "First reference here.".into(),
                         ],
                         ErrorType::MultipleImmutableReferences,
@@ -524,19 +577,6 @@ pub fn check_references(
                         &this.info,
                     );
                 }
-            } else if l1_end > l2_start {
-                raise_error_multi(
-                    vec![
-                        "Value has multiple immutable references.".into(),
-                        "First reference here.".into(),
-                    ],
-                    ErrorType::MultipleImmutableReferences,
-                    vec![
-                        &instructions.get(*j).unwrap().pos,
-                        &instructions.get(*i).unwrap().pos,
-                    ],
-                    &this.info,
-                );
             }
         }
     }

@@ -2,7 +2,7 @@ fn main() {
     let x = &123
     
     if 1==1 {
-        let _ = 1
+        let _ = x
     }
     let n = x
 } 

@@ -23,8 +23,25 @@ pub struct Mir<'a> {
     instructions: Vec<MirInstruction<'a>>,
     pub builtins: BuiltinTypes<'a>,
     functions: CodegenFunctions<'a>,
-    namespace: HashMap<String, (Type<'a>, BindingTags)>,
     debug_mir: bool,
+    cur_block: usize,
+    blocks: Vec<Block<'a>>,
+}
+
+#[allow(dead_code)]
+#[derive(Clone, Debug)]
+pub struct Block<'a> {
+    namespace_check: MirNamespace,
+    parents: Vec<usize>,
+    blockid: usize,
+    namespace: HashMap<String, (Type<'a>, BindingTags)>,
+    instructions: Option<Vec<MirInstruction<'a>>>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub struct BlockName {
+    name: String,
+    blockid: usize,
 }
 
 #[derive(Clone, Debug)]
@@ -44,15 +61,15 @@ pub enum RawMirInstruction<'a> {
         right: usize,
     },
     Declare {
-        name: String,
+        name: BlockName,
         is_mut: bool,
     },
     Store {
-        name: String,
+        name: BlockName,
         right: usize,
     },
     Own(usize),
-    Load(String),
+    Load(BlockName),
     Reference(usize),
     Copy(usize),
     Bool(bool),
@@ -71,6 +88,7 @@ pub enum RawMirInstruction<'a> {
         code: Vec<MirInstruction<'a>>,
         check_n: usize,
         right: usize,
+        offset: usize,
     },
 }
 
@@ -89,35 +107,34 @@ pub enum ReferenceType {
     Immutable,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct MirTag {
     is_owned: bool,
     is_mut: bool,
-    owner: Option<usize>,
+    owner: Option<(usize, usize)>, //i, blockid
     lifetime: Lifetime,
 }
 
 type MirNamespace = HashMap<String, (Option<usize>, Option<usize>, MirTag)>; //(declaration, right, tag)
 type MirReference = (usize, ReferenceType, Lifetime, ReferenceBase); //(right, type, lifetime, referred)
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
 pub enum ReferenceBase {
     Literal(Lifetime),
     Load {
-        borrowed_life: Lifetime,
-        value_life: Lifetime,
+        name: BlockName,
     },
     Reference(Lifetime),
 }
 
 impl<'a> RawMirInstruction<'a> {
-    fn fmt(&self, f: &mut String, namespace: &mut MirNamespace, info: &FileInfo) {
+    fn fmt(&self, f: &mut String, blocks: Vec<Block>, info: &FileInfo) {
         f.push_str(&match self {
             RawMirInstruction::Add { left, right } => {
                 format!("add .{left} .{right}")
             }
             RawMirInstruction::Declare { name, is_mut } => {
-                format!("declare {}{}", if *is_mut { "mut " } else { "" }, name)
+                format!("declare {}{}", if *is_mut { "mut " } else { "" }, name.name)
             }
             RawMirInstruction::I8(value) => {
                 format!("i8 {value}")
@@ -135,13 +152,13 @@ impl<'a> RawMirInstruction<'a> {
                 format!("i128 {value}")
             }
             RawMirInstruction::Load(name) => {
-                format!("load {name}")
+                format!("load {}", name.name)
             }
             RawMirInstruction::Own(result) => {
                 format!("own .{result}")
             }
             RawMirInstruction::Store { name, right } => {
-                format!("store {name} .{right}")
+                format!("store {} .{right}", name.name)
             }
             RawMirInstruction::Reference(right) => {
                 format!("ref .{right}")
@@ -186,10 +203,15 @@ impl<'a> RawMirInstruction<'a> {
                 code,
                 check_n,
                 right,
+                offset,
             } => {
                 let mut out = String::new();
-                output_mir(code, namespace, &mut out, &0, info);
-                out = out.split("\n").map(|x| String::from("    ") + x).collect::<Vec<String>>().join("\n");
+                output_mir(&code[*offset..], &mut out, &0, info, blocks);
+                out = out
+                    .split("\n")
+                    .map(|x| String::from("    ") + x)
+                    .collect::<Vec<String>>()
+                    .join("\n");
                 format!("ifcondition #{check_n} .{right} {{\n{}}}", out)
             }
         })
@@ -204,6 +226,13 @@ pub fn new<'a>(
     fn_pos: Position,
     debug_mir: bool,
 ) -> Mir<'a> {
+    let cur = Block {
+        namespace_check: HashMap::new(),
+        namespace: HashMap::new(),
+        parents: vec![0],
+        blockid: 0,
+        instructions: None,
+    };
     Mir {
         info,
         fn_name,
@@ -211,30 +240,42 @@ pub fn new<'a>(
         instructions: Vec::new(),
         builtins,
         functions,
-        namespace: HashMap::new(),
         debug_mir,
+        cur_block: 0,
+        blocks: vec![cur],
     }
 }
 
-pub fn check<'a>(this: &mut Mir<'a>, instructions: &mut Vec<MirInstruction<'a>>, head: bool, namespace: &mut MirNamespace) {
-    let references = check::generate_lifetimes(this, instructions, namespace);
-    check::check_references(this, instructions, namespace, &references);
+pub fn check<'a>(this: &mut Mir<'a>, instructions: &mut Vec<MirInstruction<'a>>, head: bool) {
+    let references = check::generate_lifetimes(this, instructions);
+    check::check_references(this, instructions, &references);
     check::check_return(this, instructions);
     if head {
         if !this.debug_mir {
-            write_mir(this, instructions.clone(), namespace, &references);
+            write_mir(
+                this,
+                instructions.clone(),
+                this.blocks.first().unwrap().clone(),
+                &references,
+            );
         } else {
-            explore(instructions, namespace, &references, &this.info);
+            explore(
+                this,
+                instructions,
+                this.blocks.first().unwrap().clone(),
+                references.clone(),
+                this.info.clone(),
+            );
         }
     }
 }
 
 pub fn output_mir(
     instructions: &[MirInstruction<'_>],
-    namespace: &mut MirNamespace,
     out: &mut String,
     start: &usize,
     info: &FileInfo,
+    blocks: Vec<Block>,
 ) {
     let mut cur_line = None;
 
@@ -247,10 +288,20 @@ pub fn output_mir(
 
         out.push_str("    ");
         out.push_str(&format!(".{:<5}", format!("{}:", i + start)));
-        instruction.instruction.fmt(out, namespace, info);
+        instruction.instruction.fmt(out, blocks.clone(), info);
 
         if let RawMirInstruction::Declare { name, is_mut: _ } = &instruction.instruction {
-            out.push_str(&namespace.get(name).unwrap().2.lifetime.to_string());
+            out.push_str(
+                &blocks
+                    .get(name.blockid)
+                    .unwrap()
+                    .namespace_check
+                    .get(&name.name)
+                    .unwrap()
+                    .2
+                    .lifetime
+                    .to_string(),
+            );
         }
 
         if instruction.tp.is_some() {
@@ -273,7 +324,7 @@ pub fn output_mir(
 pub fn write_mir(
     this: &mut Mir,
     instructions: Vec<MirInstruction<'_>>,
-    namespace: &mut MirNamespace,
+    _namespace: Block,
     references: &IndexMap<usize, MirReference>,
 ) {
     let mut out = String::new();
@@ -284,7 +335,7 @@ pub fn write_mir(
         this.functions.get(&this.fn_name).unwrap().1 .1.qualname()
     ));
 
-    output_mir(&instructions, namespace, &mut out, &0, &this.info);
+    output_mir(&instructions, &mut out, &0, &this.info, this.blocks.clone());
 
     out.push('\n');
 
@@ -324,9 +375,11 @@ pub fn write_mir(
 
 impl<'a> Mir<'a> {
     pub fn generate(&mut self, ast: &Vec<Node>) -> Vec<MirInstruction<'a>> {
+        let n = self.blocks.len() - 1;
         for node in ast {
             self.generate_expr(node);
         }
+        self.blocks.get_mut(n).unwrap().instructions = Some(self.instructions.clone());
 
         self.instructions.clone()
     }
@@ -831,9 +884,14 @@ impl<'a> Mir<'a> {
         let name = letnode.raw.get("name").unwrap();
         let is_mut = letnode.booleans.get("is_mut").unwrap();
 
+        let blockname = BlockName {
+            name: name.clone(),
+            blockid: self.cur_block,
+        };
+
         self.instructions.push(MirInstruction {
             instruction: RawMirInstruction::Declare {
-                name: name.to_string(),
+                name: blockname.clone(),
                 is_mut: *is_mut,
             },
             pos: node.pos.clone(),
@@ -851,7 +909,7 @@ impl<'a> Mir<'a> {
         });
         self.instructions.push(MirInstruction {
             instruction: RawMirInstruction::Store {
-                name: name.to_string(),
+                name: blockname.clone(),
                 right: right.0,
             },
             pos: node.pos.clone(),
@@ -859,8 +917,12 @@ impl<'a> Mir<'a> {
             last_use: None,
         });
 
-        self.namespace
+        let mut get = self.blocks.get_mut(self.cur_block);
+        let block = get.as_mut().unwrap();
+        block
+            .namespace
             .insert(name.clone(), (right.1, BindingTags { is_mut: *is_mut }));
+
 
         (
             self.instructions.len() - 1,
@@ -872,33 +934,43 @@ impl<'a> Mir<'a> {
         let identifiernode = node.data.get_data();
         let name = identifiernode.raw.get("value").unwrap();
 
-        if self.namespace.get(name).is_none() {
-            let fmt: String = format!("Binding '{}' not found in scope.", name);
-            raise_error(&fmt, ErrorType::BindingNotFound, &node.pos, &self.info);
-        }
-
-        let tp = self.namespace.get(name).unwrap().0.clone();
-
-        self.instructions.push(MirInstruction {
-            instruction: RawMirInstruction::Load(name.to_string()),
-            pos: node.pos.clone(),
-            tp: Some(tp.clone()),
-            last_use: None,
-        });
-
-        if implements_trait(&tp, TraitType::Copy) {
+        for blockid in self.blocks.get(self.cur_block).unwrap().parents.iter().rev() {
+            let block = self.blocks.get(*blockid).unwrap();
+            if block.namespace.get(name).is_none() {
+                continue;
+            }
+            
+            let tp = block.namespace.get(name).unwrap().0.clone();
+    
+            let blockname = BlockName {
+                name: name.clone(),
+                blockid: block.blockid,
+            };
+    
             self.instructions.push(MirInstruction {
-                instruction: RawMirInstruction::Copy(self.instructions.len() - 1),
+                instruction: RawMirInstruction::Load(blockname),
                 pos: node.pos.clone(),
                 tp: Some(tp.clone()),
                 last_use: None,
             });
+    
+            if implements_trait(&tp, TraitType::Copy) {
+                self.instructions.push(MirInstruction {
+                    instruction: RawMirInstruction::Copy(self.instructions.len() - 1),
+                    pos: node.pos.clone(),
+                    tp: Some(tp.clone()),
+                    last_use: None,
+                });
+            }
+    
+            return (
+                self.instructions.len() - 1,
+                block.namespace.get(name).unwrap().0.clone(),
+            )
         }
-
-        (
-            self.instructions.len() - 1,
-            self.namespace.get(name).unwrap().0.clone(),
-        )
+        
+        let fmt: String = format!("Binding '{}' not found in scope.", name);
+        raise_error(&fmt, ErrorType::BindingNotFound, &node.pos, &self.info);
     }
 
     fn generate_store(&mut self, node: &Node) -> MirResult<'a> {
@@ -907,12 +979,14 @@ impl<'a> Mir<'a> {
         let expr = storenode.nodes.get("expr").unwrap();
         let right = self.generate_expr(expr);
 
-        if self.namespace.get(name).is_none() {
+        let block = self.blocks.get(self.cur_block).unwrap();
+
+        if block.namespace.get(name).is_none() {
             let fmt: String = format!("Binding '{}' not found in scope.", name);
             raise_error(&fmt, ErrorType::BindingNotFound, &node.pos, &self.info);
         }
 
-        let binding = self.namespace.get(name).unwrap();
+        let binding = block.namespace.get(name).unwrap();
 
         if right.1 != binding.0 {
             raise_error(
@@ -939,6 +1013,11 @@ impl<'a> Mir<'a> {
             );
         }
 
+        let blockname = BlockName {
+            name: name.clone(),
+            blockid: self.cur_block,
+        };
+
         self.instructions.push(MirInstruction {
             instruction: RawMirInstruction::Own(right.0),
             pos: node.pos.clone(),
@@ -947,7 +1026,7 @@ impl<'a> Mir<'a> {
         });
         self.instructions.push(MirInstruction {
             instruction: RawMirInstruction::Store {
-                name: name.to_string(),
+                name: blockname,
                 right: right.0,
             },
             pos: node.pos.clone(),
@@ -957,7 +1036,7 @@ impl<'a> Mir<'a> {
 
         (
             self.instructions.len() - 1,
-            self.namespace.get(name).unwrap().0.clone(),
+            block.namespace.get(name).unwrap().0.clone(),
         )
     }
 
@@ -1065,23 +1144,34 @@ impl<'a> Mir<'a> {
                 &self.info,
             );
         }
+        let block = self.blocks.get(self.cur_block).unwrap().clone();
 
-        let mut mir = self::new(
-            self.info.clone(),
-            self.builtins.clone(),
-            self.functions.clone(),
-            self.fn_name.clone(),
-            self.fn_pos.clone(),
-            self.debug_mir,
-        );
+        let mut parents = block.parents.clone();
+        parents.push(self.blocks.len());
+        let cur_block = Block {
+            namespace_check: HashMap::new(),
+            parents,
+            blockid: self.blocks.len(),
+            namespace: HashMap::new(),
+            instructions: None,
+        };
 
-        let instructions = mir.generate(&code);
+        self.blocks.push(cur_block.clone());
+
+        let old_block = self.cur_block.clone();
+        self.cur_block = cur_block.blockid;
+
+        let len = self.instructions.len();
+        let instructions = self.generate(&code);
+
+        self.cur_block = old_block;
 
         self.instructions.push(MirInstruction {
             instruction: RawMirInstruction::IfCondition {
                 code: instructions.clone(),
                 check_n: 0,
                 right: expr.0,
+                offset: len,
             },
             pos: node.pos.clone(),
             tp: Some(
@@ -1089,11 +1179,11 @@ impl<'a> Mir<'a> {
                     .into_iter()
                     .map(|x| {
                         x.tp.as_ref()
-                            .unwrap_or(mir.builtins.get(&BasicType::Void).unwrap())
+                            .unwrap_or(self.builtins.get(&BasicType::Void).unwrap())
                             .clone()
                     })
                     .last()
-                    .unwrap_or(mir.builtins.get(&BasicType::Void).unwrap().clone()),
+                    .unwrap_or(self.builtins.get(&BasicType::Void).unwrap().clone()),
             ),
             last_use: None,
         });

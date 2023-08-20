@@ -23,6 +23,7 @@ use crate::{
     Flags,
 };
 
+#[derive(Clone, Debug)]
 pub struct BindingTags {
     pub is_mut: bool,
 }
@@ -1116,7 +1117,7 @@ impl<'a> CodeGen<'a> {
                 self.debug_mir,
             );
             let mut instructions = mir.generate(fnnode.nodearr.unwrap());
-            mir::check(&mut mir, &mut instructions, true, &mut HashMap::new());
+            mir::check(&mut mir, &mut instructions, true);
             //
 
             self.namespaces.insert(
@@ -1283,7 +1284,7 @@ impl<'a> CodeGen<'a> {
                 self.debug_mir,
             );
             let mut instructions = mir.generate(fnnode.nodearr.unwrap());
-            mir::check(&mut mir, &mut instructions, true, &mut HashMap::new());
+            mir::check(&mut mir, &mut instructions, true);
             //
 
             self.namespaces.insert(
@@ -1350,7 +1351,7 @@ impl<'a> CodeGen<'a> {
             self.debug_mir,
         );
         let mut instructions = mir.generate(&vec![]);
-        mir::check(&mut mir, &mut instructions, true, &mut HashMap::new());
+        mir::check(&mut mir, &mut instructions, true);
         //
 
         self.namespaces.insert(
