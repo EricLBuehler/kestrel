@@ -13,22 +13,14 @@ main:                                   # @main
 	.cfi_offset %rbp, -16
 	movq	%rsp, %rbp
 	.cfi_def_cfa_register %rbp
-	subq	$16, %rsp
                                         # kill: killed $rsi
                                         # kill: killed $edi
-	leaq	-12(%rbp), %rax
-	movq	%rax, -8(%rbp)
-# %bb.1:
+	jmp	.LBB0_1
+.LBB0_1:
 	movq	%rsp, %rax
 	addq	$-16, %rax
 	movq	%rax, %rsp
-	movl	$1, (%rax)
-# %bb.2:
-	movq	-8(%rbp), %rax
-	movq	%rsp, %rcx
-	addq	$-16, %rcx
-	movq	%rcx, %rsp
-	movq	%rax, (%rcx)
+	movl	%eax, (%rax)
 	xorl	%eax, %eax
 	movq	%rbp, %rsp
 	popq	%rbp

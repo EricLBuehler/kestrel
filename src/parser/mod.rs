@@ -442,10 +442,10 @@ impl<'a> Parser<'a> {
             TokenType::U128 => Some(self.generate_u128()),
             TokenType::Identifier => Some(self.generate_identifier()),
             TokenType::Ampersand => Some(self.generate_reference()),
-            TokenType::Keyword => match self.current.data.as_str() {
-                "true" => Some(self.generate_true()),
-                "false" => Some(self.generate_false()),
-                _ => None,
+            TokenType::Keyword => {
+                let res = self.keyword();
+                self.backadvance();
+                Some(res)
             },
             TokenType::Asterisk => Some(self.generate_asterisk()),
             _ => None,

@@ -295,6 +295,85 @@ impl<'a> CodeGen<'a> {
             BasicType::Void => context.void_type().into(),
         }
     }
+    
+    fn kestrel_to_inkwell_tp_undef(context: &'a Context, tp: &Type<'a>) -> BasicValueEnum<'a> {
+        match tp.basictype {
+            BasicType::Bool => {
+                let inkwell_tp = context.bool_type();
+                if tp.ref_n > 0 {
+                    let mut inkwell_tp = inkwell_tp.ptr_type(AddressSpace::from(0u16));
+                    for _ in 1..tp.ref_n {
+                        inkwell_tp = inkwell_tp.ptr_type(AddressSpace::from(0u16));
+                    }
+                    inkwell_tp.get_undef().into()
+                } else {
+                    inkwell_tp.get_undef().into()
+                }
+            }
+            BasicType::I128 | BasicType::U128 => {
+                let inkwell_tp = context.i128_type();
+                if tp.ref_n > 0 {
+                    let mut inkwell_tp = inkwell_tp.ptr_type(AddressSpace::from(0u16));
+                    for _ in 1..tp.ref_n {
+                        inkwell_tp = inkwell_tp.ptr_type(AddressSpace::from(0u16));
+                    }
+                    inkwell_tp.get_undef().into()
+                } else {
+                    inkwell_tp.get_undef().into()
+                }
+            }
+            BasicType::I64 | BasicType::U64 => {
+                let inkwell_tp = context.i64_type();
+                if tp.ref_n > 0 {
+                    let mut inkwell_tp = inkwell_tp.ptr_type(AddressSpace::from(0u16));
+                    for _ in 1..tp.ref_n {
+                        inkwell_tp = inkwell_tp.ptr_type(AddressSpace::from(0u16));
+                    }
+                    inkwell_tp.get_undef().into()
+                } else {
+                    inkwell_tp.get_undef().into()
+                }
+            }
+            BasicType::I32 | BasicType::U32 => {
+                let inkwell_tp = context.i32_type();
+                if tp.ref_n > 0 {
+                    let mut inkwell_tp = inkwell_tp.ptr_type(AddressSpace::from(0u16));
+                    for _ in 1..tp.ref_n {
+                        inkwell_tp = inkwell_tp.ptr_type(AddressSpace::from(0u16));
+                    }
+                    inkwell_tp.get_undef().into()
+                } else {
+                    inkwell_tp.get_undef().into()
+                }
+            }
+            BasicType::I16 | BasicType::U16 => {
+                let inkwell_tp = context.i16_type();
+                if tp.ref_n > 0 {
+                    let mut inkwell_tp = inkwell_tp.ptr_type(AddressSpace::from(0u16));
+                    for _ in 1..tp.ref_n {
+                        inkwell_tp = inkwell_tp.ptr_type(AddressSpace::from(0u16));
+                    }
+                    inkwell_tp.get_undef().into()
+                } else {
+                    inkwell_tp.get_undef().into()
+                }
+            }
+            BasicType::I8 | BasicType::U8 => {
+                let inkwell_tp = context.i8_type();
+                if tp.ref_n > 0 {
+                    let mut inkwell_tp = inkwell_tp.ptr_type(AddressSpace::from(0u16));
+                    for _ in 1..tp.ref_n {
+                        inkwell_tp = inkwell_tp.ptr_type(AddressSpace::from(0u16));
+                    }
+                    inkwell_tp.get_undef().into()
+                } else {
+                    inkwell_tp.get_undef().into()
+                }
+            }
+            BasicType::Void => unimplemented!(), //TODO
+        }
+    }
+
     fn create_fn_tp(
         context: &'a Context,
         args: &[Type<'a>],
@@ -1218,12 +1297,22 @@ impl<'a> CodeGen<'a> {
 
         self.builder.position_at_end(if_block);
 
-        self.compile_statements(ifnode.nodearr.unwrap());
+        let res = self.compile_statements(ifnode.nodearr.unwrap());
         self.builder.build_unconditional_branch(done_block);
 
         self.builder.position_at_end(done_block);
 
-        expr
+        let phi: inkwell::values::PhiValue<'_> = self
+            .builder
+            .build_phi(res.data.unwrap().get_type(), "");
+
+        phi.add_incoming(&[(&res.data.unwrap(), if_block)]);
+        phi.add_incoming(&[(&Self::kestrel_to_inkwell_tp_undef(self.context, &res.tp), done_block)]);
+
+        Data {
+            data: Some(phi.as_basic_value()),
+            tp: res.tp.clone(),
+        }
     }
 }
 
