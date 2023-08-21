@@ -1,7 +1,7 @@
 import sys
 
 """
-.git/commit-msg
+.git/hooks/commit-msg
 
 #!/bin/bash
 
