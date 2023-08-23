@@ -1,0 +1,37 @@
+name: Test
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  test:
+    if: "!contains(github.event.head_commit.message, '[ci-skip]')"
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Install llvm-14
+      run: sudo apt install llvm-14
+    - name: Install llvm
+      run: sudo apt install llvm
+    - name: Build
+      run: make build
+    - name: Default
+      run: ./kestrel program.ke
+    - name: Optimized and Sanitized
+      run: ./kestrel program.ke -o -fsanitize
+    - name: Optimized and No OU
+      run: ./kestrel program.ke -o -fno-ou-checks
+    - name: Optimized and all flags
+      run: ./kestrel program.ke -o -fno-ou-checks -fsanitize
+    - name: Not optimized and Sanitized
+      run: ./kestrel program.ke -fsanitize
+    - name: Not optimized and No OU
+      run: ./kestrel program.ke -fno-ou-checks
+    - name: Not optimized and all flags
+      run: ./kestrel program.ke -fno-ou-checks -fsanitize
+    - name: Kestrel and Doc tests
+      run: python3 tests/kats.py

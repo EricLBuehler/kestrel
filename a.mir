@@ -1,0 +1,44 @@
+fn main: std::void {
+    program.ke:2
+    .0:   declare a['1 .0 => .11]
+    .1:   i32 1 -> std::i32['2 .1 => .2]
+    .2:   ref .1 -> &std::i32['4 .2 => .4]
+    .3:   own .2
+    .4:   store a .2 -> std::void['5 .4 => .4]
+    program.ke:3
+    .5:   declare x['6 .5 => .5]
+    .6:   i32 1 -> std::i32['7 .6 => .8]
+    .7:   i32 2 -> std::i32['8 .7 => .8]
+    .8:   eq .6 .7 -> std::bool['9 .8 => .15]
+    program.ke:4
+    .9:   i32 123 -> std::i32['10 .9 => .9]
+    program.ke:5
+    .10:  declare m['11 .10 => .14]
+    .11:  load a -> &std::i32['12 .11 => .12]
+    .12:  ref .11 -> &&std::i32['14 .12 => .14]
+    .13:  own .12
+    .14:  store m .12 -> std::void['15 .14 => .14]  dropbinding m
+    program.ke:3
+    .15:  ifcondition #0 .8 {
+        program.ke:4
+        .0:   i32 123 -> std::i32['static]
+        program.ke:5
+        .1:   declare m['11 .10 => .14]
+        .2:   load a -> &std::i32['static]
+        .3:   ref .11 -> &&std::i32['static]
+        .4:   own .12
+        .5:   store m .12 -> std::void['static]
+    } -> std::void['16 .15 => .17]
+    .16:  own .15
+    .17:  store x .15 -> std::void['17 .17 => .17]  dropbinding x
+    program.ke:7
+    .18:  declare y['18 .18 => .22]
+    .19:  load a -> &std::i32['19 .19 => .20]  dropbinding a
+    .20:  ref .19 -> &&std::i32['21 .20 => .22]
+    .21:  own .20
+    .22:  store y .20 -> std::void['22 .22 => .22]  dropbinding y
+
+    & ref .2 ['3 .2 => .19]
+    && ref .12 ['13 .12 => .14]
+    && ref .20 ['20 .20 => .22]
+}
