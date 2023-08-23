@@ -1,6 +1,0 @@
-fn main() {
-    let x = 123
-    let y = &x
-    let z = *y
-    let _ = *x
-}

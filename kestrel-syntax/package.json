@@ -1,0 +1,33 @@
+{
+    "name": "kestrel-syntax",
+    "displayName": "Kestrel Syntax",
+    "description": "Syntax highlighting for Kestrel programs",
+    "version": "0.0.1",
+    "engines": {
+      "vscode": "^1.80.0"
+    },
+    "categories": [
+      "Programming Languages"
+    ],
+    "contributes": {
+      "languages": [
+        {
+          "id": "Kestrel",
+          "aliases": [
+            "Kestrel"
+          ],
+          "extensions": [
+            ".ke"
+          ],
+          "configuration": "./language-configuration.json"
+        }
+      ],
+      "grammars": [
+        {
+          "language": "Kestrel",
+          "scopeName": "source.kestrel",
+          "path": "./syntaxes/kestrel.tmLanguage.json"
+        }
+      ]
+    }
+  }

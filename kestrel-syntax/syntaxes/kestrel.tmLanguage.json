@@ -1,0 +1,80 @@
+{
+    "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+    "name": "Kestrel",
+    "patterns": [
+      {
+        "include": "#keywords"
+      },
+      {
+        "include": "#strings"
+      },
+      {
+        "include": "#comment"
+      },
+      {
+        "include": "#block-comments"
+      },
+      {
+        "include": "#constant"
+      },
+      {
+        "include": "#characters"
+      },
+      {
+        "include": "#number"
+      },
+      {
+        "include": "#type"
+      },
+      {
+        "include": "#variable"
+      }
+    ],
+    "repository": {
+      "constant": {
+        "match": "\\b(?:true|false)\\b",
+        "name": "constant.language.kestrel"
+      },
+      "keywords": {
+        "patterns": [
+          {
+            "name": "keyword.control.kestrel",
+            "match": "\\b(if|fn|let)\\b"
+          }
+        ]
+      },
+      "type": {
+        "patterns": [
+          {
+            "name": "storage.type.kestrel",
+            "match": "\\b(?:(u|i)(8|16|32|64|128))\\b"
+          }
+        ]
+      },
+      "number": {
+        "match": "(?x)        # turn on extended mode\n  -?        # an optional minus\n  (?:\n    0       # a zero\n    |       # ...or...\n    [1-9]   # a 1-9 character\n    \\d*     # followed by zero or more digits\n  )\n  (?:\n    (?:\n      \\.    # a period\n      \\d+   # followed by one or more digits\n    )?\n    (?:\n      [eE]  # an e character\n      [+-]? # followed by an option +/-\n      \\d+   # followed by one or more digits\n    )?      # make exponent optional\n  )?        # make decimal portion optional",
+        "name": "constant.numeric.kestrel"
+      },
+      "characters": {
+        "name": "string.quoted.single.kestrel",
+        "begin": "'",
+        "end": "'",
+        "patterns": [
+          {
+            "name": "constant.character.escape.kestrel",
+            "match": "\\\\."
+          }
+        ]
+      },
+      "variable": {
+        "patterns": [
+          {
+            "name": "variable.other",
+            "match": "[_a-zA-Z][_a-zA-Z0-9]{0,1024}" 
+          }
+        ]
+      },
+      "function": {}
+    },
+    "scopeName": "source.kestrel"
+  }
