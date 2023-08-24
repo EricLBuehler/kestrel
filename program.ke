@@ -3,8 +3,5 @@ fn main() {
     let x = if 1==2 {
         let m = &a
     }
-    else {
-        let n = &a
-    }
     let y = &a
 } 
