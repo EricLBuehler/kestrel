@@ -39,7 +39,7 @@
         "patterns": [
           {
             "name": "keyword.control.kestrel",
-            "match": "\\b(if|fn|let)\\b"
+            "match": "\\b(if|else|fn|let)\\b"
           }
         ]
       },
