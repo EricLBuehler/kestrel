@@ -11,6 +11,7 @@ use inkwell::{
     AddressSpace,
 };
 use std::{collections::HashMap, error::Error, fs::OpenOptions};
+use strum::IntoEnumIterator;
 
 use crate::{
     errors::{raise_error, raise_error_multi, ErrorType},
@@ -416,20 +417,7 @@ impl<'a> CodeGen<'a> {
         let data = name.data.get_data();
         let name_str = data.raw.get("value").unwrap();
 
-        for basictype in [
-            BasicType::I8,
-            BasicType::I16,
-            BasicType::I32,
-            BasicType::I64,
-            BasicType::I128,
-            BasicType::Bool,
-            BasicType::U8,
-            BasicType::U16,
-            BasicType::U32,
-            BasicType::U64,
-            BasicType::U128,
-            BasicType::Void,
-        ] {
+        for basictype in BasicType::iter() {
             if name_str == &basictype.to_string() {
                 return builtins.get(&basictype).unwrap().clone();
             }

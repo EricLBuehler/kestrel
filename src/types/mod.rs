@@ -1,6 +1,7 @@
 use std::{collections::HashMap, fmt::Display};
 
 use inkwell::AddressSpace;
+use strum::EnumIter;
 
 use crate::{
     codegen::{CodeGen, Data},
@@ -66,7 +67,7 @@ pub enum TraitType {
     Ne,
 }
 
-#[derive(Hash, PartialEq, Eq, PartialOrd, Ord, Clone, Debug)]
+#[derive(Hash, PartialEq, Eq, PartialOrd, Ord, Clone, Debug, EnumIter)]
 pub enum BasicType {
     I8,
     I16,

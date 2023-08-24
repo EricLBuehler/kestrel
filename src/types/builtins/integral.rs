@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use inkwell::{intrinsics::Intrinsic, types::BasicTypeEnum};
+use strum::IntoEnumIterator;
 
 use crate::{
     codegen::{CodeGen, CurFunctionState, Data},
@@ -220,19 +221,7 @@ fn integral_skeleton_cmp<'a>(
 }
 
 pub fn init_integral(codegen: &mut CodeGen) {
-    for basictype in [
-        BasicType::I8,
-        BasicType::I16,
-        BasicType::I32,
-        BasicType::I64,
-        BasicType::I128,
-        BasicType::Bool,
-        BasicType::U8,
-        BasicType::U16,
-        BasicType::U32,
-        BasicType::U64,
-        BasicType::U128,
-    ] {
+    for basictype in BasicType::iter() {
         let tp = Type {
             basictype: basictype.clone(),
             traits: HashMap::from([
