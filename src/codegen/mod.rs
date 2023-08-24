@@ -1302,16 +1302,24 @@ impl<'a> CodeGen<'a> {
 
         self.builder.position_at_end(done_block);
 
-        let phi: inkwell::values::PhiValue<'_> = self
-            .builder
-            .build_phi(res.data.unwrap().get_type(), "");
+        if res.data.is_some() { 
+            let phi: inkwell::values::PhiValue<'_> = self
+                .builder
+                .build_phi(res.data.unwrap().get_type(), "");
 
-        phi.add_incoming(&[(&res.data.unwrap(), if_block)]);
-        phi.add_incoming(&[(&Self::kestrel_to_inkwell_tp_undef(self.context, &res.tp), done_block)]);
+            phi.add_incoming(&[(&res.data.unwrap(), if_block)]);
+            phi.add_incoming(&[(&Self::kestrel_to_inkwell_tp_undef(self.context, &res.tp), done_block)]);
 
-        Data {
-            data: Some(phi.as_basic_value()),
-            tp: res.tp.clone(),
+            Data {
+                data: Some(phi.as_basic_value()),
+                tp: res.tp.clone(),
+            }
+        }
+        else {
+            Data {
+                data: None,
+                tp: res.tp.clone(),
+            }
         }
     }
 }
