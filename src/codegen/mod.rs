@@ -295,7 +295,7 @@ impl<'a> CodeGen<'a> {
             BasicType::Void => context.void_type().into(),
         }
     }
-    
+
     fn kestrel_to_inkwell_tp_undef(context: &'a Context, tp: &Type<'a>) -> BasicValueEnum<'a> {
         match tp.basictype {
             BasicType::Bool => {
@@ -416,7 +416,7 @@ impl<'a> CodeGen<'a> {
         let data = name.data.get_data();
         let name_str = data.raw.get("value").unwrap();
 
-        for basictype in vec![
+        for basictype in [
             BasicType::I8,
             BasicType::I16,
             BasicType::I32,
@@ -1302,20 +1302,21 @@ impl<'a> CodeGen<'a> {
 
         self.builder.position_at_end(done_block);
 
-        if res.data.is_some() { 
-            let phi: inkwell::values::PhiValue<'_> = self
-                .builder
-                .build_phi(res.data.unwrap().get_type(), "");
+        if res.data.is_some() {
+            let phi: inkwell::values::PhiValue<'_> =
+                self.builder.build_phi(res.data.unwrap().get_type(), "");
 
             phi.add_incoming(&[(&res.data.unwrap(), if_block)]);
-            phi.add_incoming(&[(&Self::kestrel_to_inkwell_tp_undef(self.context, &res.tp), done_block)]);
+            phi.add_incoming(&[(
+                &Self::kestrel_to_inkwell_tp_undef(self.context, &res.tp),
+                done_block,
+            )]);
 
             Data {
                 data: Some(phi.as_basic_value()),
                 tp: res.tp.clone(),
             }
-        }
-        else {
+        } else {
             Data {
                 data: None,
                 tp: res.tp.clone(),

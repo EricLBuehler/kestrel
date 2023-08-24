@@ -220,7 +220,7 @@ fn integral_skeleton_cmp<'a>(
 }
 
 pub fn init_integral(codegen: &mut CodeGen) {
-    for basictype in vec![
+    for basictype in [
         BasicType::I8,
         BasicType::I16,
         BasicType::I32,

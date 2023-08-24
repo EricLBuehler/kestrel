@@ -446,7 +446,7 @@ impl<'a> Parser<'a> {
                 let res = self.keyword();
                 self.backadvance();
                 Some(res)
-            },
+            }
             TokenType::Asterisk => Some(self.generate_asterisk()),
             _ => None,
         }
