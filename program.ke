@@ -1,8 +1,2 @@
 fn main() {
-    let a = &1    
-    let x = if 1==2 {
-        123
-        let m = &a
-    }
-    let y = &a
 } 

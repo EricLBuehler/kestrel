@@ -4,11 +4,6 @@ target triple = "x86_64-unknown-linux-gnu"
 
 ; Function Attrs: noinline norecurse nounwind optnone willreturn
 define i32 @main(i32 %0, i32** %1) local_unnamed_addr #0 {
-  br label %3
-
-3:                                                ; preds = %2
-  %4 = alloca i32, align 4
-  store i32 undef, i32* %4, align 4
   ret i32 0
 }
 
