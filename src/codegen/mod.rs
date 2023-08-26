@@ -1267,8 +1267,6 @@ impl<'a> CodeGen<'a> {
                 phi.add_incoming(&[(&result.0.data.unwrap(), *result.1)]);
             }
 
-            println!("phi {phi:?}");
-
             Data {
                 data: Some(phi.as_basic_value()),
                 tp: tp.unwrap(),
