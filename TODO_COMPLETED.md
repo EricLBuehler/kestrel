@@ -24,3 +24,14 @@
     Add: 
     - [x] `Eq`, `Ne` traits, implement for `std` types.
     - [x] Add `==`, `!=` operators.
+
+- **Add control flow** (by 8/16/23)
+
+    Add:
+    - [x] `if` keyword
+    - [x] `elif` keyword
+    - [x] `else` keyword
+    - [x] use phi values.
+
+    This was false: "MIR effect: Will require permutations to prove invariants."
+    - [x] Use namespaces to allow for MIR checking

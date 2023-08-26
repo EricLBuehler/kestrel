@@ -8,12 +8,6 @@
 Simple and safe.
 
 ## Todo Roadmap
-
-- **Add control flow** (by 8/16/23)
-
-    Add: `if` keyword, `elif` keyword, `else` keyword, use phi values.
-
-    MIR effect: Will require permutations to prove invariants.
     
 - **Add C-style enums** (by 8/18/23)
 
