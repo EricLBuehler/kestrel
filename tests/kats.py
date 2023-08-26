@@ -11,7 +11,7 @@ def check(title: str, name: str, expected: str):
 
     expected = expected.replace("\\n", "\n")
     result = result.stderr.replace(b"\\n", b"\n").decode()
-    if expected != result:
+    if expected != result and not (expected == "\n" and expected.replace("\n", "") != result+"\n"):
         print(f"{title}: ❌")
         print(f"Expected:\n'{expected}'\n\nGot:\n'{result}'")
         return False

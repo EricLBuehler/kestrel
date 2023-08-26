@@ -33,3 +33,6 @@ It was moved here:
 ./tests/E007_if.ke:5:17
 5 |         let _ = x
   |                 ^     
+=-=
+Expected passing - Use of references with scopes
+iref_ifblock.ke
