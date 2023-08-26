@@ -4,7 +4,7 @@ use indexmap::IndexMap;
 
 use crate::{
     codegen::{BindingTags, CodegenFunctions},
-    errors::{raise_error, ErrorType, raise_error_multi},
+    errors::{raise_error, raise_error_multi, ErrorType},
     parser::nodes::{Node, NodeType, OpType},
     types::{implements_trait, BasicType, BuiltinTypes, Lifetime, Trait, TraitType, Type},
     utils::{FileInfo, Position},
@@ -223,8 +223,7 @@ impl<'a> RawMirInstruction<'a> {
                     .join("\n");
                 if right.is_some() {
                     format!("ifcondition #{check_n} .{} {{\n{out}}}", right.unwrap())
-                }
-                else {
+                } else {
                     format!("ifcondition #{check_n} {{\n{out}}}")
                 }
             }
@@ -1193,30 +1192,37 @@ impl<'a> Mir<'a> {
             self.cur_block = old_block;
 
             let tp_cur = instructions
-            .iter()
-            .map(|x| {
-                x.tp.as_ref()
-                    .unwrap_or(self.builtins.get(&BasicType::Void).unwrap())
-                    .clone()
-            })
-            .last()
-            .unwrap_or(self.builtins.get(&BasicType::Void).unwrap().clone());
+                .iter()
+                .map(|x| {
+                    x.tp.as_ref()
+                        .unwrap_or(self.builtins.get(&BasicType::Void).unwrap())
+                        .clone()
+                })
+                .last()
+                .unwrap_or(self.builtins.get(&BasicType::Void).unwrap().clone());
 
-            let pos_cur = instructions.iter().map(|x| {
-                x.pos.clone()
-            }).last()
-            .unwrap_or(node.pos.clone());
+            let pos_cur = instructions
+                .iter()
+                .map(|x| x.pos.clone())
+                .last()
+                .unwrap_or(node.pos.clone());
 
             match finaltp {
                 Some(ref tp) => {
                     if tp.0 != tp_cur {
                         raise_error_multi(
-                            vec![format!("Expected '{}', got '{}'", tp.0.qualname(), tp_cur.qualname()),
-                            format!("Original type:")],
+                            vec![
+                                format!(
+                                    "Expected '{}', got '{}'",
+                                    tp.0.qualname(),
+                                    tp_cur.qualname()
+                                ),
+                                format!("Original type:"),
+                            ],
                             ErrorType::TypeMismatch,
-                            vec![&pos_cur,&tp.1],
+                            vec![&pos_cur, &tp.1],
                             &self.info,
-                        );                     
+                        );
                     }
                 }
                 None => {
@@ -1232,14 +1238,12 @@ impl<'a> Mir<'a> {
                     offset: len,
                 },
                 pos: node.pos.clone(),
-                tp: Some(
-                    tp_cur
-                ),
+                tp: Some(tp_cur),
                 last_use: None,
             });
-            check_n+=1;
+            check_n += 1;
         }
-        
+
         if ifnode.nodearr_else.is_some() {
             let code = ifnode.nodearr_else.as_ref().unwrap().clone();
 
@@ -1266,30 +1270,37 @@ impl<'a> Mir<'a> {
             self.cur_block = old_block;
 
             let tp_cur = instructions
-            .iter()
-            .map(|x| {
-                x.tp.as_ref()
-                    .unwrap_or(self.builtins.get(&BasicType::Void).unwrap())
-                    .clone()
-            })
-            .last()
-            .unwrap_or(self.builtins.get(&BasicType::Void).unwrap().clone());
+                .iter()
+                .map(|x| {
+                    x.tp.as_ref()
+                        .unwrap_or(self.builtins.get(&BasicType::Void).unwrap())
+                        .clone()
+                })
+                .last()
+                .unwrap_or(self.builtins.get(&BasicType::Void).unwrap().clone());
 
-            let pos_cur = instructions.iter().map(|x| {
-                x.pos.clone()
-            }).last()
-            .unwrap_or(node.pos.clone());
+            let pos_cur = instructions
+                .iter()
+                .map(|x| x.pos.clone())
+                .last()
+                .unwrap_or(node.pos.clone());
 
             match finaltp {
                 Some(ref tp) => {
                     if tp.0 != tp_cur {
                         raise_error_multi(
-                            vec![format!("Expected '{}', got '{}'", tp.0.qualname(), tp_cur.qualname()),
-                            format!("Original type:")],
+                            vec![
+                                format!(
+                                    "Expected '{}', got '{}'",
+                                    tp.0.qualname(),
+                                    tp_cur.qualname()
+                                ),
+                                format!("Original type:"),
+                            ],
                             ErrorType::TypeMismatch,
-                            vec![&pos_cur,&tp.1],
+                            vec![&pos_cur, &tp.1],
                             &self.info,
-                        );                     
+                        );
                     }
                 }
                 None => {
@@ -1305,9 +1316,7 @@ impl<'a> Mir<'a> {
                     offset: len,
                 },
                 pos: node.pos.clone(),
-                tp: Some(
-                    tp_cur
-                ),
+                tp: Some(tp_cur),
                 last_use: None,
             });
         }

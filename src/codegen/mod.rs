@@ -296,7 +296,7 @@ impl<'a> CodeGen<'a> {
             BasicType::Void => context.void_type().into(),
         }
     }
-    
+
     fn create_fn_tp(
         context: &'a Context,
         args: &[Type<'a>],
@@ -1198,18 +1198,22 @@ impl<'a> CodeGen<'a> {
             let check_block = self.context.append_basic_block(self.cur_fn.unwrap(), "chk");
             check_blocks.push(Some(check_block));
         }
-        let done_block = self.context.append_basic_block(self.cur_fn.unwrap(), "done");
-        let else_block = self.context.append_basic_block(self.cur_fn.unwrap(), "else");
+        let done_block = self
+            .context
+            .append_basic_block(self.cur_fn.unwrap(), "done");
+        let else_block = self
+            .context
+            .append_basic_block(self.cur_fn.unwrap(), "else");
 
         let mut results = vec![];
-        let mut tp=None;
+        let mut tp = None;
 
         for (i, (code, expr)) in std::iter::zip(codes, exprs).enumerate() {
             let if_block = if_blocks.get(i);
             let if_block = if_block.as_ref().unwrap();
 
-            if i < code.len()-1 {
-                let check_block = check_blocks.get(i+1);
+            if i < code.len() - 1 {
+                let check_block = check_blocks.get(i + 1);
                 let check_block = check_block.as_ref().unwrap();
                 if_block.move_after(check_block.unwrap()).unwrap();
                 self.builder.position_at_end(check_block.unwrap());
@@ -1229,13 +1233,12 @@ impl<'a> CodeGen<'a> {
             self.builder.build_conditional_branch(
                 expr.data.unwrap().into_int_value(),
                 **if_block,
-                if i < code.len()-1 {
-                    check_blocks.get(i+1).unwrap().unwrap()
-                }else {
+                if i < code.len() - 1 {
+                    check_blocks.get(i + 1).unwrap().unwrap()
+                } else {
                     else_block
                 },
             );
-
 
             self.builder.position_at_end(**if_block);
 
@@ -1248,7 +1251,7 @@ impl<'a> CodeGen<'a> {
         self.builder.position_at_end(else_block);
         if ifnode.nodearr_else.is_some() {
             let elsecode = ifnode.nodearr_else.as_ref().unwrap();
-            let res = self.compile_statements(&elsecode);
+            let res = self.compile_statements(elsecode);
             results.push((res, &else_block));
         }
         self.builder.build_unconditional_branch(done_block);
@@ -1256,8 +1259,9 @@ impl<'a> CodeGen<'a> {
         self.builder.position_at_end(done_block);
 
         if results.last().unwrap().0.data.is_some() {
-            let phi =
-                self.builder.build_phi(results.last().unwrap().0.data.unwrap().get_type(), "");
+            let phi = self
+                .builder
+                .build_phi(results.last().unwrap().0.data.unwrap().get_type(), "");
 
             for result in results {
                 phi.add_incoming(&[(&result.0.data.unwrap(), *result.1)]);
@@ -1269,8 +1273,7 @@ impl<'a> CodeGen<'a> {
                 data: Some(phi.as_basic_value()),
                 tp: tp.unwrap(),
             }
-        }
-        else {
+        } else {
             Data {
                 data: None,
                 tp: tp.unwrap(),

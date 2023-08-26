@@ -233,9 +233,7 @@ impl<'a> Parser<'a> {
             "fn" => self.generate_fn(),
             "return" => self.generate_return(),
             "if" => self.generate_if(),
-            "else" => {
-                self.raise_error("'else' is not allowed here", ErrorType::FloatingElse)
-            }
+            "else" => self.raise_error("'else' is not allowed here", ErrorType::FloatingElse),
             _ => {
                 unreachable!();
             }
@@ -422,27 +420,26 @@ impl<'a> Parser<'a> {
 
         let elsecode = if self.current_is_keyword("else") {
             self.advance();
-            
+
             self.skip_newlines();
-    
+
             self.expect(TokenType::LCurly);
-    
+
             endcol = self.current.end.endcol;
             endline = self.current.end.line;
-    
+
             self.advance();
             self.skip_newlines();
-    
+
             let code = self.block();
-    
+
             self.expect(TokenType::RCurly);
-    
+
             self.advance();
             self.skip_newlines();
 
             Some(code)
-        }
-        else {
+        } else {
             None
         };
 
@@ -454,7 +451,11 @@ impl<'a> Parser<'a> {
                 line: endline,
             },
             nodes::NodeType::Conditional,
-            Box::new(ConditionalNode { exprs, codes, elsecode }),
+            Box::new(ConditionalNode {
+                exprs,
+                codes,
+                elsecode,
+            }),
         )
     }
 
