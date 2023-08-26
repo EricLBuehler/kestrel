@@ -162,7 +162,7 @@ impl<'a> CodeGen<'a> {
             NodeType::Return => self.compile_return(node, flags),
             NodeType::Call => self.compile_call(node, flags),
             NodeType::Deref => self.compile_deref(node, flags),
-            NodeType::If => self.compile_if(node, flags),
+            NodeType::Conditional => self.compile_if(node, flags),
         }
     }
 
@@ -296,85 +296,7 @@ impl<'a> CodeGen<'a> {
             BasicType::Void => context.void_type().into(),
         }
     }
-
-    fn kestrel_to_inkwell_tp_undef(context: &'a Context, tp: &Type<'a>) -> BasicValueEnum<'a> {
-        match tp.basictype {
-            BasicType::Bool => {
-                let inkwell_tp = context.bool_type();
-                if tp.ref_n > 0 {
-                    let mut inkwell_tp = inkwell_tp.ptr_type(AddressSpace::from(0u16));
-                    for _ in 1..tp.ref_n {
-                        inkwell_tp = inkwell_tp.ptr_type(AddressSpace::from(0u16));
-                    }
-                    inkwell_tp.get_undef().into()
-                } else {
-                    inkwell_tp.get_undef().into()
-                }
-            }
-            BasicType::I128 | BasicType::U128 => {
-                let inkwell_tp = context.i128_type();
-                if tp.ref_n > 0 {
-                    let mut inkwell_tp = inkwell_tp.ptr_type(AddressSpace::from(0u16));
-                    for _ in 1..tp.ref_n {
-                        inkwell_tp = inkwell_tp.ptr_type(AddressSpace::from(0u16));
-                    }
-                    inkwell_tp.get_undef().into()
-                } else {
-                    inkwell_tp.get_undef().into()
-                }
-            }
-            BasicType::I64 | BasicType::U64 => {
-                let inkwell_tp = context.i64_type();
-                if tp.ref_n > 0 {
-                    let mut inkwell_tp = inkwell_tp.ptr_type(AddressSpace::from(0u16));
-                    for _ in 1..tp.ref_n {
-                        inkwell_tp = inkwell_tp.ptr_type(AddressSpace::from(0u16));
-                    }
-                    inkwell_tp.get_undef().into()
-                } else {
-                    inkwell_tp.get_undef().into()
-                }
-            }
-            BasicType::I32 | BasicType::U32 => {
-                let inkwell_tp = context.i32_type();
-                if tp.ref_n > 0 {
-                    let mut inkwell_tp = inkwell_tp.ptr_type(AddressSpace::from(0u16));
-                    for _ in 1..tp.ref_n {
-                        inkwell_tp = inkwell_tp.ptr_type(AddressSpace::from(0u16));
-                    }
-                    inkwell_tp.get_undef().into()
-                } else {
-                    inkwell_tp.get_undef().into()
-                }
-            }
-            BasicType::I16 | BasicType::U16 => {
-                let inkwell_tp = context.i16_type();
-                if tp.ref_n > 0 {
-                    let mut inkwell_tp = inkwell_tp.ptr_type(AddressSpace::from(0u16));
-                    for _ in 1..tp.ref_n {
-                        inkwell_tp = inkwell_tp.ptr_type(AddressSpace::from(0u16));
-                    }
-                    inkwell_tp.get_undef().into()
-                } else {
-                    inkwell_tp.get_undef().into()
-                }
-            }
-            BasicType::I8 | BasicType::U8 => {
-                let inkwell_tp = context.i8_type();
-                if tp.ref_n > 0 {
-                    let mut inkwell_tp = inkwell_tp.ptr_type(AddressSpace::from(0u16));
-                    for _ in 1..tp.ref_n {
-                        inkwell_tp = inkwell_tp.ptr_type(AddressSpace::from(0u16));
-                    }
-                    inkwell_tp.get_undef().into()
-                } else {
-                    inkwell_tp.get_undef().into()
-                }
-            }
-            BasicType::Void => unimplemented!(), //TODO
-        }
-    }
-
+    
     fn create_fn_tp(
         context: &'a Context,
         args: &[Type<'a>],
@@ -1262,52 +1184,96 @@ impl<'a> CodeGen<'a> {
 
     fn compile_if(&mut self, node: &Node, _flags: ExprFlags) -> Data<'a> {
         let ifnode = node.data.get_data();
-        let expr = self.compile_expr(
-            ifnode.nodes.get("expr").unwrap(),
-            ExprFlags {
-                ref_opt: RefOptions::Normal,
-            },
-        );
+        let codes = ifnode.nodearr_codes.unwrap().clone();
+        let exprs = ifnode.nodearr.unwrap();
 
-        let if_block = self.context.append_basic_block(self.cur_fn.unwrap(), "");
+        let mut if_blocks = vec![];
+        let mut check_blocks = vec![];
+        for _ in 0..codes.len() {
+            let if_block = self.context.append_basic_block(self.cur_fn.unwrap(), "if");
+            if_blocks.push(if_block);
+        }
+        check_blocks.push(None);
+        for _ in 1..codes.len() {
+            let check_block = self.context.append_basic_block(self.cur_fn.unwrap(), "chk");
+            check_blocks.push(Some(check_block));
+        }
+        let done_block = self.context.append_basic_block(self.cur_fn.unwrap(), "done");
+        let else_block = self.context.append_basic_block(self.cur_fn.unwrap(), "else");
 
-        let done_block = self.context.append_basic_block(self.cur_fn.unwrap(), "");
+        let mut results = vec![];
+        let mut tp=None;
 
-        if_block
-            .move_after(self.cur_fnstate.as_ref().unwrap().cur_block.unwrap())
-            .unwrap();
+        for (i, (code, expr)) in std::iter::zip(codes, exprs).enumerate() {
+            let if_block = if_blocks.get(i);
+            let if_block = if_block.as_ref().unwrap();
 
-        self.builder.build_conditional_branch(
-            expr.data.unwrap().into_int_value(),
-            if_block,
-            done_block,
-        );
+            if i < code.len()-1 {
+                let check_block = check_blocks.get(i+1);
+                let check_block = check_block.as_ref().unwrap();
+                if_block.move_after(check_block.unwrap()).unwrap();
+                self.builder.position_at_end(check_block.unwrap());
+            }
 
-        self.builder.position_at_end(if_block);
+            if_block
+                .move_after(self.cur_fnstate.as_ref().unwrap().cur_block.unwrap())
+                .unwrap();
 
-        let res = self.compile_statements(ifnode.nodearr.unwrap());
+            let expr = self.compile_expr(
+                expr,
+                ExprFlags {
+                    ref_opt: RefOptions::Normal,
+                },
+            );
+
+            self.builder.build_conditional_branch(
+                expr.data.unwrap().into_int_value(),
+                **if_block,
+                if i < code.len()-1 {
+                    check_blocks.get(i+1).unwrap().unwrap()
+                }else {
+                    else_block
+                },
+            );
+
+
+            self.builder.position_at_end(**if_block);
+
+            let res = self.compile_statements(&code);
+            self.builder.build_unconditional_branch(done_block);
+            tp = Some(res.tp.clone());
+            results.push((res, *if_block));
+        }
+
+        self.builder.position_at_end(else_block);
+        if ifnode.nodearr_else.is_some() {
+            let elsecode = ifnode.nodearr_else.as_ref().unwrap();
+            let res = self.compile_statements(&elsecode);
+            results.push((res, &else_block));
+        }
         self.builder.build_unconditional_branch(done_block);
 
         self.builder.position_at_end(done_block);
 
-        if res.data.is_some() {
-            let phi: inkwell::values::PhiValue<'_> =
-                self.builder.build_phi(res.data.unwrap().get_type(), "");
+        if results.last().unwrap().0.data.is_some() {
+            let phi =
+                self.builder.build_phi(results.last().unwrap().0.data.unwrap().get_type(), "");
 
-            phi.add_incoming(&[(&res.data.unwrap(), if_block)]);
-            phi.add_incoming(&[(
-                &Self::kestrel_to_inkwell_tp_undef(self.context, &res.tp),
-                done_block,
-            )]);
+            for result in results {
+                phi.add_incoming(&[(&result.0.data.unwrap(), *result.1)]);
+            }
+
+            println!("phi {phi:?}");
 
             Data {
                 data: Some(phi.as_basic_value()),
-                tp: res.tp.clone(),
+                tp: tp.unwrap(),
             }
-        } else {
+        }
+        else {
             Data {
                 data: None,
-                tp: res.tp.clone(),
+                tp: tp.unwrap(),
             }
         }
     }

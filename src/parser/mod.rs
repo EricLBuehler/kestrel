@@ -233,6 +233,9 @@ impl<'a> Parser<'a> {
             "fn" => self.generate_fn(),
             "return" => self.generate_return(),
             "if" => self.generate_if(),
+            "else" => {
+                self.raise_error("'else' is not allowed here", ErrorType::FloatingElse)
+            }
             _ => {
                 unreachable!();
             }
@@ -401,8 +404,8 @@ impl<'a> Parser<'a> {
 
         self.expect(TokenType::LCurly);
 
-        let endcol = self.current.end.endcol;
-        let endline = self.current.end.line;
+        let mut endcol = self.current.end.endcol;
+        let mut endline = self.current.end.line;
 
         self.advance();
         self.skip_newlines();
@@ -414,6 +417,35 @@ impl<'a> Parser<'a> {
         self.advance();
         self.skip_newlines();
 
+        let exprs = vec![expr];
+        let codes = vec![code];
+
+        let elsecode = if self.current_is_keyword("else") {
+            self.advance();
+            
+            self.skip_newlines();
+    
+            self.expect(TokenType::LCurly);
+    
+            endcol = self.current.end.endcol;
+            endline = self.current.end.line;
+    
+            self.advance();
+            self.skip_newlines();
+    
+            let code = self.block();
+    
+            self.expect(TokenType::RCurly);
+    
+            self.advance();
+            self.skip_newlines();
+
+            Some(code)
+        }
+        else {
+            None
+        };
+
         Node::new(
             Position {
                 startcol,
@@ -421,8 +453,8 @@ impl<'a> Parser<'a> {
                 opcol: None,
                 line: endline,
             },
-            nodes::NodeType::If,
-            Box::new(ConditionalNode { expr, code }),
+            nodes::NodeType::Conditional,
+            Box::new(ConditionalNode { exprs, codes, elsecode }),
         )
     }
 

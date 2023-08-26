@@ -4,7 +4,7 @@ use indexmap::IndexMap;
 
 use crate::{
     codegen::{BindingTags, CodegenFunctions},
-    errors::{raise_error, ErrorType},
+    errors::{raise_error, ErrorType, raise_error_multi},
     parser::nodes::{Node, NodeType, OpType},
     types::{implements_trait, BasicType, BuiltinTypes, Lifetime, Trait, TraitType, Type},
     utils::{FileInfo, Position},
@@ -87,7 +87,7 @@ pub enum RawMirInstruction<'a> {
     IfCondition {
         code: Vec<MirInstruction<'a>>,
         check_n: usize,
-        right: usize,
+        right: Option<usize>,
         offset: usize,
     },
 }
@@ -221,7 +221,12 @@ impl<'a> RawMirInstruction<'a> {
                     .map(|x| String::from("    ") + x)
                     .collect::<Vec<String>>()
                     .join("\n");
-                format!("ifcondition #{check_n} .{right} {{\n{}}}", out)
+                if right.is_some() {
+                    format!("ifcondition #{check_n} .{} {{\n{out}}}", right.unwrap())
+                }
+                else {
+                    format!("ifcondition #{check_n} {{\n{out}}}")
+                }
             }
         })
     }
@@ -415,7 +420,7 @@ impl<'a> Mir<'a> {
             NodeType::Fn => unreachable!(),
             NodeType::Call => self.generate_call(node),
             NodeType::Deref => self.generate_deref(node),
-            NodeType::If => self.generate_if(node),
+            NodeType::Conditional => self.generate_if(node),
         }
     }
 }
@@ -1148,61 +1153,165 @@ impl<'a> Mir<'a> {
 
     fn generate_if(&mut self, node: &Node) -> MirResult<'a> {
         let ifnode = node.data.get_data();
-        let code = ifnode.nodearr.unwrap().clone();
-        let expr = self.generate_expr(ifnode.nodes.get("expr").unwrap());
+        let codes = ifnode.nodearr_codes.unwrap().clone();
+        let exprs = ifnode.nodearr.unwrap();
 
-        if expr.1.basictype != BasicType::Bool {
-            raise_error(
-                &format!("Expected 'std::bool', got '{}'", expr.1.qualname()),
-                ErrorType::TypeMismatch,
-                &node.pos,
-                &self.info,
-            );
+        let mut finaltp: Option<(Type<'_>, Position)> = None;
+        let mut check_n = 0;
+
+        for (code, expr) in std::iter::zip(codes, exprs) {
+            let expr = self.generate_expr(expr);
+
+            if expr.1.basictype != BasicType::Bool {
+                raise_error(
+                    &format!("Expected 'std::bool', got '{}'", expr.1.qualname()),
+                    ErrorType::TypeMismatch,
+                    &node.pos,
+                    &self.info,
+                );
+            }
+            let block = self.blocks.get(self.cur_block).unwrap().clone();
+
+            let mut parents = block.parents.clone();
+            parents.push(self.blocks.len());
+            let cur_block = Block {
+                namespace_check: HashMap::new(),
+                parents,
+                blockid: self.blocks.len(),
+                namespace: HashMap::new(),
+                instructions: None,
+            };
+
+            self.blocks.push(cur_block.clone());
+
+            let old_block = self.cur_block;
+            self.cur_block = cur_block.blockid;
+
+            let len = self.instructions.len();
+            let instructions = self.generate(&code);
+
+            self.cur_block = old_block;
+
+            let tp_cur = instructions
+            .iter()
+            .map(|x| {
+                x.tp.as_ref()
+                    .unwrap_or(self.builtins.get(&BasicType::Void).unwrap())
+                    .clone()
+            })
+            .last()
+            .unwrap_or(self.builtins.get(&BasicType::Void).unwrap().clone());
+
+            let pos_cur = instructions.iter().map(|x| {
+                x.pos.clone()
+            }).last()
+            .unwrap_or(node.pos.clone());
+
+            match finaltp {
+                Some(ref tp) => {
+                    if tp.0 != tp_cur {
+                        raise_error_multi(
+                            vec![format!("Expected '{}', got '{}'", tp.0.qualname(), tp_cur.qualname()),
+                            format!("Original type:")],
+                            ErrorType::TypeMismatch,
+                            vec![&pos_cur,&tp.1],
+                            &self.info,
+                        );                     
+                    }
+                }
+                None => {
+                    finaltp = Some((tp_cur.clone(), pos_cur));
+                }
+            }
+
+            self.instructions.push(MirInstruction {
+                instruction: RawMirInstruction::IfCondition {
+                    code: instructions.clone(),
+                    check_n,
+                    right: Some(expr.0),
+                    offset: len,
+                },
+                pos: node.pos.clone(),
+                tp: Some(
+                    tp_cur
+                ),
+                last_use: None,
+            });
+            check_n+=1;
         }
-        let block = self.blocks.get(self.cur_block).unwrap().clone();
+        
+        if ifnode.nodearr_else.is_some() {
+            let code = ifnode.nodearr_else.as_ref().unwrap().clone();
 
-        let mut parents = block.parents.clone();
-        parents.push(self.blocks.len());
-        let cur_block = Block {
-            namespace_check: HashMap::new(),
-            parents,
-            blockid: self.blocks.len(),
-            namespace: HashMap::new(),
-            instructions: None,
-        };
+            let block = self.blocks.get(self.cur_block).unwrap().clone();
 
-        self.blocks.push(cur_block.clone());
+            let mut parents = block.parents.clone();
+            parents.push(self.blocks.len());
+            let cur_block = Block {
+                namespace_check: HashMap::new(),
+                parents,
+                blockid: self.blocks.len(),
+                namespace: HashMap::new(),
+                instructions: None,
+            };
 
-        let old_block = self.cur_block;
-        self.cur_block = cur_block.blockid;
+            self.blocks.push(cur_block.clone());
 
-        let len = self.instructions.len();
-        let instructions = self.generate(&code);
+            let old_block = self.cur_block;
+            self.cur_block = cur_block.blockid;
 
-        self.cur_block = old_block;
+            let len = self.instructions.len();
+            let instructions = self.generate(&code);
 
-        self.instructions.push(MirInstruction {
-            instruction: RawMirInstruction::IfCondition {
-                code: instructions.clone(),
-                check_n: 0,
-                right: expr.0,
-                offset: len,
-            },
-            pos: node.pos.clone(),
-            tp: Some(
-                instructions
-                    .into_iter()
-                    .map(|x| {
-                        x.tp.as_ref()
-                            .unwrap_or(self.builtins.get(&BasicType::Void).unwrap())
-                            .clone()
-                    })
-                    .last()
-                    .unwrap_or(self.builtins.get(&BasicType::Void).unwrap().clone()),
-            ),
-            last_use: None,
-        });
+            self.cur_block = old_block;
 
-        (self.instructions.len() - 1, expr.1.clone())
+            let tp_cur = instructions
+            .iter()
+            .map(|x| {
+                x.tp.as_ref()
+                    .unwrap_or(self.builtins.get(&BasicType::Void).unwrap())
+                    .clone()
+            })
+            .last()
+            .unwrap_or(self.builtins.get(&BasicType::Void).unwrap().clone());
+
+            let pos_cur = instructions.iter().map(|x| {
+                x.pos.clone()
+            }).last()
+            .unwrap_or(node.pos.clone());
+
+            match finaltp {
+                Some(ref tp) => {
+                    if tp.0 != tp_cur {
+                        raise_error_multi(
+                            vec![format!("Expected '{}', got '{}'", tp.0.qualname(), tp_cur.qualname()),
+                            format!("Original type:")],
+                            ErrorType::TypeMismatch,
+                            vec![&pos_cur,&tp.1],
+                            &self.info,
+                        );                     
+                    }
+                }
+                None => {
+                    finaltp = Some((tp_cur.clone(), pos_cur));
+                }
+            }
+
+            self.instructions.push(MirInstruction {
+                instruction: RawMirInstruction::IfCondition {
+                    code: instructions.clone(),
+                    check_n,
+                    right: None,
+                    offset: len,
+                },
+                pos: node.pos.clone(),
+                tp: Some(
+                    tp_cur
+                ),
+                last_use: None,
+            });
+        }
+
+        (self.instructions.len() - 1, finaltp.unwrap().0)
     }
 }

@@ -79,7 +79,7 @@ pub fn calculate_last_use(i: &usize, instructions: &mut Vec<MirInstruction>) -> 
                 right,
                 offset: _,
             } => {
-                if i == right {
+                if right.is_some() && right.unwrap() == *i {
                     uses.push(j);
                 }
             }

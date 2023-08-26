@@ -53,7 +53,7 @@ pub enum NodeType {
     Return,
     Call,
     Deref,
-    If,
+    Conditional,
 }
 
 #[derive(Debug)]
@@ -66,6 +66,8 @@ pub struct NodeValue<'a> {
     pub mapping: Option<&'a Vec<(Node, Node)>>,
     pub booleans: HashMap<String, bool>,
     pub tp: Option<Node>,
+    pub nodearr_codes: Option<&'a Vec<Vec<Node>>>,
+    pub nodearr_else: &'a Option<Vec<Node>>,
 }
 
 pub trait NodeData {
@@ -89,6 +91,8 @@ impl<'a> NodeValue<'a> {
             mapping: None,
             booleans: HashMap::new(),
             tp: None,
+            nodearr_codes: None,
+            nodearr_else: &None,
         }
     }
 }
@@ -291,15 +295,17 @@ impl NodeData for DerefNode {
 // ========================
 
 pub struct ConditionalNode {
-    pub expr: Node,
-    pub code: Vec<Node>,
+    pub exprs: Vec<Node>,
+    pub codes: Vec<Vec<Node>>,
+    pub elsecode: Option<Vec<Node>>,
 }
 
 impl NodeData for ConditionalNode {
     fn get_data(&self) -> NodeValue {
         let mut value = NodeValue::new();
-        value.nodearr = Some(&self.code);
-        value.nodes.insert(String::from("expr"), &self.expr);
+        value.nodearr = Some(&self.exprs);
+        value.nodearr_else = &self.elsecode;
+        value.nodearr_codes = Some(&self.codes);
 
         value
     }
