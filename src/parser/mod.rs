@@ -234,6 +234,7 @@ impl<'a> Parser<'a> {
             "return" => self.generate_return(),
             "if" => self.generate_if(),
             "else" => self.raise_error("'else' is not allowed here", ErrorType::FloatingElse),
+            "elif" => self.raise_error("'elif' is not allowed here", ErrorType::FloatingElif),
             _ => {
                 unreachable!();
             }
@@ -415,8 +416,34 @@ impl<'a> Parser<'a> {
         self.advance();
         self.skip_newlines();
 
-        let exprs = vec![expr];
-        let codes = vec![code];
+        let mut exprs = vec![expr];
+        let mut codes = vec![code];
+
+        while self.current_is_keyword("elif") {
+            self.advance();
+
+            let expr = self.expr(Precedence::Lowest);
+
+            self.skip_newlines();
+
+            self.expect(TokenType::LCurly);
+
+            endcol = self.current.end.endcol;
+            endline = self.current.end.line;
+
+            self.advance();
+            self.skip_newlines();
+
+            let code = self.block();
+
+            self.expect(TokenType::RCurly);
+
+            self.advance();
+            self.skip_newlines();
+
+            codes.push(code);
+            exprs.push(expr);
+        }
 
         let elsecode = if self.current_is_keyword("else") {
             self.advance();

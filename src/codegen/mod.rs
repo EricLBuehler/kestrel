@@ -1230,7 +1230,7 @@ impl<'a> CodeGen<'a> {
             self.builder.build_conditional_branch(
                 expr.data.unwrap().into_int_value(),
                 **if_block,
-                if i > 0 {
+                if i < if_blocks.len()-1 {
                     *if_blocks.get(i + 1).unwrap()
                 } else {
                     else_block

@@ -1,10 +1,13 @@
 fn main() {
     let a = &1    
     let x = if 1==2 {
-        let m = &a
+        let i = 1
+    }
+    elif 1+1==2 {
+        let j = 2
     }
     else {
-        let x = 1+1
+        let k = 3
     }
     let y = &a
 } 

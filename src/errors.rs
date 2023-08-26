@@ -25,6 +25,7 @@ pub enum ErrorType {
     CannotMoveOutOfBinding,
     CannotMoveOutOfNonCopy,
     FloatingElse,
+    FloatingElif,
 }
 
 impl std::fmt::Display for ErrorType {
@@ -56,6 +57,7 @@ pub fn repr_err(tp: ErrorType) -> &'static str {
         ErrorType::CannotMoveOutOfBinding => "cannot move non Copy-able type out of binding",
         ErrorType::CannotMoveOutOfNonCopy => "cannot move out of non Copy-able type",
         ErrorType::FloatingElse => "floating else is not allowed here",
+        ErrorType::FloatingElif => "floating elif is not allowed here",
     }
 }
 

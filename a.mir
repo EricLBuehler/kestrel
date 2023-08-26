@@ -1,6 +1,6 @@
 fn main: std::void {
     program.ke:2
-    .0:   declare a['1 .0 => .10]
+    .0:   declare a['1 .0 => .4]
     .1:   i32 1 -> std::i32['2 .1 => .2]
     .2:   ref .1 -> &std::i32['4 .2 => .4]
     .3:   own .2
@@ -9,50 +9,62 @@ fn main: std::void {
     .5:   declare x['6 .5 => .5]
     .6:   i32 1 -> std::i32['7 .6 => .8]
     .7:   i32 2 -> std::i32['8 .7 => .8]
-    .8:   eq .6 .7 -> std::bool['9 .8 => .14]
+    .8:   eq .6 .7 -> std::bool['9 .8 => .13]
     program.ke:4
-    .9:   declare m['10 .9 => .13]
-    .10:  load a -> &std::i32['11 .10 => .11]
-    .11:  ref .10 -> &&std::i32['13 .11 => .13]
-    .12:  own .11
-    .13:  store m .11 -> std::void['14 .13 => .13]  dropbinding m
-    program.ke:6
-    .14:  ifcondition #0 .8 {
-        program.ke:4
-        .0:   declare m['10 .9 => .13]
-        .1:   load a -> &std::i32['static]
-        .2:   ref .10 -> &&std::i32['static]
-        .3:   own .11
-        .4:   store m .11 -> std::void['static]
-    } -> std::void['15 .14 => .14]
-    program.ke:7
-    .15:  declare x['16 .15 => .20]
-    .16:  i32 1 -> std::i32['17 .16 => .18]
-    .17:  i32 1 -> std::i32['18 .17 => .18]
-    .18:  add .16 .17 -> std::i32['19 .18 => .20]
-    .19:  own .18
-    .20:  store x .18 -> std::void['20 .20 => .20]  dropbinding x
-    program.ke:6
-    .21:  ifcondition #1 {
-        program.ke:7
-        .0:   declare x['16 .15 => .20]
-        .1:   i32 1 -> std::i32['static]
-        .2:   i32 1 -> std::i32['static]
-        .3:   add .16 .17 -> std::i32['static]
-        .4:   own .18
-        .5:   store x .18 -> std::void['static]
-    } -> std::void['21 .21 => .23]
-    program.ke:3
-    .22:  own .21
-    .23:  store x .21 -> std::void['22 .23 => .23]  dropbinding x
+    .9:   declare i['10 .9 => .12]
+    .10:  i32 1 -> std::i32['11 .10 => .12]
+    .11:  own .10
+    .12:  store i .10 -> std::void['12 .12 => .12]  dropbinding i
     program.ke:9
-    .24:  declare y['23 .24 => .28]
-    .25:  load a -> &std::i32['24 .25 => .26]  dropbinding a
-    .26:  ref .25 -> &&std::i32['26 .26 => .28]
-    .27:  own .26
-    .28:  store y .26 -> std::void['27 .28 => .28]  dropbinding y
+    .13:  ifcondition #0 .8 {
+        program.ke:4
+        .0:   declare i['10 .9 => .12]
+        .1:   i32 1 -> std::i32['static]
+        .2:   own .10
+        .3:   store i .10 -> std::void['static]
+    } -> std::void['13 .13 => .13]
+    program.ke:6
+    .14:  i32 1 -> std::i32['14 .14 => .16]
+    .15:  i32 1 -> std::i32['15 .15 => .16]
+    .16:  add .14 .15 -> std::i32['16 .16 => .18]
+    .17:  i32 2 -> std::i32['17 .17 => .18]
+    .18:  eq .16 .17 -> std::bool['18 .18 => .23]
+    program.ke:7
+    .19:  declare j['19 .19 => .22]
+    .20:  i32 2 -> std::i32['20 .20 => .22]
+    .21:  own .20
+    .22:  store j .20 -> std::void['21 .22 => .22]  dropbinding j
+    program.ke:9
+    .23:  ifcondition #1 .18 {
+        program.ke:7
+        .0:   declare j['19 .19 => .22]
+        .1:   i32 2 -> std::i32['static]
+        .2:   own .20
+        .3:   store j .20 -> std::void['static]
+    } -> std::void['22 .23 => .23]
+    program.ke:10
+    .24:  declare k['23 .24 => .27]
+    .25:  i32 3 -> std::i32['24 .25 => .27]
+    .26:  own .25
+    .27:  store k .25 -> std::void['25 .27 => .27]  dropbinding k
+    program.ke:9
+    .28:  ifcondition #2 {
+        program.ke:10
+        .0:   declare k['23 .24 => .27]
+        .1:   i32 3 -> std::i32['static]
+        .2:   own .25
+        .3:   store k .25 -> std::void['static]
+    } -> std::void['26 .28 => .30]
+    program.ke:3
+    .29:  own .28
+    .30:  store x .28 -> std::void['27 .30 => .30]  dropbinding x
+    program.ke:12
+    .31:  declare y['28 .31 => .35]
+    .32:  load a -> &std::i32['29 .32 => .33]  dropbinding a
+    .33:  ref .32 -> &&std::i32['31 .33 => .35]
+    .34:  own .33
+    .35:  store y .33 -> std::void['32 .35 => .35]  dropbinding y
 
-    & ref .2 ['3 .2 => .25]
-    && ref .11 ['12 .11 => .13]
-    && ref .26 ['25 .26 => .28]
+    & ref .2 ['3 .2 => .32]
+    && ref .33 ['30 .33 => .35]
 }
