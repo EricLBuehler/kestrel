@@ -1190,20 +1190,16 @@ impl<'a> CodeGen<'a> {
         let mut if_blocks = vec![];
         let mut check_blocks = vec![];
         for _ in 0..codes.len() {
-            let if_block = self.context.append_basic_block(self.cur_fn.unwrap(), "if");
+            let if_block = self.context.append_basic_block(self.cur_fn.unwrap(), "");
             if_blocks.push(if_block);
         }
         check_blocks.push(None);
         for _ in 1..codes.len() {
-            let check_block = self.context.append_basic_block(self.cur_fn.unwrap(), "chk");
+            let check_block = self.context.append_basic_block(self.cur_fn.unwrap(), "");
             check_blocks.push(Some(check_block));
         }
-        let done_block = self
-            .context
-            .append_basic_block(self.cur_fn.unwrap(), "done");
-        let else_block = self
-            .context
-            .append_basic_block(self.cur_fn.unwrap(), "else");
+        let done_block = self.context.append_basic_block(self.cur_fn.unwrap(), "");
+        let else_block = self.context.append_basic_block(self.cur_fn.unwrap(), "");
 
         let mut results = vec![];
         let mut tp = None;

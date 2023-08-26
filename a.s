@@ -26,7 +26,7 @@ main:                                   # @main
 	jmp	.LBB0_5
 .LBB0_2:
 	jmp	.LBB0_5
-.LBB0_3:                                # %done
+.LBB0_3:
 	movq	%rsp, %rax
 	addq	$-16, %rax
 	movq	%rax, %rsp
@@ -37,7 +37,7 @@ main:                                   # @main
 	popq	%rbp
 	.cfi_def_cfa %rsp, 8
 	retq
-.LBB0_4:                                # %else
+.LBB0_4:
 	.cfi_def_cfa %rbp, 16
 	movl	$1, %eax
 	incl	%eax

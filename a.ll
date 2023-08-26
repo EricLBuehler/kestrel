@@ -12,32 +12,32 @@ define i32 @main(i32 %0, i32** %1) local_unnamed_addr #1 {
   %3 = alloca i32, align 4
   %4 = alloca i32*, align 8
   store i32* %3, i32** %4, align 8
-  br label %else
+  br label %10
 
-5:                                                ; preds = %else
+5:                                                ; preds = %10
   %6 = call i32 @printf(i8* getelementptr inbounds ([56 x i8], [56 x i8]* @0, i32 0, i32 0))
-  br label %13
+  br label %15
 
-7:                                                ; preds = %else
-  br label %13
+7:                                                ; preds = %10
+  br label %15
 
-done:                                             ; preds = %13
-  %8 = alloca i32**, align 8
-  store i32** %4, i32*** %8, align 8
+8:                                                ; preds = %15
+  %9 = alloca i32**, align 8
+  store i32** %4, i32*** %9, align 8
   ret i32 0
 
-else:                                             ; preds = %2
-  %9 = call { i32, i1 } @llvm.sadd.with.overflow.i32.i32(i32 1, i32 1)
-  %10 = extractvalue { i32, i1 } %9, 0
-  %11 = extractvalue { i32, i1 } %9, 1
-  %12 = call i1 @llvm.expect.i1.i1(i1 %11, i1 false)
-  br i1 %12, label %5, label %7
+10:                                               ; preds = %2
+  %11 = call { i32, i1 } @llvm.sadd.with.overflow.i32.i32(i32 1, i32 1)
+  %12 = extractvalue { i32, i1 } %11, 0
+  %13 = extractvalue { i32, i1 } %11, 1
+  %14 = call i1 @llvm.expect.i1.i1(i1 %13, i1 false)
+  br i1 %14, label %5, label %7
 
-13:                                               ; preds = %7, %5
-  %14 = phi i32 [ %10, %7 ], [ undef, %5 ]
-  %15 = alloca i32, align 4
-  store i32 %14, i32* %15, align 4
-  br label %done
+15:                                               ; preds = %7, %5
+  %16 = phi i32 [ %12, %7 ], [ undef, %5 ]
+  %17 = alloca i32, align 4
+  store i32 %16, i32* %17, align 4
+  br label %8
 }
 
 ; Function Attrs: mustprogress nofree nosync nounwind readnone speculatable willreturn
