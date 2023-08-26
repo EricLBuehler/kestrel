@@ -1198,7 +1198,7 @@ impl<'a> CodeGen<'a> {
             let check_block = self.context.append_basic_block(self.cur_fn.unwrap(), "");
             check_blocks.push(Some(check_block));
         }
-        
+
         let done_block = self.context.append_basic_block(self.cur_fn.unwrap(), "");
         let else_block = self.context.append_basic_block(self.cur_fn.unwrap(), "");
 
@@ -1209,7 +1209,7 @@ impl<'a> CodeGen<'a> {
             let if_block = if_blocks.get(i);
             let if_block = if_block.as_ref().unwrap();
 
-            if i>0 {
+            if i > 0 {
                 let check_block = check_blocks.get(i);
                 let check_block = check_block.as_ref().unwrap();
                 if_block.move_after(check_block.unwrap()).unwrap();
@@ -1230,8 +1230,8 @@ impl<'a> CodeGen<'a> {
             self.builder.build_conditional_branch(
                 expr.data.unwrap().into_int_value(),
                 **if_block,
-                if i>0 {
-                    *if_blocks.get(i+1 ).unwrap()
+                if i > 0 {
+                    *if_blocks.get(i + 1).unwrap()
                 } else {
                     else_block
                 },
