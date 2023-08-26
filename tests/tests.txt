@@ -36,3 +36,7 @@ It was moved here:
 =-=
 Expected passing - Use of references with scopes
 iref_ifblock.ke
+
+=-=
+Expected passing - if, elif and else
+elif.ke
