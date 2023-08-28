@@ -243,9 +243,7 @@ impl<'a> RawMirInstruction<'a> {
                     format!("ifcondition #{check_n} {{\n{out}}}")
                 }
             }
-            RawMirInstruction::InstructionWrapper(_) => {
-                format!("")
-            }
+            RawMirInstruction::InstructionWrapper(_) => "".into(),
         })
     }
 }
@@ -1280,9 +1278,9 @@ impl<'a> Mir<'a> {
 
             for instruction in &mut self.instructions[blockstart..blockend] {
                 *instruction = MirInstruction {
-                    instruction: RawMirInstruction::InstructionWrapper (
-                        Box::new(instruction.clone())
-                    ),
+                    instruction: RawMirInstruction::InstructionWrapper(Box::new(
+                        instruction.clone(),
+                    )),
                     pos: instruction.pos.clone(),
                     tp: instruction.tp.clone(),
                     last_use: instruction.last_use.clone(),

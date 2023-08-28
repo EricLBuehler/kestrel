@@ -84,9 +84,7 @@ pub fn calculate_last_use(i: &usize, instructions: &mut Vec<MirInstruction>) -> 
                     uses.push(j);
                 }
             }
-            RawMirInstruction::InstructionWrapper(_) => {
-
-            }
+            RawMirInstruction::InstructionWrapper(_) => {}
         }
     }
 
@@ -285,49 +283,56 @@ pub fn generate_lifetimes<'a>(
                 let referred_type;
                 loop {
                     match &instructions.get(rt).as_ref().unwrap().instruction {
-                        RawMirInstruction::Reference(_) => {let life =instructions
-                            .get(rt)
-                            .as_ref()
-                            .unwrap()
-                            .tp
-                            .as_ref()
-                            .unwrap()
-                            .lifetime
-                            .clone();
+                        RawMirInstruction::Reference(_) => {
+                            let life = instructions
+                                .get(rt)
+                                .as_ref()
+                                .unwrap()
+                                .tp
+                                .as_ref()
+                                .unwrap()
+                                .lifetime
+                                .clone();
 
                             let life = match life {
-                                Lifetime::ImplicitLifetime { name, start_mir, end_mir: _ } => {
-                                    Lifetime::ImplicitLifetime { name, start_mir, end_mir: calculate_last_use(&rt, instructions) }
-                                }
-                                Lifetime::Static => {
-                                    life
-                                }
+                                Lifetime::ImplicitLifetime {
+                                    name,
+                                    start_mir,
+                                    end_mir: _,
+                                } => Lifetime::ImplicitLifetime {
+                                    name,
+                                    start_mir,
+                                    end_mir: calculate_last_use(&rt, instructions),
+                                },
+                                Lifetime::Static => life,
                             };
-                            referred_type = ReferenceBase::Reference(
-                                life
-                            );
+                            referred_type = ReferenceBase::Reference(life);
                             break;
                         }
                         RawMirInstruction::Load(name) => {
                             let life = this
-                            .blocks
-                            .get(name.blockid)
-                            .unwrap()
-                            .namespace_check
-                            .get(&name.name)
-                            .unwrap()
-                            .2
-                            .lifetime
-                            .clone();
+                                .blocks
+                                .get(name.blockid)
+                                .unwrap()
+                                .namespace_check
+                                .get(&name.name)
+                                .unwrap()
+                                .2
+                                .lifetime
+                                .clone();
                             let name = name.clone();
 
                             let life = match life {
-                                Lifetime::ImplicitLifetime { name, start_mir, end_mir: _ } => {
-                                    Lifetime::ImplicitLifetime { name, start_mir, end_mir: calculate_last_use(&rt, instructions) }
-                                }
-                                Lifetime::Static => {
-                                    life
-                                }
+                                Lifetime::ImplicitLifetime {
+                                    name,
+                                    start_mir,
+                                    end_mir: _,
+                                } => Lifetime::ImplicitLifetime {
+                                    name,
+                                    start_mir,
+                                    end_mir: calculate_last_use(&rt, instructions),
+                                },
+                                Lifetime::Static => life,
                             };
                             referred_type = ReferenceBase::Load {
                                 name,
@@ -350,26 +355,28 @@ pub fn generate_lifetimes<'a>(
                         | RawMirInstruction::U64(_)
                         | RawMirInstruction::U128(_) => {
                             let life = instructions
-                            .get(rt)
-                            .as_ref()
-                            .unwrap()
-                            .tp
-                            .as_ref()
-                            .unwrap()
-                            .lifetime
-                            .clone();
+                                .get(rt)
+                                .as_ref()
+                                .unwrap()
+                                .tp
+                                .as_ref()
+                                .unwrap()
+                                .lifetime
+                                .clone();
                             let life = match life {
-                                Lifetime::ImplicitLifetime { name, start_mir, end_mir: _ } => {
-                                    Lifetime::ImplicitLifetime { name, start_mir, end_mir: calculate_last_use(&rt, instructions) }
-                                }
-                                Lifetime::Static => {
-                                    life
-                                }
+                                Lifetime::ImplicitLifetime {
+                                    name,
+                                    start_mir,
+                                    end_mir: _,
+                                } => Lifetime::ImplicitLifetime {
+                                    name,
+                                    start_mir,
+                                    end_mir: calculate_last_use(&rt, instructions),
+                                },
+                                Lifetime::Static => life,
                             };
 
-                            referred_type = ReferenceBase::Literal(
-                                life
-                            );
+                            referred_type = ReferenceBase::Literal(life);
                             break;
                         }
                         _ => {}
@@ -561,7 +568,7 @@ pub fn generate_lifetimes<'a>(
 }
 
 fn check_value_life(this: &mut Mir, life: &Lifetime, right: &usize, id: usize) {
-    let blockend = this.block_positions.get(&id).unwrap().clone().1;
+    let blockend = this.block_positions.get(&id).unwrap().1;
     match life {
         Lifetime::ImplicitLifetime {
             name: _,
@@ -583,7 +590,7 @@ fn check_value_life(this: &mut Mir, life: &Lifetime, right: &usize, id: usize) {
                 );
             }
         }
-        
+
         Lifetime::Static => {}
     }
 }
@@ -595,12 +602,23 @@ pub fn check_references(
     id: usize,
 ) {
     for (_, (right, _reftype, _life, base, refblock)) in references {
-        if *refblock == id && (this.block_positions.get(&id).unwrap().0..this.block_positions.get(&id).unwrap().1).contains(right){
-            check_value_life(this, match base {
-                ReferenceBase::Literal(lifetime) => lifetime,
-                ReferenceBase::Load { name: _, bindinglife } => bindinglife,
-                ReferenceBase::Reference(lifetime) => lifetime,
-            }, right, id);
+        if *refblock == id
+            && (this.block_positions.get(&id).unwrap().0..this.block_positions.get(&id).unwrap().1)
+                .contains(right)
+        {
+            check_value_life(
+                this,
+                match base {
+                    ReferenceBase::Literal(lifetime) => lifetime,
+                    ReferenceBase::Load {
+                        name: _,
+                        bindinglife,
+                    } => bindinglife,
+                    ReferenceBase::Reference(lifetime) => lifetime,
+                },
+                right,
+                id,
+            );
         }
     }
 
