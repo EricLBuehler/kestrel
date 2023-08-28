@@ -63,6 +63,7 @@ impl<'a> Parser<'a> {
     }
 
     fn block(&mut self) -> Vec<Node> {
+        self.skip_newlines();
         let mut nodes = Vec::new();
 
         while !self.current_is_type(TokenType::Eof) && !self.current_is_type(TokenType::RCurly) {
