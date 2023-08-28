@@ -1106,7 +1106,7 @@ impl<'a> CodeGen<'a> {
                 self.debug_mir,
             );
             let mut instructions = mir.generate(fnnode.nodearr.unwrap());
-            mir::check(&mut mir, &mut instructions, true);
+            mir::check(&mut mir, &mut instructions, None, 0);
             //
 
             self.namespaces.insert(
@@ -1289,7 +1289,10 @@ impl<'a> CodeGen<'a> {
                     "First definition here:".into(),
                 ],
                 ErrorType::MultipleFunctionDefinitions,
-                vec![&node.pos, &self.functions.get(name).as_ref().unwrap().0.pos],
+                vec![
+                    Some(&node.pos),
+                    Some(&self.functions.get(name).as_ref().unwrap().0.pos),
+                ],
                 self.info,
             );
         }
@@ -1334,7 +1337,7 @@ impl<'a> CodeGen<'a> {
                 self.debug_mir,
             );
             let mut instructions = mir.generate(fnnode.nodearr.unwrap());
-            mir::check(&mut mir, &mut instructions, true);
+            mir::check(&mut mir, &mut instructions, None, 0);
             //
 
             self.namespaces.insert(
@@ -1401,7 +1404,7 @@ impl<'a> CodeGen<'a> {
             self.debug_mir,
         );
         let mut instructions = mir.generate(&vec![]);
-        mir::check(&mut mir, &mut instructions, true);
+        mir::check(&mut mir, &mut instructions, None, 0);
         //
 
         self.namespaces.insert(

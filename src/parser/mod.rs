@@ -418,6 +418,12 @@ impl<'a> Parser<'a> {
 
         let mut exprs = vec![expr];
         let mut codes = vec![code];
+        let mut positions = vec![Position {
+            startcol,
+            endcol,
+            opcol: None,
+            line: endline,
+        }];
 
         while self.current_is_keyword("elif") {
             self.advance();
@@ -443,6 +449,12 @@ impl<'a> Parser<'a> {
 
             codes.push(code);
             exprs.push(expr);
+            positions.push(Position {
+                startcol,
+                endcol,
+                opcol: None,
+                line: endline,
+            });
         }
 
         let elsecode = if self.current_is_keyword("else") {
@@ -464,6 +476,12 @@ impl<'a> Parser<'a> {
 
             self.advance();
             self.skip_newlines();
+            positions.push(Position {
+                startcol,
+                endcol,
+                opcol: None,
+                line: endline,
+            });
 
             Some(code)
         } else {
@@ -482,6 +500,7 @@ impl<'a> Parser<'a> {
                 exprs,
                 codes,
                 elsecode,
+                positions,
             }),
         )
     }

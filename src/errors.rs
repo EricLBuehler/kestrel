@@ -26,6 +26,7 @@ pub enum ErrorType {
     CannotMoveOutOfNonCopy,
     FloatingElse,
     FloatingElif,
+    ValueNotLiveEnough,
 }
 
 impl std::fmt::Display for ErrorType {
@@ -58,6 +59,7 @@ pub fn repr_err(tp: ErrorType) -> &'static str {
         ErrorType::CannotMoveOutOfNonCopy => "cannot move out of non Copy-able type",
         ErrorType::FloatingElse => "floating else is not allowed here",
         ErrorType::FloatingElif => "floating elif is not allowed here",
+        ErrorType::ValueNotLiveEnough => "value does not live long enough",
     }
 }
 
@@ -116,10 +118,21 @@ pub fn raise_error_no_pos(error: &str, errtp: ErrorType) -> ! {
 pub fn raise_error_multi(
     err: Vec<String>,
     errtp: ErrorType,
-    pos: Vec<&Position>,
+    pos: Vec<Option<&Position>>,
     info: &FileInfo,
 ) -> ! {
     for (i, (error, pos)) in std::iter::zip(&err, pos).enumerate() {
+        if pos.is_none() {
+            if i != 0 {
+                let header: String = error.to_string();
+                eprintln!("{}", header.yellow());
+                continue;
+            } else {
+                unreachable!();
+            }
+        }
+        let pos = pos.unwrap();
+
         let location: String = format!("{}:{}:{}", info.name, pos.line + 1, pos.startcol + 1);
         if i == 0 {
             let header: String = format!("error[E{:0>3}]: {}", errtp.clone() as u8 + 1, error);

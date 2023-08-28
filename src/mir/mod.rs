@@ -26,6 +26,7 @@ pub struct Mir<'a> {
     debug_mir: bool,
     cur_block: usize,
     blocks: Vec<Block<'a>>,
+    block_positions: HashMap<usize, (usize, usize)>, //(start(inclusive), end(exclusive))
 }
 
 #[allow(dead_code)]
@@ -89,7 +90,9 @@ pub enum RawMirInstruction<'a> {
         check_n: usize,
         right: Option<usize>,
         offset: usize,
+        id: usize,
     },
+    InstructionWrapper(Box<MirInstruction<'a>>),
 }
 
 #[derive(Clone, Debug)]
@@ -116,12 +119,15 @@ pub struct MirTag {
 }
 
 type MirNamespace = HashMap<String, (Option<usize>, Option<usize>, MirTag)>; //(declaration, right, tag)
-type MirReference = (usize, ReferenceType, Lifetime, ReferenceBase); //(right, type, lifetime, referred)
+type MirReference = (usize, ReferenceType, Lifetime, ReferenceBase, usize); //(right, type, lifetime, referred, blockid)
 
 #[derive(Debug, Eq, PartialOrd, Ord, Clone)]
 pub enum ReferenceBase {
     Literal(Lifetime),
-    Load { name: BlockName },
+    Load {
+        name: BlockName,
+        bindinglife: Lifetime,
+    },
     Reference(Lifetime),
 }
 
@@ -129,7 +135,16 @@ impl PartialEq for ReferenceBase {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
             (ReferenceBase::Literal(life1), ReferenceBase::Literal(life2)) => life1 == life2,
-            (ReferenceBase::Load { name: _ }, ReferenceBase::Load { name: _ }) => true,
+            (
+                ReferenceBase::Load {
+                    name: _,
+                    bindinglife: _,
+                },
+                ReferenceBase::Load {
+                    name: _,
+                    bindinglife: _,
+                },
+            ) => true,
             (ReferenceBase::Reference(life1), ReferenceBase::Reference(life2)) => life1 == life2,
             _ => false,
         }
@@ -213,6 +228,7 @@ impl<'a> RawMirInstruction<'a> {
                 check_n,
                 right,
                 offset,
+                id: _,
             } => {
                 let mut out = String::new();
                 output_mir(&code[*offset..], &mut out, &0, info, blocks);
@@ -226,6 +242,9 @@ impl<'a> RawMirInstruction<'a> {
                 } else {
                     format!("ifcondition #{check_n} {{\n{out}}}")
                 }
+            }
+            RawMirInstruction::InstructionWrapper(_) => {
+                format!("")
             }
         })
     }
@@ -246,6 +265,8 @@ pub fn new<'a>(
         blockid: 0,
         instructions: None,
     };
+    let mut positions = HashMap::new();
+    positions.insert(0, (0, 0));
     Mir {
         info,
         fn_name,
@@ -256,14 +277,20 @@ pub fn new<'a>(
         debug_mir,
         cur_block: 0,
         blocks: vec![cur],
+        block_positions: positions,
     }
 }
 
-pub fn check<'a>(this: &mut Mir<'a>, instructions: &mut Vec<MirInstruction<'a>>, head: bool) {
-    let references = check::generate_lifetimes(this, instructions);
-    check::check_references(this, instructions, &references);
+pub fn check<'a>(
+    this: &mut Mir<'a>,
+    instructions: &mut Vec<MirInstruction<'a>>,
+    block_res: Option<usize>,
+    blockid: usize,
+) {
+    let references = check::generate_lifetimes(this, instructions, block_res, blockid);
+    check::check_references(this, instructions, &references, blockid);
     check::check_return(this, instructions);
-    if head {
+    if block_res.is_none() {
         if !this.debug_mir {
             write_mir(
                 this,
@@ -293,6 +320,9 @@ pub fn output_mir(
     let mut cur_line = None;
 
     for (i, instruction) in instructions.iter().enumerate() {
+        if let RawMirInstruction::InstructionWrapper(_) = &instruction.instruction {
+            continue;
+        }
         if Some(instruction.pos.line) != cur_line {
             cur_line = Some(instruction.pos.line);
             out.push_str("    ");
@@ -352,7 +382,7 @@ pub fn write_mir(
 
     out.push('\n');
 
-    for (i, (_right, _reftype, life, _)) in references {
+    for (i, (_right, _reftype, life, _, _)) in references {
         out.push_str("    ");
         out.push_str(&format!(
             "{} ref .{} {life}",
@@ -1154,11 +1184,12 @@ impl<'a> Mir<'a> {
         let ifnode = node.data.get_data();
         let codes = ifnode.nodearr_codes.unwrap().clone();
         let exprs = ifnode.nodearr.unwrap();
+        let positions = ifnode.positions;
 
         let mut finaltp: Option<(Type<'_>, Position)> = None;
         let mut check_n = 0;
 
-        for (code, expr) in std::iter::zip(codes, exprs) {
+        for (position, (code, expr)) in std::iter::zip(positions, std::iter::zip(codes, exprs)) {
             let expr = self.generate_expr(expr);
 
             if expr.1.basictype != BasicType::Bool {
@@ -1186,8 +1217,12 @@ impl<'a> Mir<'a> {
             let old_block = self.cur_block;
             self.cur_block = cur_block.blockid;
 
-            let len = self.instructions.len();
+            let blockstart = self.instructions.len();
             let instructions = self.generate(&code);
+            let blockend = self.instructions.len();
+
+            self.block_positions
+                .insert(cur_block.blockid, (blockstart, blockend));
 
             self.cur_block = old_block;
 
@@ -1220,7 +1255,7 @@ impl<'a> Mir<'a> {
                                 format!("Original type:"),
                             ],
                             ErrorType::TypeMismatch,
-                            vec![&pos_cur, &tp.1],
+                            vec![Some(&pos_cur), Some(&tp.1)],
                             &self.info,
                         );
                     }
@@ -1235,12 +1270,25 @@ impl<'a> Mir<'a> {
                     code: instructions.clone(),
                     check_n,
                     right: Some(expr.0),
-                    offset: len,
+                    offset: blockstart,
+                    id: cur_block.blockid,
                 },
-                pos: node.pos.clone(),
+                pos: position,
                 tp: Some(tp_cur),
                 last_use: None,
             });
+
+            for instruction in &mut self.instructions[blockstart..blockend] {
+                *instruction = MirInstruction {
+                    instruction: RawMirInstruction::InstructionWrapper (
+                        Box::new(instruction.clone())
+                    ),
+                    pos: instruction.pos.clone(),
+                    tp: instruction.tp.clone(),
+                    last_use: instruction.last_use.clone(),
+                }
+            }
+
             check_n += 1;
         }
 
@@ -1264,8 +1312,12 @@ impl<'a> Mir<'a> {
             let old_block = self.cur_block;
             self.cur_block = cur_block.blockid;
 
-            let len = self.instructions.len();
+            let blockstart = self.instructions.len();
             let instructions = self.generate(&code);
+            let blockend = self.instructions.len();
+
+            self.block_positions
+                .insert(cur_block.blockid, (blockstart, blockend));
 
             self.cur_block = old_block;
 
@@ -1298,7 +1350,7 @@ impl<'a> Mir<'a> {
                                 format!("Original type:"),
                             ],
                             ErrorType::TypeMismatch,
-                            vec![&pos_cur, &tp.1],
+                            vec![Some(&pos_cur), Some(&tp.1)],
                             &self.info,
                         );
                     }
@@ -1313,7 +1365,8 @@ impl<'a> Mir<'a> {
                     code: instructions.clone(),
                     check_n,
                     right: None,
-                    offset: len,
+                    offset: blockstart,
+                    id: cur_block.blockid,
                 },
                 pos: node.pos.clone(),
                 tp: Some(tp_cur),

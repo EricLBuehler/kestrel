@@ -68,6 +68,7 @@ pub struct NodeValue<'a> {
     pub tp: Option<Node>,
     pub nodearr_codes: Option<&'a Vec<Vec<Node>>>,
     pub nodearr_else: &'a Option<Vec<Node>>,
+    pub positions: Vec<Position>,
 }
 
 pub trait NodeData {
@@ -93,6 +94,7 @@ impl<'a> NodeValue<'a> {
             tp: None,
             nodearr_codes: None,
             nodearr_else: &None,
+            positions: Vec::new(),
         }
     }
 }
@@ -298,6 +300,7 @@ pub struct ConditionalNode {
     pub exprs: Vec<Node>,
     pub codes: Vec<Vec<Node>>,
     pub elsecode: Option<Vec<Node>>,
+    pub positions: Vec<Position>,
 }
 
 impl NodeData for ConditionalNode {
@@ -306,6 +309,7 @@ impl NodeData for ConditionalNode {
         value.nodearr = Some(&self.exprs);
         value.nodearr_else = &self.elsecode;
         value.nodearr_codes = Some(&self.codes);
+        value.positions = self.positions.clone();
 
         value
     }

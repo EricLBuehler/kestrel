@@ -40,3 +40,15 @@ iref_ifblock.ke
 =-=
 Expected passing - if, elif and else
 elif.ke
+
+=-=
+Expected failing - value does not live long enough
+E023.ke
+error[E023]: Value does not live long enough.
+./tests/E023.ke:3:10
+3 |         &1
+  |          ^         
+It must live until the end of this block:
+./tests/E023.ke:2:13
+2 |     let x = if 1==2 {
+  |             ^^^^^^^^^
