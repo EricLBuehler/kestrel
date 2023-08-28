@@ -74,7 +74,16 @@
           }
         ]
       },
-      "function": {}
+      "function": {},
+      "comment": {
+        "patterns": [
+          {
+            "name": "comment.line.percentage.kestrel",
+            "begin": "#",
+            "end": "\\n"
+          }
+        ]
+      }
     },
     "scopeName": "source.kestrel"
   }

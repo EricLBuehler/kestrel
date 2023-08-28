@@ -409,6 +409,10 @@ pub fn generate_tokens(lexer: &mut Lexer, kwds: &[String]) -> (usize, Vec<Token>
                 },
             });
             advance(lexer);
+        } else if cur == '#' {
+            while lexer.current != '\n' {
+                advance(lexer);
+            }
         } else if !cur.is_whitespace() {
             tokens.push(make_identifier(lexer, kwds));
         } else {
