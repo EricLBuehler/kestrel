@@ -27,6 +27,7 @@ pub enum ErrorType {
     FloatingElse,
     FloatingElif,
     ValueNotLiveEnough,
+    MissingElseClause,
 }
 
 impl std::fmt::Display for ErrorType {
@@ -60,6 +61,7 @@ pub fn repr_err(tp: ErrorType) -> &'static str {
         ErrorType::FloatingElse => "floating else is not allowed here",
         ErrorType::FloatingElif => "floating elif is not allowed here",
         ErrorType::ValueNotLiveEnough => "value does not live long enough",
+        ErrorType::MissingElseClause => "missing else clause",
     }
 }
 

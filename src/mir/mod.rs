@@ -940,6 +940,17 @@ impl<'a> Mir<'a> {
             last_use: None,
         });
 
+        if letnode.nodes.get("expr").unwrap().tp == NodeType::Conditional {
+            if let None = letnode.nodes.get("expr").unwrap().data.get_data().nodearr_else {
+                raise_error(
+                    "Conditional expression is missing else clause.",
+                    ErrorType::MissingElseClause,
+                    &node.pos,
+                    &self.info,
+                );
+            }
+        }
+
         let right = self.generate_expr(letnode.nodes.get("expr").unwrap());
 
         self.instructions.push(MirInstruction {
@@ -1024,6 +1035,17 @@ impl<'a> Mir<'a> {
         let storenode = node.data.get_data();
         let name = storenode.raw.get("name").unwrap();
         let expr = storenode.nodes.get("expr").unwrap();
+
+        if expr.tp == NodeType::Conditional {
+            if let None = expr.data.get_data().nodearr_else {
+                raise_error(
+                    "Conditional expression is missing else clause.",
+                    ErrorType::MissingElseClause,
+                    &node.pos,
+                    &self.info,
+                );
+            }
+        }
         let right = self.generate_expr(expr);
 
         let block = self.blocks.get(self.cur_block).unwrap();

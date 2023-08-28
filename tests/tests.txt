@@ -52,3 +52,10 @@ It must live until the end of this block:
 ./tests/E023.ke:2:13
 2 |     let x = if 1==2 {
   |             ^^^^^^^^^
+=-=
+Expected failing - missng else clause
+E024.ke
+error[E024]: Conditional expression is missing else clause.
+./tests/E024.ke:2:5
+2 |     let x = if 1==2 {
+  |     ^^^^^^^^^^^^^^^^^ 
