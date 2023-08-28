@@ -37,6 +37,11 @@ Simple and safe.
     
     Mir effect: Will require lifetime checks for functions.
 
+## Syntax Highlighting
+Kestrel has a syntax highlighting theme for VSCode! To install:
+1) `cd kestrel-syntax`
+2) `make install`
+3) Restart VSCode
 
 ## Features
 - **Ahead of time compilation** - Kestrel is compiled ahead of time (AOT), instead of being interpreted or JIT compiled. AOT compilation allows Kestrel to catch entire classes of runtime errors, vastly improving the developer experience.
