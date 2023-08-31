@@ -3,7 +3,7 @@ use std::{collections::HashMap, fs::OpenOptions, io::Write};
 use indexmap::IndexMap;
 
 use crate::{
-    codegen::{BindingTags, CodegenFunctions},
+    codegen::{BindingTags, CodegenFunctions, CustomTypes},
     errors::{raise_error, raise_error_multi, ErrorType},
     parser::nodes::{Node, NodeType, OpType},
     types::{implements_trait, BasicType, BuiltinTypes, Lifetime, Trait, TraitType, Type},
@@ -22,6 +22,7 @@ pub struct Mir<'a> {
     fn_pos: Position,
     instructions: Vec<MirInstruction<'a>>,
     pub builtins: BuiltinTypes<'a>,
+    types: CustomTypes<'a>,
     functions: CodegenFunctions<'a>,
     debug_mir: bool,
     cur_block: usize,
@@ -93,6 +94,7 @@ pub enum RawMirInstruction<'a> {
         id: usize,
     },
     InstructionWrapper(Box<MirInstruction<'a>>),
+    NoOp,
 }
 
 #[derive(Clone, Debug)]
@@ -244,6 +246,7 @@ impl<'a> RawMirInstruction<'a> {
                 }
             }
             RawMirInstruction::InstructionWrapper(_) => "".into(),
+            RawMirInstruction::NoOp => "noop".into(),
         })
     }
 }
@@ -251,6 +254,7 @@ impl<'a> RawMirInstruction<'a> {
 pub fn new<'a>(
     info: FileInfo<'a>,
     builtins: BuiltinTypes<'a>,
+    types: CustomTypes<'a>,
     functions: CodegenFunctions<'a>,
     fn_name: String,
     fn_pos: Position,
@@ -271,6 +275,7 @@ pub fn new<'a>(
         fn_pos,
         instructions: Vec::new(),
         builtins,
+        types,
         functions,
         debug_mir,
         cur_block: 0,
@@ -447,7 +452,7 @@ impl<'a> Mir<'a> {
             NodeType::Call => self.generate_call(node),
             NodeType::Deref => self.generate_deref(node),
             NodeType::Conditional => self.generate_if(node),
-            NodeType::Enum => unimplemented!(), //TODO
+            NodeType::Enum => self.generate_enum(node), //TODO
         }
     }
 }
@@ -1395,5 +1400,19 @@ impl<'a> Mir<'a> {
         }
 
         (self.instructions.len() - 1, finaltp.unwrap().0)
+    }
+
+    fn generate_enum(&mut self, node: &Node) -> MirResult<'a> {        
+        self.instructions.push(MirInstruction {
+            instruction: RawMirInstruction::NoOp,
+            pos: node.pos.clone(),
+            tp: Some(self.builtins.get(&BasicType::Void).unwrap().clone()),
+            last_use: None,
+        });
+
+        (
+            self.instructions.len() - 1,
+            self.builtins.get(&BasicType::Void).unwrap().clone(),
+        )
     }
 }

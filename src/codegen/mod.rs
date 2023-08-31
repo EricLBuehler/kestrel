@@ -84,6 +84,24 @@ struct ExprFlags {
 }
 
 impl<'a> CodeGen<'a> {
+    fn hoist_defs_in_fn(&mut self, ast: Vec<Node>) {
+        //Hoist definitions
+        for node in ast.clone() {
+            match node.tp {
+                NodeType::Enum => {
+                    self.create_enum(node);
+                }
+                _ => {
+                    raise_error(
+                        "Only enum definitions are allowed at the function level.",
+                        ErrorType::NonModuleLevelStatement,
+                        &node.pos,
+                        self.info,
+                    );
+                }
+            }
+        }
+    }
     fn compile(&mut self, ast: Vec<Node>) {
         //Hoist definitions
         for node in ast.clone() {
@@ -96,7 +114,7 @@ impl<'a> CodeGen<'a> {
                 }
                 _ => {
                     raise_error(
-                        "Only function definitions are allowed at the module level.",
+                        "Only function or enum definitions are allowed at the module level.",
                         ErrorType::NonModuleLevelStatement,
                         &node.pos,
                         self.info,
@@ -1167,6 +1185,7 @@ impl<'a> CodeGen<'a> {
             let mut mir = mir::new(
                 self.info.clone(),
                 self.builtins.clone(),
+                self.types.clone(),
                 self.functions.clone(),
                 name.clone(),
                 node.pos.clone(),
@@ -1458,6 +1477,7 @@ impl<'a> CodeGen<'a> {
         let fnnode = node.data.get_data();
         let name = fnnode.raw.get("name").unwrap();
 
+
         if name == "main" {
             let main_tp: inkwell::types::FunctionType = self.context.i32_type().fn_type(
                 &[
@@ -1474,10 +1494,13 @@ impl<'a> CodeGen<'a> {
             let realmain = self.module.add_function("main", main_tp, None);
             let basic_block = self.context.append_basic_block(realmain, "");
 
+            self.hoist_defs_in_fn(fnnode.nodearr.unwrap().clone());
+
             // Mir check
             let mut mir = mir::new(
                 self.info.clone(),
                 self.builtins.clone(),
+                self.types.clone(),
                 self.functions.clone(),
                 name.into(),
                 node.pos.clone(),
@@ -1540,6 +1563,7 @@ impl<'a> CodeGen<'a> {
         let mut mir = mir::new(
             self.info.clone(),
             self.builtins.clone(),
+            self.types.clone(),
             self.functions.clone(),
             "main".into(),
             Position {
@@ -1680,7 +1704,7 @@ pub fn generate_code(
         .output()
         .expect("Failed to execute llc");
     if !res.status.success() {
-        println!(
+        eprintln!(
             "Stderr:\n{}\n\nStdout:{}",
             std::str::from_utf8(&res.stderr[..]).expect("Unable to convert for stderr (llc)"),
             std::str::from_utf8(&res.stdout[..]).expect("Unable to convert for stdout (llc)")
@@ -1695,7 +1719,7 @@ pub fn generate_code(
         .output()
         .expect("Failed to execute gcc");
     if !res.status.success() {
-        println!(
+        eprintln!(
             "Stderr:\n{}\n\nStdout:{}",
             std::str::from_utf8(&res.stderr[..]).expect("Unable to convert for stderr (gcc)"),
             std::str::from_utf8(&res.stdout[..]).expect("Unable to convert for stdout (gcc)")
@@ -1710,7 +1734,7 @@ pub fn generate_code(
         .output()
         .expect("Failed to execute gcc");
     if !res.status.success() {
-        println!(
+        eprintln!(
             "Stderr:\n{}\n\nStdout:{}",
             std::str::from_utf8(&res.stderr[..]).expect("Unable to convert for stderr (gcc)"),
             std::str::from_utf8(&res.stdout[..]).expect("Unable to convert for stdout (gcc)")

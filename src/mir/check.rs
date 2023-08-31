@@ -84,7 +84,7 @@ pub fn calculate_last_use(i: &usize, instructions: &mut Vec<MirInstruction>) -> 
                     uses.push(j);
                 }
             }
-            RawMirInstruction::InstructionWrapper(_) => {}
+            RawMirInstruction::InstructionWrapper(_) | RawMirInstruction::NoOp => {}
         }
     }
 
@@ -543,7 +543,7 @@ pub fn generate_lifetimes<'a>(
             } => {
                 check(this, &mut code.clone(), Some(i), *id);
             }
-            RawMirInstruction::InstructionWrapper(_) => {}
+            RawMirInstruction::InstructionWrapper(_) | RawMirInstruction::NoOp => {}
         }
 
         if let RawMirInstruction::Declare { name: _, is_mut: _ } = instruction.instruction {
