@@ -12,6 +12,7 @@ pub fn init_void(codegen: &mut CodeGen) {
         qualname: "std::void".into(),
         lifetime: Lifetime::Static,
         ref_n: 0,
+        usertype: None,
     };
     codegen.builtins.insert(BasicType::Void, tp);
 }

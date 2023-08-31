@@ -152,7 +152,8 @@ pub fn is_identi(cur: char) -> bool {
         || cur == ')'
         || cur == '{'
         || cur == '}'
-        || cur == ':')
+        || cur == ':'
+        || cur == ',')
 }
 
 pub fn generate_tokens(lexer: &mut Lexer, kwds: &[String]) -> (usize, Vec<Token>) {

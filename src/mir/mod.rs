@@ -369,7 +369,6 @@ pub fn write_mir(
     references: &IndexMap<usize, MirReference>,
 ) {
     let mut out = String::new();
-
     out.push_str(&format!(
         "fn {}: {} {{\n",
         this.fn_name,
@@ -448,6 +447,7 @@ impl<'a> Mir<'a> {
             NodeType::Call => self.generate_call(node),
             NodeType::Deref => self.generate_deref(node),
             NodeType::Conditional => self.generate_if(node),
+            NodeType::Enum => unimplemented!(), //TODO
         }
     }
 }

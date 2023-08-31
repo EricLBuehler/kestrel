@@ -6,7 +6,7 @@ use inkwell::{
     module::FlagBehavior,
     module::Module,
     passes::PassManagerSubType,
-    types::{AnyTypeEnum, BasicMetadataTypeEnum, FunctionType},
+    types::{AnyTypeEnum, BasicMetadataTypeEnum, FunctionType, BasicTypeEnum, BasicType as InkwellBasicType},
     values::{BasicValueEnum, FunctionValue, PointerValue},
     AddressSpace,
 };
@@ -18,7 +18,7 @@ use crate::{
     mir,
     parser::nodes::{Node, NodeType, OpType},
     types::{
-        builtins::init_builtins, init_extern_fns, BasicType, BuiltinTypes, Trait, TraitType, Type,
+        builtins::init_builtins, init_extern_fns, BasicType, BuiltinTypes, Trait, TraitType, Type, Lifetime, CustomTypeInternals,
     },
     utils::{FileInfo, Position},
     Flags,
@@ -43,6 +43,8 @@ pub struct CurFunctionState<'a> {
 pub type CodegenFunctions<'a> =
     HashMap<String, (Node, (Vec<Type<'a>>, Type<'a>), Option<FunctionValue<'a>>)>; //(args, (code, (args, rettp), function)
 
+pub type CustomTypes<'a> = HashMap<String, Type<'a>>;
+
 pub struct CodeGen<'a> {
     pub context: &'a Context,
     pub module: Module<'a>,
@@ -55,6 +57,7 @@ pub struct CodeGen<'a> {
     pub cur_fn: Option<FunctionValue<'a>>,
 
     pub builtins: BuiltinTypes<'a>,
+    pub types: CustomTypes<'a>,
     pub extern_fns: HashMap<String, FunctionValue<'a>>,
     pub functions: CodegenFunctions<'a>, //(args, (code, (args, rettp))
     namespaces: HashMap<FunctionValue<'a>, Namespace<'a>>,
@@ -88,6 +91,9 @@ impl<'a> CodeGen<'a> {
                 NodeType::Fn => {
                     self.hoist_fn_def(node);
                 }
+                NodeType::Enum => {
+                    self.create_enum(node);
+                }
                 _ => {
                     raise_error(
                         "Only function definitions are allowed at the module level.",
@@ -98,7 +104,7 @@ impl<'a> CodeGen<'a> {
                 }
             }
         }
-
+        
         if !self.functions.contains_key("main") {
             self.add_main_skeleton();
         }
@@ -108,6 +114,7 @@ impl<'a> CodeGen<'a> {
                 NodeType::Fn => {
                     self.create_fn(node);
                 }
+                NodeType::Enum => {}
                 _ => {
                     unreachable!()
                 }
@@ -163,6 +170,7 @@ impl<'a> CodeGen<'a> {
             NodeType::Call => self.compile_call(node, flags),
             NodeType::Deref => self.compile_deref(node, flags),
             NodeType::Conditional => self.compile_if(node, flags),
+            NodeType::Enum => self.compile_enum(node, flags)
         }
     }
 
@@ -294,6 +302,9 @@ impl<'a> CodeGen<'a> {
                 }
             }
             BasicType::Void => context.void_type().into(),
+            BasicType::Enum => {
+                unimplemented!() //TODO
+            }
         }
     }
 
@@ -334,7 +345,59 @@ impl<'a> CodeGen<'a> {
         }
     }
 
-    fn resolve_type(builtins: &BuiltinTypes<'a>, info: &FileInfo<'a>, name: &Node) -> Type<'a> {
+    fn get_size_of_basic(inkwell_tp: BasicTypeEnum<'a>) -> u32 {
+        match inkwell_tp {
+            BasicTypeEnum::ArrayType(_) => {
+                unimplemented!()
+            }
+            BasicTypeEnum::FloatType(_) => {
+                unimplemented!()
+            }
+            BasicTypeEnum::IntType(tp) => {
+                return tp.get_bit_width();                
+            }
+            BasicTypeEnum::PointerType(_) => {
+                unimplemented!()              
+            }
+            BasicTypeEnum::StructType(tp) => {
+                tp.get_field_types().iter().map(|x| Self::get_size_of_basic(*x)).sum()
+            }
+            BasicTypeEnum::VectorType(_) => {
+                unimplemented!()             
+            }
+        }
+    }
+
+    fn get_size_of(inkwell_tp: AnyTypeEnum<'a>) -> u32 {
+        match inkwell_tp {
+            AnyTypeEnum::ArrayType(_) => {
+                unimplemented!()
+            }
+            AnyTypeEnum::FloatType(tp) => {
+                Self::get_size_of_basic(tp.as_basic_type_enum())
+            }
+            AnyTypeEnum::FunctionType(_) => {
+                unimplemented!()                
+            }
+            AnyTypeEnum::IntType(tp) => {
+                Self::get_size_of_basic(tp.as_basic_type_enum())
+            }
+            AnyTypeEnum::PointerType(tp) => {
+                Self::get_size_of_basic(tp.as_basic_type_enum())              
+            }
+            AnyTypeEnum::StructType(tp) => {
+                tp.get_field_types().iter().map(|x| Self::get_size_of_basic(*x)).sum()
+            }
+            AnyTypeEnum::VectorType(_) => {
+                unimplemented!()
+            }
+            AnyTypeEnum::VoidType(_) => {
+                0
+            }
+        }
+    }
+
+    fn resolve_type(builtins: &BuiltinTypes<'a>, types: &CustomTypes<'a>, info: &FileInfo<'a>, name: &Node) -> Type<'a> {
         assert!(name.tp == NodeType::Identifier);
         let data = name.data.get_data();
         let name_str = data.raw.get("value").unwrap();
@@ -343,6 +406,10 @@ impl<'a> CodeGen<'a> {
             if name_str == &basictype.to_string() {
                 return builtins.get(&basictype).unwrap().clone();
             }
+        }
+
+        if types.contains_key(name_str) {
+            return types.get(name_str).unwrap().clone();
         }
 
         let fmt: String = format!("Type '{}' not found.", name_str);
@@ -1275,6 +1342,86 @@ impl<'a> CodeGen<'a> {
             }
         }
     }
+
+    fn compile_enum(&mut self, node: &Node, _flags: ExprFlags) -> Data<'a> {
+        self.create_enum(node.clone());
+
+        Data {
+            data: None,
+            tp: self.builtins.get(&BasicType::Void).unwrap().clone(),
+        }
+    }
+}
+
+impl<'a> CodeGen<'a> {
+    fn create_enum(&mut self, node: Node) {
+        let enumdata = node.data.get_data();
+        let variants = enumdata.nodes_owned;
+        let name = enumdata.raw.get("name").unwrap().clone();
+
+        let mut maxtp = None;
+
+        let mut types = HashMap::new();
+        for (name, typename) in variants{
+            let tp = Self::resolve_type(&self.builtins, &self.types, self.info, &typename);
+            let inkwell_tp = Self::kestrel_to_inkwell_tp(self.context, &tp);
+            if let Some((size, _)) = maxtp {
+                if Self::get_size_of(inkwell_tp)>size {
+                    maxtp = Some((Self::get_size_of(inkwell_tp), inkwell_tp));
+                }
+            }
+            else {
+                maxtp = Some((Self::get_size_of(inkwell_tp), inkwell_tp));
+            }
+            types.insert(name, tp);
+        }
+
+        let maxtp = maxtp.unwrap_or((0, self.context.void_type().into())).1;
+        
+        let structtp;
+        if let AnyTypeEnum::VoidType(_) = maxtp {
+            structtp = self.context.struct_type(&[BasicTypeEnum::IntType(self.context.i32_type()) ], false);
+        }
+        else {
+            structtp = self.context.struct_type(&[BasicTypeEnum::IntType(self.context.i32_type()), match maxtp {
+                AnyTypeEnum::ArrayType(tp) => {
+                    tp.into()
+                }
+                AnyTypeEnum::FloatType(tp) => {
+                    tp.into()
+                }
+                AnyTypeEnum::IntType(tp) => {
+                    tp.into()
+                }
+                AnyTypeEnum::PointerType(tp) => {
+                    tp.into()
+                }
+                AnyTypeEnum::StructType(tp) => {
+                    tp.into()
+                }
+                AnyTypeEnum::FunctionType(_) => {
+                    unimplemented!()
+                }
+                AnyTypeEnum::VectorType(tp) => {
+                    tp.into()
+                }
+                AnyTypeEnum::VoidType(_) => {
+                    unreachable!()
+                }
+             } ], false);
+        }
+
+        let tp = Type {
+            basictype: BasicType::Enum,
+            traits: HashMap::new(),
+            qualname: name.clone(),
+            lifetime: Lifetime::Static,
+            ref_n: 0,
+            usertype: Some(CustomTypeInternals::Enum { variants: types, tp: structtp })
+        };
+
+        self.types.insert(name, tp);
+    }
 }
 
 impl<'a> CodeGen<'a> {
@@ -1298,7 +1445,7 @@ impl<'a> CodeGen<'a> {
         }
 
         let rettp = if let Some(ref v) = fnnode.tp {
-            Self::resolve_type(&self.builtins, self.info, v)
+            Self::resolve_type(&self.builtins, &self.types, self.info, v)
         } else {
             self.builtins.get(&BasicType::Void).unwrap().clone()
         };
@@ -1403,6 +1550,7 @@ impl<'a> CodeGen<'a> {
             },
             self.debug_mir,
         );
+
         let mut instructions = mir.generate(&vec![]);
         mir::check(&mut mir, &mut instructions, None, 0);
         //
@@ -1489,6 +1637,7 @@ pub fn generate_code(
         cur_fnstate: None,
         cur_fn: None,
         builtins: HashMap::new(),
+        types: HashMap::new(),
         extern_fns: HashMap::new(),
         functions: HashMap::new(),
         namespaces: HashMap::new(),

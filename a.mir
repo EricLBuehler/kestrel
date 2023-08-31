@@ -1,5 +1,5 @@
 fn main: std::void {
-    program.ke:2
+    program.ke:8
     .0:   declare x['1 .0 => .5]
     .1:   i32 1 -> std::i32['2 .1 => .3]
     .2:   i32 1 -> std::i32['3 .2 => .3]

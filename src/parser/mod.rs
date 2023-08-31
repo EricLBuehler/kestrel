@@ -1,7 +1,9 @@
+use std::collections::HashMap;
+
 use crate::{
     errors::{raise_error, ErrorType},
     lexer::{Token, TokenType},
-    utils::{FileInfo, Position},
+    utils::{FileInfo, Position}, parser::nodes::EnumNode,
 };
 
 pub mod nodes;
@@ -236,6 +238,7 @@ impl<'a> Parser<'a> {
             "if" => self.generate_if(),
             "else" => self.raise_error("'else' is not allowed here", ErrorType::FloatingElse),
             "elif" => self.raise_error("'elif' is not allowed here", ErrorType::FloatingElif),
+            "enum" => self.generate_enum(),
             _ => {
                 unreachable!();
             }
@@ -502,6 +505,71 @@ impl<'a> Parser<'a> {
                 codes,
                 elsecode,
                 positions,
+            }),
+        )
+    }
+
+    fn generate_enum(&mut self) -> Node {
+        let startcol = self.current.start.startcol;
+
+        self.advance();
+        
+        self.expect(TokenType::Identifier);
+        let name = self.current.data.clone();
+        self.advance();
+
+        self.skip_newlines();
+
+        self.expect(TokenType::LCurly);
+
+        let endcol = self.current.end.endcol;
+        let endline = self.current.end.line;
+
+        self.advance();
+        self.skip_newlines();
+
+        let mut variants = HashMap::new();
+        while self.current_is_type(TokenType::Identifier) {
+            variants.insert(self.current.data.clone(), 
+            Node::new(
+                Position {
+                    startcol: self.current.start.startcol,
+                    endcol: self.current.end.endcol,
+                    opcol: None,
+                    line: self.current.start.line,
+                },
+                nodes::NodeType::Identifier,
+                Box::new(IdentifierNode {
+                    value: "void".into(),
+                }),
+            ));
+
+            self.advance();
+            self.skip_newlines();
+            if self.current_is_type(TokenType::RCurly) {
+                break;
+            }
+            self.expect(TokenType::Comma);
+            self.advance();
+            self.skip_newlines();
+        }
+
+        self.expect(TokenType::RCurly);
+
+        self.advance();
+        self.skip_newlines();
+
+        Node::new(
+            Position {
+                startcol,
+                endcol,
+                opcol: None,
+                line: endline,
+            },
+            nodes::NodeType::Enum,
+            Box::new(EnumNode {
+                name,
+                variants
             }),
         )
     }

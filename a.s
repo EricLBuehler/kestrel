@@ -46,7 +46,7 @@ main:                                   # @main
 	.section	.rodata,"a",@progbits
 	.p2align	4
 .L__unnamed_1:
-	.asciz	"Error: std::i32 addition overflow!\n    program.ke:2:14\n"
+	.asciz	"Error: std::i32 addition overflow!\n    program.ke:8:14\n"
 	.size	.L__unnamed_1, 56
 
 	.section	".note.GNU-stack","",@progbits

@@ -1,6 +1,6 @@
 use std::{collections::HashMap, fmt::Display};
 
-use inkwell::AddressSpace;
+use inkwell::{AddressSpace, types::StructType};
 use strum::EnumIter;
 
 use crate::{
@@ -81,6 +81,7 @@ pub enum BasicType {
     U32,
     U64,
     U128,
+    Enum,
 }
 
 impl Display for BasicType {
@@ -122,17 +123,26 @@ impl Display for BasicType {
             BasicType::U128 => {
                 write!(f, "u128")
             }
+            BasicType::Enum => {
+                write!(f, "enum")
+            }
         }
     }
+}
+
+#[derive(PartialEq, Eq, Clone, Debug)]
+pub enum CustomTypeInternals<'a> {
+    Enum{variants: HashMap<String, Type<'a>>, tp: StructType<'a>}
 }
 
 #[derive(Eq, Clone, Debug)]
 pub struct Type<'a> {
     pub basictype: BasicType,
     pub traits: Traits<'a>,
-    qualname: String,
+    pub qualname: String,
     pub lifetime: Lifetime,
     pub ref_n: usize,
+    pub usertype: Option<CustomTypeInternals<'a>>
 }
 
 impl<'a> Type<'a> {

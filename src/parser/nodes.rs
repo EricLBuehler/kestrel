@@ -54,6 +54,7 @@ pub enum NodeType {
     Call,
     Deref,
     Conditional,
+    Enum,
 }
 
 #[derive(Debug)]
@@ -69,6 +70,7 @@ pub struct NodeValue<'a> {
     pub nodearr_codes: Option<&'a Vec<Vec<Node>>>,
     pub nodearr_else: &'a Option<Vec<Node>>,
     pub positions: Vec<Position>,
+    pub nodes_owned: HashMap<String, Node>,
 }
 
 pub trait NodeData {
@@ -95,6 +97,7 @@ impl<'a> NodeValue<'a> {
             nodearr_codes: None,
             nodearr_else: &None,
             positions: Vec::new(),
+            nodes_owned: HashMap::new(),
         }
     }
 }
@@ -310,6 +313,24 @@ impl NodeData for ConditionalNode {
         value.nodearr_else = &self.elsecode;
         value.nodearr_codes = Some(&self.codes);
         value.positions = self.positions.clone();
+
+        value
+    }
+}
+
+
+// ========================
+
+pub struct EnumNode {
+    pub name: String,
+    pub variants: HashMap<String, Node>,
+}
+
+impl NodeData for EnumNode {
+    fn get_data(&self) -> NodeValue {
+        let mut value = NodeValue::new();
+        value.raw.insert("name".into(), self.name.clone());
+        value.nodes_owned = self.variants.clone();
 
         value
     }

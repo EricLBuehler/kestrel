@@ -254,6 +254,7 @@ pub fn init_integral(codegen: &mut CodeGen) {
             qualname: format!("std::{basictype}"),
             lifetime: Lifetime::Static,
             ref_n: 0,
+            usertype: None,
         };
         codegen.builtins.insert(basictype, tp);
     }

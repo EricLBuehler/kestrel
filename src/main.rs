@@ -99,6 +99,7 @@ fn main() {
         "if".into(),
         "else".into(),
         "elif".into(),
+        "enum".into(),
     ];
     let mut lexer = lexer::new(&mut file_info);
     let (_, tokens) = lexer::generate_tokens(&mut lexer, &keywords);
