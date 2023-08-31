@@ -85,20 +85,12 @@ struct ExprFlags {
 
 impl<'a> CodeGen<'a> {
     fn hoist_defs_in_fn(&mut self, ast: Vec<Node>) {
-        //Hoist definitions
         for node in ast.clone() {
             match node.tp {
                 NodeType::Enum => {
                     self.create_enum(node);
                 }
-                _ => {
-                    raise_error(
-                        "Only enum definitions are allowed at the function level.",
-                        ErrorType::NonModuleLevelStatement,
-                        &node.pos,
-                        self.info,
-                    );
-                }
+                _ => {}
             }
         }
     }

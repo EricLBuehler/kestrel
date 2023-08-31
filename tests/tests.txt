@@ -59,3 +59,10 @@ error[E024]: Conditional expression is missing else clause.
 ./tests/E024.ke:2:5
 2 |     let x = if 1==2 {
   |     ^^^^^^^^^^^^^^^^^ 
+=-=
+Expected passing - enum def outside fn
+enum_outside.ke
+
+=-=
+Expected passing - enum def inside fn
+enum_inside.ke

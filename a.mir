@@ -1,5 +1,12 @@
 fn main: std::void {
     program.ke:2
     .0:   noop -> std::void['1 .0 => .0]
+    program.ke:8
+    .1:   declare x['2 .1 => .6]
+    .2:   i32 1 -> std::i32['3 .2 => .4]
+    .3:   i32 1 -> std::i32['4 .3 => .4]
+    .4:   add .2 .3 -> std::i32['5 .4 => .6]
+    .5:   own .4
+    .6:   store x .4 -> std::void['6 .6 => .6]  dropbinding x
 
 }
