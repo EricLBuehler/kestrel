@@ -1,9 +1,9 @@
-fn main() {
-    enum Enum {
-        A,
-        B,
-        C
-    }
+enum Enum {
+    A,
+    B,
+    C
+}
 
+fn main() {
     let x = 1+1
 }
